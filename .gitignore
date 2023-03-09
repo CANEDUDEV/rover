@@ -1,0 +1,13 @@
+build/
+.cache/
+compile_commands.json
+# Unused parts of Drivers package
+Drivers/CMSIS/Core/
+Drivers/CMSIS/Core_A/
+Drivers/CMSIS/Device/ST/STM32F3xx/Source
+Drivers/CMSIS/docs/
+Drivers/CMSIS/DSP/
+Drivers/CMSIS/Lib/
+Drivers/CMSIS/NN/
+Drivers/CMSIS/RTOS/
+Drivers/CMSIS/RTOS2/
