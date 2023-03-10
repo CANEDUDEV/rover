@@ -2,8 +2,24 @@
 
 set -eo pipefail
 
-sudo apt -q update
-sudo apt -q install -y crossbuild-essential-armhf binutils-arm-none-eabi gcc-arm-none-eabi make
+YAMLFMT=https://github.com/google/yamlfmt/releases/download/v0.7.1/yamlfmt_0.7.1_Linux_x86_64.tar.gz
 
-pip3 install --user meson==1.0.1
+sudo apt -qq update
+sudo apt -qq install -y \
+	curl \
+	clang-format \
+	clang-tidy \
+	gcc-arm-none-eabi \
+	libc6-dev-armhf-cross \
+	meson \
+	ninja-build \
+	shellcheck \
+	shfmt
+
+if [[ ! -x .bin/yamlfmt ]]; then
+	mkdir -p .bin
+	curl -L -s "${YAMLFMT}" | tar -C .bin -xzf - yamlfmt
+	chmod +x .bin/yamlfmt
+fi
+
 meson setup --cross-file stm32f302ret6.ini build
