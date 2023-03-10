@@ -1,7 +1,7 @@
 project(
   'canedudev',
   'c',
-  meson_version: '>=1.0.1',
+  meson_version: '==0.61.2',
   version: '0.1',
   default_options: [
     'buildtype=debugoptimized',
@@ -12,11 +12,7 @@ project(
   ]
 )
 
-add_project_arguments('-Wno-suggest-attribute=noreturn', language: 'c')
-
 objcopy = find_program('objcopy')
-
-fs = import('fs')
 
 drivers_inc = include_directories(
   'Drivers' / 'STM32F3xx_HAL_Driver' / 'Inc',
