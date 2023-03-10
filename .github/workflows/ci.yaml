@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Bootstrap build
+        run: ./scripts/bootstrap.sh
+
+      - name: Build source
+        run: ninja -C build
+
+      - name: Check source
+        run: ./scripts/check-src.sh
