@@ -1,5 +1,6 @@
-build/
+.bin/
 .cache/
+build/
 compile_commands.json
 # Unused parts of Drivers package
 Drivers/CMSIS/Core/

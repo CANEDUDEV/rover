@@ -9,14 +9,18 @@ io_node_src = files(
   'startup_stm32f302xe.s',
 )
 
-ld_script = fs.copyfile('STM32F302RETx_FLASH.ld')
+ld_script = configure_file(
+  copy: true,
+  input: files('STM32F302RETx_FLASH.ld'),
+  output: '@PLAINNAME@',
+)
 
 io_node_elf = executable(
   'io_node.elf',
   [drivers_src, freertos_src, io_node_src],
   include_directories: [drivers_inc, freertos_inc, io_node_inc],
   link_depends: ld_script,
-  link_args: ['-T'+ld_script.full_path()],
+  link_args: ['-T@0@'.format(ld_script)],
 )
 
 io_node_bin = custom_target(
