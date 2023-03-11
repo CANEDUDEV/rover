@@ -1,0 +1,4 @@
+# Ignore generated files present in the top level dir
+Drivers/
+Middlewares/
+Makefile
