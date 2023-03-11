@@ -1,11 +1,11 @@
-io_node_inc = include_directories('inc')
+io_node_inc = include_directories('Core' / 'Inc')
 io_node_src = files(
-  'src' / 'freertos.c',
-  'src' / 'freertos.c',
-  'src' / 'main.c',
-  'src' / 'stm32f3xx_hal_msp.c',
-  'src' / 'stm32f3xx_it.c',
-  'src' / 'system_stm32f3xx.c',
+  'Core' / 'Src' / 'freertos.c',
+  'Core' / 'Src' / 'freertos.c',
+  'Core' / 'Src' / 'main.c',
+  'Core' / 'Src' / 'stm32f3xx_hal_msp.c',
+  'Core' / 'Src' / 'stm32f3xx_it.c',
+  'Core' / 'Src' / 'system_stm32f3xx.c',
   'startup_stm32f302xe.s',
 )
 
