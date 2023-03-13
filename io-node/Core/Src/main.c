@@ -15,16 +15,20 @@
  *
  ******************************************************************************
  */
+
+// Disable warnings for generated code
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
 #include "cmsis_os.h"
-#include "cmsis_os2.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdint.h>
+#include <stm32f3xx_hal_gpio.h>
 #include <string.h>
 
 #include "semphr.h"
@@ -35,17 +39,29 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
+// When mounting a switch vertically, SWITCH_PRESS_LEFT should correspond to
+// pressing the switch up, and SWITCH_PRESS_RIGHT should correspond to pressing
+// the switch down.
+enum SWITCH_STATE {
+  SWITCH_NEUTRAL = 0U,
+  SWITCH_PRESS_LEFT = 1U,
+  SWITCH_PRESS_RIGHT = 2U,
+};
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define ANALOG_PORT_MESSAGE_ID 100U
+#define ANALOG_PORT_MESSAGE_DLC 4U
+
+#define SWITCH_MESSAGE_ID 200U
+#define SWITCH_MESSAGE_DLC 4U
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
-// Disable warnings for generated code
-// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 
 /* USER CODE END PM */
 
@@ -58,6 +74,7 @@ CAN_HandleTypeDef hcan;
 I2C_HandleTypeDef hi2c1;
 
 SPI_HandleTypeDef hspi1;
+SPI_HandleTypeDef hspi3;
 
 UART_HandleTypeDef huart1;
 
@@ -70,8 +87,6 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* USER CODE BEGIN PV */
 
-// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -83,6 +98,7 @@ static void MX_CAN_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_SPI3_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -128,6 +144,7 @@ int main(void) {
   MX_I2C1_Init();
   MX_USART1_UART_Init();
   MX_SPI1_Init();
+  MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -319,12 +336,9 @@ static void MX_CAN_Init(void) {
 
   /* USER CODE BEGIN CAN_Init 1 */
 
-  // Disable warnings for generated code
-  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN;
-  hcan.Init.Prescaler = 12;
+  hcan.Init.Prescaler = CAN_BRP;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
@@ -340,8 +354,6 @@ static void MX_CAN_Init(void) {
   }
   /* USER CODE BEGIN CAN_Init 2 */
 
-  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-
   /* USER CODE END CAN_Init 2 */
 }
 
@@ -356,9 +368,6 @@ static void MX_I2C1_Init(void) {
   /* USER CODE END I2C1_Init 0 */
 
   /* USER CODE BEGIN I2C1_Init 1 */
-
-  // Disable warnings for generated code
-  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
@@ -387,8 +396,6 @@ static void MX_I2C1_Init(void) {
   }
   /* USER CODE BEGIN I2C1_Init 2 */
 
-  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-
   /* USER CODE END I2C1_Init 2 */
 }
 
@@ -403,9 +410,6 @@ static void MX_SPI1_Init(void) {
   /* USER CODE END SPI1_Init 0 */
 
   /* USER CODE BEGIN SPI1_Init 1 */
-
-  // Disable warnings for generated code
-  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
   /* USER CODE END SPI1_Init 1 */
   /* SPI1 parameter configuration*/
@@ -428,9 +432,43 @@ static void MX_SPI1_Init(void) {
   }
   /* USER CODE BEGIN SPI1_Init 2 */
 
-  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-
   /* USER CODE END SPI1_Init 2 */
+}
+
+/**
+ * @brief SPI3 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_SPI3_Init(void) {
+  /* USER CODE BEGIN SPI3_Init 0 */
+
+  /* USER CODE END SPI3_Init 0 */
+
+  /* USER CODE BEGIN SPI3_Init 1 */
+
+  /* USER CODE END SPI3_Init 1 */
+  /* SPI3 parameter configuration*/
+  hspi3.Instance = SPI3;
+  hspi3.Init.Mode = SPI_MODE_MASTER;
+  hspi3.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi3.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi3.Init.NSS = SPI_NSS_SOFT;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi3.Init.CRCPolynomial = 7;
+  hspi3.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hspi3.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  if (HAL_SPI_Init(&hspi3) != HAL_OK) {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI3_Init 2 */
+
+  /* USER CODE END SPI3_Init 2 */
 }
 
 /**
@@ -444,9 +482,6 @@ static void MX_USART1_UART_Init(void) {
   /* USER CODE END USART1_Init 0 */
 
   /* USER CODE BEGIN USART1_Init 1 */
-
-  // Disable warnings for generated code
-  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
@@ -464,8 +499,6 @@ static void MX_USART1_UART_Init(void) {
   }
   /* USER CODE BEGIN USART1_Init 2 */
 
-  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-
   /* USER CODE END USART1_Init 2 */
 }
 
@@ -473,13 +506,6 @@ static void MX_USART1_UART_Init(void) {
  * Enable DMA controller clock
  */
 static void MX_DMA_Init(void) {
-  /* USER CODE BEGIN DMA_Init 0 */
-
-  // Disable warnings for generated code
-  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-
-  /* USER CODE END DMA_Init 0 */
-
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
 
@@ -487,12 +513,6 @@ static void MX_DMA_Init(void) {
   /* DMA1_Channel1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-
-  /* USER CODE BEGIN DMA_Init 1 */
-
-  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
-
-  /* USER CODE END DMA_Init 1 */
 }
 
 /**
@@ -513,54 +533,56 @@ static void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3,
+  HAL_GPIO_WritePin(GPIOC,
+                    GPIO0_Pin | GPIO1_Pin | GPIO2_Pin | GPIO3_Pin |
+                        GPIO_PWRON_1_Pin | GPIO_PWRON_2_Pin,
+                    GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB,
+                    GPIO_PWRON_3_Pin | GPIO_PWRON_4_Pin | VDD_IO_LEVEL_Pin,
                     GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI3_NSS_GPIO_Port, SPI3_NSS_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PC13 PC6 PC7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_6 | GPIO_PIN_7;
+  /*Configure GPIO pins : SWITCH4_PIN2_Pin SWITCH2_PIN1_Pin SWITCH2_PIN2_Pin
+     CAN_FD_INT_Pin CAN_FD_SOF_Pin */
+  GPIO_InitStruct.Pin = SWITCH4_PIN2_Pin | SWITCH2_PIN1_Pin | SWITCH2_PIN2_Pin |
+                        CAN_FD_INT_Pin | CAN_FD_SOF_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PC0 PC1 PC2 PC3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3;
+  /*Configure GPIO pins : GPIO0_Pin GPIO1_Pin GPIO2_Pin GPIO3_Pin
+                           GPIO_PWRON_1_Pin GPIO_PWRON_2_Pin */
+  GPIO_InitStruct.Pin = GPIO0_Pin | GPIO1_Pin | GPIO2_Pin | GPIO3_Pin |
+                        GPIO_PWRON_1_Pin | GPIO_PWRON_2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA4 PA5 PA6 PA11
-                           PA12 */
-  GPIO_InitStruct.Pin =
-      GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_11 | GPIO_PIN_12;
+  /*Configure GPIO pins : SWITCH3_PIN1_Pin SWITCH3_PIN2_Pin SWITCH4_PIN1_Pin
+     CAN_FD_INT1_Pin CAN_FD_INT0_Pin */
+  GPIO_InitStruct.Pin = SWITCH3_PIN1_Pin | SWITCH3_PIN2_Pin | SWITCH4_PIN1_Pin |
+                        CAN_FD_INT1_Pin | CAN_FD_INT0_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB10 PB11 */
-  GPIO_InitStruct.Pin = GPIO_PIN_10 | GPIO_PIN_11;
+  /*Configure GPIO pins : GPIO_PWRON_3_Pin GPIO_PWRON_4_Pin VDD_IO_LEVEL_Pin */
+  GPIO_InitStruct.Pin = GPIO_PWRON_3_Pin | GPIO_PWRON_4_Pin | VDD_IO_LEVEL_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SWITCH1_PIN1_Pin SWITCH1_PIN2_Pin */
+  GPIO_InitStruct.Pin = SWITCH1_PIN1_Pin | SWITCH1_PIN2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PB12 PB13 PB14 PB15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PC10 PC11 PC12 */
-  GPIO_InitStruct.Pin = GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SPI3_NSS_Pin */
   GPIO_InitStruct.Pin = SPI3_NSS_Pin;
@@ -574,12 +596,78 @@ static void MX_GPIO_Init(void) {
 }
 
 /* USER CODE BEGIN 4 */
+
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
   UNUSED(hadc);
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
+
+void SendAnalogPortMessage(const uint16_t *data) {
+  CAN_TxHeaderTypeDef header = {
+      .StdId = ANALOG_PORT_MESSAGE_ID,
+      .DLC = ANALOG_PORT_MESSAGE_DLC,
+  };
+  uint32_t mailbox = CAN_TX_MAILBOX0;
+  uint8_t canData[4];
+  for (int i = 0; i < ANALOG_PORT_MESSAGE_DLC; i++) {
+    canData[i] = data[i];
+  }
+  HAL_CAN_AddTxMessage(&hcan, &header, canData, &mailbox);
+}
+
+void SendSwitchPortMessage(const uint8_t *data) {
+  CAN_TxHeaderTypeDef header = {
+      .StdId = SWITCH_MESSAGE_ID,
+      .DLC = SWITCH_MESSAGE_DLC,
+  };
+  uint32_t mailbox = CAN_TX_MAILBOX0;
+  HAL_CAN_AddTxMessage(&hcan, &header, data, &mailbox);
+}
+
+enum SWITCH_STATE getSwitchState(GPIO_PinState pin1, GPIO_PinState pin2) {
+  // pin1 = 0 && pin2 = 1 => left
+  // pin1 = 1 && pin2 = 0 => right
+  // pin1 = 1 && pin2 = 1 => neutral
+  if (!pin1 && pin2) {
+    return SWITCH_PRESS_LEFT;
+  }
+  if (pin1 && !pin2) {
+    return SWITCH_PRESS_RIGHT;
+  }
+  return SWITCH_NEUTRAL;
+}
+
+void ReadSwitches(uint8_t *data) {
+  GPIO_PinState sw1p1 =
+      HAL_GPIO_ReadPin(SWITCH1_PIN1_GPIO_Port, SWITCH1_PIN1_Pin);
+  GPIO_PinState sw1p2 =
+      HAL_GPIO_ReadPin(SWITCH1_PIN2_GPIO_Port, SWITCH1_PIN2_Pin);
+
+  GPIO_PinState sw2p1 =
+      HAL_GPIO_ReadPin(SWITCH2_PIN1_GPIO_Port, SWITCH2_PIN1_Pin);
+  GPIO_PinState sw2p2 =
+      HAL_GPIO_ReadPin(SWITCH2_PIN2_GPIO_Port, SWITCH2_PIN2_Pin);
+
+  GPIO_PinState sw3p1 =
+      HAL_GPIO_ReadPin(SWITCH3_PIN1_GPIO_Port, SWITCH3_PIN1_Pin);
+  GPIO_PinState sw3p2 =
+      HAL_GPIO_ReadPin(SWITCH3_PIN2_GPIO_Port, SWITCH3_PIN2_Pin);
+
+  GPIO_PinState sw4p1 =
+      HAL_GPIO_ReadPin(SWITCH4_PIN1_GPIO_Port, SWITCH4_PIN1_Pin);
+  GPIO_PinState sw4p2 =
+      HAL_GPIO_ReadPin(SWITCH4_PIN2_GPIO_Port, SWITCH4_PIN2_Pin);
+
+  data[0] = getSwitchState(sw1p1, sw1p2);
+  data[1] = getSwitchState(sw2p1, sw2p2);
+  data[2] = getSwitchState(sw3p1, sw3p2);
+  data[3] = getSwitchState(sw4p1, sw4p2);
+}
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -592,15 +680,9 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 void StartDefaultTask(void *argument) {
   /* USER CODE BEGIN 5 */
   UNUSED(argument);
-  const uint32_t CAN_ID = 100;
-  const uint8_t CAN_DLC = 4;
-  CAN_TxHeaderTypeDef header = {
-      .StdId = CAN_ID,
-      .DLC = CAN_DLC,
-  };
-  uint32_t mailbox = CAN_TX_MAILBOX0;
-  uint8_t data[4];
+
   uint16_t adcBuf[4];
+  uint8_t swData[4];
 
   const uint32_t taskDelayMs = 20;
 
@@ -611,10 +693,11 @@ void StartDefaultTask(void *argument) {
                       sizeof(adcBuf) / sizeof(uint16_t));
 
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    for (int i = 0; i < sizeof(data); i++) {
-      data[i] = (uint8_t)adcBuf[i];
-    }
-    HAL_CAN_AddTxMessage(&hcan, &header, data, &mailbox);
+    SendAnalogPortMessage(adcBuf);
+
+    ReadSwitches(swData);
+    SendSwitchPortMessage(swData);
+
     osDelay(taskDelayMs);
   }
   /* USER CODE END 5 */
