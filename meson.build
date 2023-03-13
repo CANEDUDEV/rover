@@ -13,6 +13,7 @@ project(
 )
 
 objcopy = find_program('objcopy')
+clang_tidy = find_program('clang-tidy')
 
 drivers_inc = include_directories(
   'Drivers' / 'STM32F3xx_HAL_Driver' / 'Inc',
@@ -68,3 +69,19 @@ freertos_src = files(
 )
 
 subdir('io-node')
+
+tidy_files = [io_node_tidy_files]
+
+# Override default meson clang-tidy target
+run_target(
+  'clang-tidy',
+  command: [
+    clang_tidy,
+    '--checks=-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,misc-*,readability-*',
+    '--format-style=file',
+    '--header-filter=.*',
+    '--warnings-as-errors=*',
+    '-p', meson.project_build_root(),
+    tidy_files,
+  ]
+)

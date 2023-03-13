@@ -16,6 +16,10 @@
  *
  ******************************************************************************
  */
+
+// Disable warnings for generated code
+// NOLINTBEGIN(bugprone-reserved-identifier)
+
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -61,6 +65,8 @@ void Error_Handler(void);
 #define SPI3_NSS_GPIO_Port GPIOD
 
 /* USER CODE BEGIN Private defines */
+
+// NOLINTEND(bugprone-reserved-identifier)
 
 /* USER CODE END Private defines */
 

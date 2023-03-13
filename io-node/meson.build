@@ -1,7 +1,6 @@
 io_node_inc = include_directories('Core' / 'Inc')
 io_node_src = files(
   'Core' / 'Src' / 'freertos.c',
-  'Core' / 'Src' / 'freertos.c',
   'Core' / 'Src' / 'main.c',
   'Core' / 'Src' / 'stm32f3xx_hal_msp.c',
   'Core' / 'Src' / 'stm32f3xx_it.c',
@@ -31,3 +30,7 @@ io_node_bin = custom_target(
   depends: io_node_elf,
   build_by_default: true,
 )
+
+# List of files that should be analyzed by clang-tidy.
+# We typically ignore all auto-generated files.
+io_node_tidy_files = files('Core' / 'Src' / 'main.c')

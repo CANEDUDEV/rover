@@ -44,6 +44,9 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
+// Disable warnings for generated code
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -66,6 +69,9 @@ const osThreadAttr_t defaultTask_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
+
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -313,6 +319,9 @@ static void MX_CAN_Init(void) {
 
   /* USER CODE BEGIN CAN_Init 1 */
 
+  // Disable warnings for generated code
+  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN;
   hcan.Init.Prescaler = 12;
@@ -331,6 +340,8 @@ static void MX_CAN_Init(void) {
   }
   /* USER CODE BEGIN CAN_Init 2 */
 
+  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
   /* USER CODE END CAN_Init 2 */
 }
 
@@ -345,6 +356,9 @@ static void MX_I2C1_Init(void) {
   /* USER CODE END I2C1_Init 0 */
 
   /* USER CODE BEGIN I2C1_Init 1 */
+
+  // Disable warnings for generated code
+  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
@@ -373,6 +387,8 @@ static void MX_I2C1_Init(void) {
   }
   /* USER CODE BEGIN I2C1_Init 2 */
 
+  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
   /* USER CODE END I2C1_Init 2 */
 }
 
@@ -387,6 +403,9 @@ static void MX_SPI1_Init(void) {
   /* USER CODE END SPI1_Init 0 */
 
   /* USER CODE BEGIN SPI1_Init 1 */
+
+  // Disable warnings for generated code
+  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
   /* USER CODE END SPI1_Init 1 */
   /* SPI1 parameter configuration*/
@@ -409,6 +428,8 @@ static void MX_SPI1_Init(void) {
   }
   /* USER CODE BEGIN SPI1_Init 2 */
 
+  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
   /* USER CODE END SPI1_Init 2 */
 }
 
@@ -423,6 +444,9 @@ static void MX_USART1_UART_Init(void) {
   /* USER CODE END USART1_Init 0 */
 
   /* USER CODE BEGIN USART1_Init 1 */
+
+  // Disable warnings for generated code
+  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
@@ -440,6 +464,8 @@ static void MX_USART1_UART_Init(void) {
   }
   /* USER CODE BEGIN USART1_Init 2 */
 
+  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
   /* USER CODE END USART1_Init 2 */
 }
 
@@ -447,6 +473,13 @@ static void MX_USART1_UART_Init(void) {
  * Enable DMA controller clock
  */
 static void MX_DMA_Init(void) {
+  /* USER CODE BEGIN DMA_Init 0 */
+
+  // Disable warnings for generated code
+  // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
+  /* USER CODE END DMA_Init 0 */
+
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
 
@@ -454,6 +487,12 @@ static void MX_DMA_Init(void) {
   /* DMA1_Channel1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+
+  /* USER CODE BEGIN DMA_Init 1 */
+
+  // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
+  /* USER CODE END DMA_Init 1 */
 }
 
 /**
@@ -552,13 +591,18 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument) {
   /* USER CODE BEGIN 5 */
+  UNUSED(argument);
+  const uint32_t CAN_ID = 100;
+  const uint8_t CAN_DLC = 4;
   CAN_TxHeaderTypeDef header = {
-      .StdId = 100,
-      .DLC = 4,
+      .StdId = CAN_ID,
+      .DLC = CAN_DLC,
   };
   uint32_t mailbox = CAN_TX_MAILBOX0;
   uint8_t data[4];
   uint16_t adcBuf[4];
+
+  const uint32_t taskDelayMs = 20;
 
   HAL_CAN_Start(&hcan);
 
@@ -571,7 +615,7 @@ void StartDefaultTask(void *argument) {
       data[i] = (uint8_t)adcBuf[i];
     }
     HAL_CAN_AddTxMessage(&hcan, &header, data, &mailbox);
-    osDelay(20);
+    osDelay(taskDelayMs);
   }
   /* USER CODE END 5 */
 }
