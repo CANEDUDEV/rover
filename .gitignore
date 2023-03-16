@@ -1,5 +1,6 @@
 .bin/
 .cache/
+.mxproject
 build/
 compile_commands.json
 # Unused parts of Drivers package
