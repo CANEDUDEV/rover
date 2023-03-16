@@ -17,7 +17,7 @@
  */
 
 // Disable warnings for generated code
-// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
@@ -27,6 +27,13 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
+
+#include "app.h"
+#include "queue.h"
+#include "task.h"
+#include "timers.h"
+#include "utils.h"
 
 /* USER CODE END Includes */
 
@@ -37,6 +44,12 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+// This controls how often the default task should run.
+// Default to once every 20ms.
+#define DEFAULT_TASK_PERIOD_MS 100
+
+#define CAN_MESSAGE_QUEUE_LENGTH 10
 
 /* USER CODE END PD */
 
@@ -72,6 +85,15 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* USER CODE BEGIN PV */
 
+osThreadId_t CANTxTaskHandle;
+const osThreadAttr_t CANTxTask_attributes = {
+    .name = "CANTxTask",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityBelowNormal,
+};
+
+QueueHandle_t CANMessageQueue;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -90,6 +112,8 @@ static void MX_TIM1_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
+
+void StartCANTxTask(void *argument);
 
 /* USER CODE END PFP */
 
@@ -156,7 +180,9 @@ int main(void) {
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+
+  CANMessageQueue = xQueueCreate(CAN_MESSAGE_QUEUE_LENGTH, sizeof(CANFrame));
+
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -165,7 +191,9 @@ int main(void) {
       osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+
+  CANTxTaskHandle = osThreadNew(StartCANTxTask, NULL, &CANTxTask_attributes);
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -279,7 +307,7 @@ static void MX_ADC1_Init(void) {
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_3;
+  sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.SamplingTime = ADC_SAMPLETIME_19CYCLES_5;
@@ -291,6 +319,7 @@ static void MX_ADC1_Init(void) {
 
   /** Configure Regular Channel
    */
+  sConfig.Channel = ADC_CHANNEL_3;
   sConfig.Rank = ADC_REGULAR_RANK_2;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
     Error_Handler();
@@ -390,7 +419,7 @@ static void MX_CAN_Init(void) {
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN;
-  hcan.Init.Prescaler = CAN_BRP;
+  hcan.Init.Prescaler = 18;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
@@ -770,7 +799,52 @@ static void MX_GPIO_Init(void) {
 
 /* USER CODE BEGIN 4 */
 
-// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+
+void signalDefaultTask() {
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+  UNUSED(hadc);
+  signalDefaultTask();
+}
+
+void defaultTaskTimer(TimerHandle_t xTimer) {
+  UNUSED(xTimer);
+  signalDefaultTask();
+}
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan) {
+  UNUSED(hcan);
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(CANTxTaskHandle, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void StartCANTxTask(void *argument) {
+  UNUSED(argument);
+
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_TX_MAILBOX_EMPTY);
+  HAL_CAN_Start(&hcan);
+
+  uint32_t mailbox = CAN_TX_MAILBOX0;
+  for (;;) {
+    CANFrame frame;
+    // Wait for queue to receive message
+    xQueueReceive(CANMessageQueue, &frame, portMAX_DELAY);
+
+    CAN_TxHeaderTypeDef header = {
+        .StdId = frame.id,
+        .DLC = frame.dlc,
+    };
+    HAL_CAN_AddTxMessage(&hcan, &header, frame.data, &mailbox);
+    // Wait for message to be sent
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+  }
+}
 
 /* USER CODE END 4 */
 
@@ -784,9 +858,50 @@ static void MX_GPIO_Init(void) {
 void StartDefaultTask(void *argument) {
   /* USER CODE BEGIN 5 */
   UNUSED(argument);
-  /* Infinite loop */
+
+  Print("Starting application...\n");
+
+  TimerHandle_t xTimer =
+      xTimerCreate("defaultTaskTimer", pdMS_TO_TICKS(DEFAULT_TASK_PERIOD_MS),
+                   pdTRUE,  // Auto reload timer
+                   NULL,    // Timer ID, unused
+                   defaultTaskTimer);
+
+  xTimerStart(xTimer, portMAX_DELAY);
+
+  uint16_t adc1Buf[4];
+  uint16_t adc2Buf[4];
+
+  CANFrame sensorPowerMessage;
+  CANFrame servoCurrentMessage;
+  CANFrame batteryVoltageMessage;
+  CANFrame vccServoVoltageMessage;
+  CANFrame hBridgeWindingCurrentMessage;
+
   for (;;) {
-    osDelay(1);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
+
+    // Start both ADCs
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1Buf,
+                      sizeof(adc1Buf) / sizeof(uint16_t));
+    HAL_ADC_Start_DMA(&hadc2, (uint32_t *)adc2Buf,
+                      sizeof(adc2Buf) / sizeof(uint16_t));
+
+    // Wait for DMA
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    ADCToSensorPowerMessage(adc1Buf[0], &sensorPowerMessage);
+    ADCToServoCurrentMessage(adc1Buf[2], &servoCurrentMessage);
+    ADCToBatteryVoltageMessage(adc1Buf[3], &batteryVoltageMessage);
+    ADCToVCCServoVoltageMessage(adc2Buf[0], &vccServoVoltageMessage);
+    ADCToHBridgeWindingCurrentMessage(adc2Buf[1],
+                                      &hBridgeWindingCurrentMessage);
+
+    xQueueSendToBack(CANMessageQueue, &sensorPowerMessage, 0);
+    xQueueSendToBack(CANMessageQueue, &servoCurrentMessage, 0);
+    xQueueSendToBack(CANMessageQueue, &batteryVoltageMessage, 0);
+    xQueueSendToBack(CANMessageQueue, &vccServoVoltageMessage, 0);
+    xQueueSendToBack(CANMessageQueue, &hBridgeWindingCurrentMessage, 0);
   }
   /* USER CODE END 5 */
 }

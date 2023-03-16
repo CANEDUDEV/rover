@@ -63,7 +63,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define CAN_BRP 12
 #define SERVO_PWM_Pin GPIO_PIN_3
 #define SERVO_PWM_GPIO_Port GPIOC
 #define SENSOR_POWER_Pin GPIO_PIN_0
