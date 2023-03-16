@@ -36,6 +36,7 @@
 #include "semphr.h"
 #include "task.h"
 #include "timers.h"
+#include "utils.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
