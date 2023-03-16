@@ -61,7 +61,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define CAN_BRP 12
 #define SWITCH4_PIN2_Pin GPIO_PIN_13
 #define SWITCH4_PIN2_GPIO_Port GPIOC
 #define SWITCH2_PIN1_Pin GPIO_PIN_15
