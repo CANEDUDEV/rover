@@ -10,6 +10,19 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+      - uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          # Need to add packages manually from bootstrap script
+          packages: |
+            curl
+            clang-format
+            clang-tidy
+            gcc-arm-none-eabi
+            libc6-dev-armhf-cross
+            meson
+            ninja-build
+            shellcheck
+            shfmt
 
       - name: Bootstrap build
         run: ./scripts/bootstrap.sh
