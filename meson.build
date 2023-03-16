@@ -69,8 +69,12 @@ freertos_src = files(
 )
 
 subdir('io-node')
+subdir('servo-node')
 
-tidy_files = [io_node_tidy_files]
+tidy_files = [
+  io_node_tidy_files,
+  servo_node_tidy_files,
+]
 
 # Override default meson clang-tidy target
 run_target(
