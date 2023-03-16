@@ -35,6 +35,7 @@
 #include "semphr.h"
 #include "stm32f3xx_hal_def.h"
 #include "task.h"
+#include "timers.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,6 +45,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+// This controls how often the default task should run.
+// Default to once every 20ms.
+#define DEFAULT_TASK_PERIOD_MS 20
 
 /* USER CODE END PD */
 
@@ -586,11 +591,20 @@ static void MX_GPIO_Init(void) {
 
 // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-  UNUSED(hadc);
+void signalDefaultTask() {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+  UNUSED(hadc);
+  signalDefaultTask();
+}
+
+void defaultTaskTimer(TimerHandle_t xTimer) {
+  UNUSED(xTimer);
+  signalDefaultTask();
 }
 
 /* USER CODE END 4 */
@@ -609,21 +623,28 @@ void StartDefaultTask(void *argument) {
   uint16_t adcBuf[4];
   uint8_t swData[4];
 
-  const uint32_t taskDelayMs = 20;
+  TimerHandle_t xTimer =
+      xTimerCreate("defaultTaskTimer", pdMS_TO_TICKS(DEFAULT_TASK_PERIOD_MS),
+                   pdTRUE,  // Auto reload timer
+                   NULL,    // Timer ID, unused
+                   defaultTaskTimer);
 
   HAL_CAN_Start(&hcan);
 
+  xTimerStart(xTimer, portMAX_DELAY);
+
   for (;;) {
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
+
+    // Get joystick readings
     HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adcBuf,
                       sizeof(adcBuf) / sizeof(uint16_t));
-
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for DMA
     SendAnalogPortMessage(adcBuf);
 
+    // Get Switch readings
     ReadSwitches(swData);
     SendSwitchPortMessage(swData);
-
-    osDelay(taskDelayMs);
   }
   /* USER CODE END 5 */
 }
