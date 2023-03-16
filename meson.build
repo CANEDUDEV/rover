@@ -80,6 +80,7 @@ run_target(
     '--checks=-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,misc-*,readability-*',
     '--format-style=file',
     '--header-filter=.*',
+    '--quiet',
     '--warnings-as-errors=*',
     '-p', meson.project_build_root(),
     tidy_files,
