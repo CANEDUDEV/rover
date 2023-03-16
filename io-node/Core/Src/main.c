@@ -28,12 +28,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdint.h>
+#include <stm32f3xx_hal_def.h>
 #include <stm32f3xx_hal_gpio.h>
 #include <string.h>
 
 #include "app.h"
 #include "semphr.h"
-#include "stm32f3xx_hal_def.h"
 #include "task.h"
 #include "timers.h"
 /* USER CODE END Includes */
@@ -619,6 +619,8 @@ void defaultTaskTimer(TimerHandle_t xTimer) {
 void StartDefaultTask(void *argument) {
   /* USER CODE BEGIN 5 */
   UNUSED(argument);
+
+  Print("Starting application...\n");
 
   uint16_t adcBuf[4];
   uint8_t swData[4];
