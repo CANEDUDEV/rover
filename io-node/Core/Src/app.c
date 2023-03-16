@@ -20,15 +20,8 @@ enum SWITCH_STATE {
 #define SWITCH_MESSAGE_DLC 4U
 
 // Handles defined in main.c by STM32CubeMX
-// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern CAN_HandleTypeDef hcan;
-extern UART_HandleTypeDef huart1;
-// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
-
-// Print message to uart
-void Print(char *str) {
-  HAL_UART_Transmit(&huart1, (uint8_t *)str, strlen(str), HAL_MAX_DELAY);
-}
 
 void SendAnalogPortMessage(const uint16_t *data) {
   CAN_TxHeaderTypeDef header = {
