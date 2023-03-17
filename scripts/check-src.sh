@@ -14,7 +14,7 @@ check_git_index() {
 
 # Format
 shfmt -w -s .
-.bin/yamlfmt .
+.bin/yamlfmt . .clang-tidy .clang-format
 ninja -C build clang-format
 
 # Check

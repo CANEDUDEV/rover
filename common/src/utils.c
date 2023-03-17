@@ -4,7 +4,6 @@
 
 #include "main.h"
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern UART_HandleTypeDef huart1;
 
 // Print message to uart
