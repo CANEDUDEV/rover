@@ -1,7 +1,5 @@
 #include "app.h"
 
-#include <string.h>
-
 #include "main.h"
 
 // When mounting a switch vertically, SWITCH_PRESS_LEFT should correspond to
@@ -20,7 +18,6 @@ enum SWITCH_STATE {
 #define SWITCH_MESSAGE_DLC 4U
 
 // Handles defined in main.c by STM32CubeMX
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern CAN_HandleTypeDef hcan;
 
 void SendAnalogPortMessage(const uint16_t *data) {
@@ -29,7 +26,7 @@ void SendAnalogPortMessage(const uint16_t *data) {
       .DLC = ANALOG_PORT_MESSAGE_DLC,
   };
   uint32_t mailbox = CAN_TX_MAILBOX0;
-  uint8_t canData[4];
+  uint8_t canData[ANALOG_PORT_MESSAGE_DLC];
   for (int i = 0; i < ANALOG_PORT_MESSAGE_DLC; i++) {
     canData[i] = data[i];
   }

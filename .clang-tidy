@@ -1,0 +1,13 @@
+Checks: |
+  -*,
+  bugprone-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  misc-*,
+  readability-*,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*'
+FormatStyle: file
+InheritParentConfig: true

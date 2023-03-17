@@ -85,11 +85,8 @@ run_target(
   'clang-tidy',
   command: [
     clang_tidy,
-    '--checks=-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,misc-*,readability-*',
-    '--format-style=file',
-    '--header-filter=.*',
+    '--config-file', meson.project_source_root() / '.clang-tidy',
     '--quiet',
-    '--warnings-as-errors=*',
     '-p', meson.project_build_root(),
     tidy_files,
   ]

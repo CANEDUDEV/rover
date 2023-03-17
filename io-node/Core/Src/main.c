@@ -17,7 +17,7 @@
  */
 
 // Disable warnings for generated code
-// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
@@ -590,7 +590,7 @@ static void MX_GPIO_Init(void) {
 
 /* USER CODE BEGIN 4 */
 
-// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables,cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
 void signalDefaultTask() {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
