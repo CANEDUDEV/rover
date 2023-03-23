@@ -25,7 +25,7 @@ void SendAnalogPortMessage(const uint16_t *data) {
       .StdId = ANALOG_PORT_MESSAGE_ID,
       .DLC = ANALOG_PORT_MESSAGE_DLC,
   };
-  uint32_t mailbox = CAN_TX_MAILBOX0;
+  uint32_t mailbox = 0;
   uint8_t canData[ANALOG_PORT_MESSAGE_DLC];
   for (int i = 0; i < ANALOG_PORT_MESSAGE_DLC; i++) {
     canData[i] = data[i];
@@ -38,7 +38,7 @@ void SendSwitchPortMessage(const uint8_t *data) {
       .StdId = SWITCH_MESSAGE_ID,
       .DLC = SWITCH_MESSAGE_DLC,
   };
-  uint32_t mailbox = CAN_TX_MAILBOX0;
+  uint32_t mailbox = 0;
   HAL_CAN_AddTxMessage(&hcan, &header, data, &mailbox);
 }
 

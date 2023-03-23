@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#include "main.h"
+
 #define ADC_REF_VOLTAGE 3300   // mV
 #define ADC_MAX (1 << 12) - 1  // 12-bit ADC
 
@@ -20,6 +22,8 @@
 
 #define H_BRIDGE_WINDING_CURRENT_MESSAGE_ID SERVO_BASE_ID + 4
 #define H_BRIDGE_WINDING_CURRENT_MESSAGE_DLC 2
+
+extern TIM_HandleTypeDef htim1;  // defined in main.c
 
 // No sensor connected, so we send the raw ADC value.
 void ADCToSensorPowerMessage(uint16_t adcValue, CANFrame *frame) {
@@ -100,4 +104,27 @@ void ADCToHBridgeWindingCurrentMessage(uint16_t adcValue, CANFrame *frame) {
     current = maxCurrent;
   }
   memcpy(frame->data, &Isense, sizeof(adcValue));
+}
+
+/* Going towards the minimum pulse gives steering to the right. Going towards
+ * maximum pulse gives steering to the left.
+ */
+void UpdatePWMDutyCycle(uint32_t *pulse, STEERING_DIRECTION *direction) {
+  const uint32_t minPulse = htim1.Init.Period / 20;  // 5% duty cycle
+  const uint32_t maxPulse = htim1.Init.Period / 10;  // 10% duty cycle
+  const uint8_t pulseStep = 10;
+  if (*pulse <= minPulse) {
+    *pulse = minPulse;
+    *direction = LEFT;
+  } else if (*pulse >= maxPulse) {
+    *pulse = maxPulse;
+    *direction = RIGHT;
+  }
+  if (*direction == LEFT) {
+    *pulse += pulseStep;
+  } else {
+    *pulse -= pulseStep;
+  }
+  // Write new pulse to CCR register
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, *pulse);
 }
