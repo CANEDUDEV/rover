@@ -63,6 +63,9 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define PWM_PSC_1MHZ (72 - 1)
+#define PWM_PERIOD_50HZ (20000 - 1)
+#define PWM_MID_POS_PULSE ((PWM_PERIOD_50HZ / 10 + PWM_PERIOD_50HZ / 20) / 2)
 #define SERVO_PWM_Pin GPIO_PIN_3
 #define SERVO_PWM_GPIO_Port GPIOC
 #define SENSOR_POWER_Pin GPIO_PIN_0

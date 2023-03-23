@@ -27,6 +27,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
+#include <stm32f3xx_hal_can.h>
+#include <stm32f3xx_hal_tim.h>
 #include <string.h>
 
 #include "app.h"
@@ -45,9 +48,9 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-// This controls how often the default task should run.
-// Default to once every 20ms.
-#define DEFAULT_TASK_PERIOD_MS 100
+// How often the periodic tasks should run (ms)
+#define DEFAULT_TASK_PERIOD_MS 20
+#define MEASURE_TASK_PERIOD_MS 100
 
 #define CAN_MESSAGE_QUEUE_LENGTH 10
 
@@ -92,6 +95,13 @@ const osThreadAttr_t CANTxTask_attributes = {
     .priority = (osPriority_t)osPriorityBelowNormal,
 };
 
+osThreadId_t measureTaskHandle;
+const osThreadAttr_t measureTask_attributes = {
+    .name = "measureTask",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityBelowNormal,
+};
+
 QueueHandle_t CANMessageQueue;
 
 /* USER CODE END PV */
@@ -114,6 +124,7 @@ void StartDefaultTask(void *argument);
 /* USER CODE BEGIN PFP */
 
 void StartCANTxTask(void *argument);
+void StartMeasureTask(void *argument);
 
 /* USER CODE END PFP */
 
@@ -193,6 +204,8 @@ int main(void) {
   /* USER CODE BEGIN RTOS_THREADS */
 
   CANTxTaskHandle = osThreadNew(StartCANTxTask, NULL, &CANTxTask_attributes);
+  measureTaskHandle =
+      osThreadNew(StartMeasureTask, NULL, &measureTask_attributes);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -613,9 +626,9 @@ static void MX_TIM1_Init(void) {
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
+  htim1.Init.Prescaler = PWM_PSC_1MHZ;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
+  htim1.Init.Period = PWM_PERIOD_50HZ;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
@@ -636,7 +649,7 @@ static void MX_TIM1_Init(void) {
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = PWM_MID_POS_PULSE;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
@@ -801,27 +814,38 @@ static void MX_GPIO_Init(void) {
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
-void signalDefaultTask() {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
   UNUSED(hadc);
-  signalDefaultTask();
+  SignalTask(measureTaskHandle);
 }
 
 void defaultTaskTimer(TimerHandle_t xTimer) {
   UNUSED(xTimer);
-  signalDefaultTask();
+  SignalTask(defaultTaskHandle);
 }
 
-void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan) {
-  UNUSED(hcan);
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(CANTxTaskHandle, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+void measureTaskTimer(TimerHandle_t xTimer) {
+  UNUSED(xTimer);
+  SignalTask(measureTaskHandle);
+}
+
+void mailboxFreeCallback(CAN_HandleTypeDef *_hcan) {
+  // Only signal when going from 0 free mailboxes to 1 free
+  if (HAL_CAN_GetTxMailboxesFreeLevel(_hcan) <= 1) {
+    SignalTask(CANTxTaskHandle);
+  }
+}
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *_hcan) {
+  mailboxFreeCallback(_hcan);
+}
+
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *_hcan) {
+  mailboxFreeCallback(_hcan);
+}
+
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *_hcan) {
+  mailboxFreeCallback(_hcan);
 }
 
 void StartCANTxTask(void *argument) {
@@ -830,8 +854,14 @@ void StartCANTxTask(void *argument) {
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_TX_MAILBOX_EMPTY);
   HAL_CAN_Start(&hcan);
 
-  uint32_t mailbox = CAN_TX_MAILBOX0;
+  uint32_t mailbox = 0;
+
   for (;;) {
+    if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0) {
+      // Wait for mailbox to become available
+      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    }
+
     CANFrame frame;
     // Wait for queue to receive message
     xQueueReceive(CANMessageQueue, &frame, portMAX_DELAY);
@@ -840,32 +870,18 @@ void StartCANTxTask(void *argument) {
         .StdId = frame.id,
         .DLC = frame.dlc,
     };
+
     HAL_CAN_AddTxMessage(&hcan, &header, frame.data, &mailbox);
-    // Wait for message to be sent
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
   }
 }
 
-/* USER CODE END 4 */
-
-/* USER CODE BEGIN Header_StartDefaultTask */
-/**
- * @brief  Function implementing the defaultTask thread.
- * @param  argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument) {
-  /* USER CODE BEGIN 5 */
+void StartMeasureTask(void *argument) {
   UNUSED(argument);
-
-  Print("Starting application...\n");
-
   TimerHandle_t xTimer =
-      xTimerCreate("defaultTaskTimer", pdMS_TO_TICKS(DEFAULT_TASK_PERIOD_MS),
+      xTimerCreate("measureTaskTimer", pdMS_TO_TICKS(MEASURE_TASK_PERIOD_MS),
                    pdTRUE,  // Auto reload timer
                    NULL,    // Timer ID, unused
-                   defaultTaskTimer);
+                   measureTaskTimer);
 
   xTimerStart(xTimer, portMAX_DELAY);
 
@@ -903,6 +919,40 @@ void StartDefaultTask(void *argument) {
     xQueueSendToBack(CANMessageQueue, &vccServoVoltageMessage, 0);
     xQueueSendToBack(CANMessageQueue, &hBridgeWindingCurrentMessage, 0);
   }
+}
+
+/* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+ * @brief  Function implementing the defaultTask thread.
+ * @param  argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void *argument) {
+  /* USER CODE BEGIN 5 */
+  UNUSED(argument);
+
+  Print("Starting application...\n");
+
+  TimerHandle_t xTimer =
+      xTimerCreate("defaultTaskTimer", pdMS_TO_TICKS(DEFAULT_TASK_PERIOD_MS),
+                   pdTRUE,  // Auto reload timer
+                   NULL,    // Timer ID, unused
+                   defaultTaskTimer);
+
+  xTimerStart(xTimer, portMAX_DELAY);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+
+  uint32_t pulse = PWM_MID_POS_PULSE;
+  STEERING_DIRECTION direction = LEFT;
+
+  for (;;) {
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
+    UpdatePWMDutyCycle(&pulse, &direction);
+  }
+
   /* USER CODE END 5 */
 }
 
