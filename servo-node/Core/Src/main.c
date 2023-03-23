@@ -28,8 +28,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
-#include <stm32f3xx_hal_can.h>
-#include <stm32f3xx_hal_tim.h>
 #include <string.h>
 
 #include "app.h"
@@ -172,6 +170,8 @@ int main(void) {
   MX_SPI3_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
+
+  InitPotentiometers();
 
   /* USER CODE END 2 */
 
@@ -877,6 +877,7 @@ void StartCANTxTask(void *argument) {
 
 void StartMeasureTask(void *argument) {
   UNUSED(argument);
+
   TimerHandle_t xTimer =
       xTimerCreate("measureTaskTimer", pdMS_TO_TICKS(MEASURE_TASK_PERIOD_MS),
                    pdTRUE,  // Auto reload timer
@@ -934,7 +935,7 @@ void StartDefaultTask(void *argument) {
   /* USER CODE BEGIN 5 */
   UNUSED(argument);
 
-  Print("Starting application...\n");
+  Print("Starting application...\r\n");
 
   TimerHandle_t xTimer =
       xTimerCreate("defaultTaskTimer", pdMS_TO_TICKS(DEFAULT_TASK_PERIOD_MS),
@@ -963,6 +964,7 @@ void StartDefaultTask(void *argument) {
 void Error_Handler(void) {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  Print("error\r\n");
   __disable_irq();
   while (1) {
   }
