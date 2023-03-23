@@ -21,6 +21,7 @@ void ADCToServoCurrentMessage(uint16_t adcValue, CANFrame *frame);
 void ADCToBatteryVoltageMessage(uint16_t adcValue, CANFrame *frame);
 void ADCToVCCServoVoltageMessage(uint16_t adcValue, CANFrame *frame);
 void ADCToHBridgeWindingCurrentMessage(uint16_t adcValue, CANFrame *frame);
+void InitPotentiometers(void);
 void UpdatePWMDutyCycle(uint32_t *pulse, STEERING_DIRECTION *direction);
 
 #endif /* APP_H */

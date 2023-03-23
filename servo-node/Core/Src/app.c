@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "FreeRTOS.h"
 #include "main.h"
 
 #define ADC_REF_VOLTAGE 3300   // mV
@@ -23,7 +24,13 @@
 #define H_BRIDGE_WINDING_CURRENT_MESSAGE_ID SERVO_BASE_ID + 4
 #define H_BRIDGE_WINDING_CURRENT_MESSAGE_DLC 2
 
-extern TIM_HandleTypeDef htim1;  // defined in main.c
+#define POT_ADDR (0x50 << 1)  // Shift left to match STM32 specification
+#define POT_IVRA_ADDR 0x0     // VCC_Servo potentiometer
+#define POT_IVRB_ADDR 0x1     // VDD_Sensor potentiometer
+
+// Externals defined in main.c.
+extern TIM_HandleTypeDef htim1;
+extern I2C_HandleTypeDef hi2c1;
 
 // No sensor connected, so we send the raw ADC value.
 void ADCToSensorPowerMessage(uint16_t adcValue, CANFrame *frame) {
@@ -104,6 +111,19 @@ void ADCToHBridgeWindingCurrentMessage(uint16_t adcValue, CANFrame *frame) {
     current = maxCurrent;
   }
   memcpy(frame->data, &Isense, sizeof(adcValue));
+}
+
+/* Set up potentiomenter terminals with default value 0.
+ * TODO: split into two functions, one for servo and one for sensor.
+ *       Make potentiometer values configurable as well.
+ */
+void InitPotentiometers(void) {
+  uint8_t ivraWrite[2] = {POT_IVRA_ADDR, 0};
+  uint8_t ivrbWrite[2] = {POT_IVRB_ADDR, 0};
+  HAL_I2C_Master_Transmit(&hi2c1, POT_ADDR, ivraWrite, sizeof(ivraWrite),
+                          portMAX_DELAY);
+  HAL_I2C_Master_Transmit(&hi2c1, POT_ADDR, ivrbWrite, sizeof(ivrbWrite),
+                          portMAX_DELAY);
 }
 
 /* Going towards the minimum pulse gives steering to the right. Going towards
