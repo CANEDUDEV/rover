@@ -55,7 +55,7 @@ void ADCToServoCurrentMessage(uint16_t adcValue, CANFrame *frame) {
   frame->id = SERVO_CURRENT_MESSAGE_ID;
   frame->dlc = SERVO_CURRENT_MESSAGE_DLC;
 
-  const uint32_t Vout = (ADC_REF_VOLTAGE * adcValue) / ADC_MAX;  // Vout in mV
+  uint32_t Vout = (ADC_REF_VOLTAGE * adcValue) / ADC_MAX;  // Vout in mV
   const uint32_t Rin = 51;
   const uint32_t Rout = 5100;
   const uint32_t Rsense = 2;  // use mOhm here, this counteracts mV value in
@@ -76,8 +76,10 @@ void ADCToBatteryVoltageMessage(uint16_t adcValue, CANFrame *frame) {
   frame->dlc = BAT_VOLTAGE_MESSAGE_DLC;
 
   // Voltages in mV
-  const uint32_t Vout = (ADC_REF_VOLTAGE * adcValue) / ADC_MAX;
-  const uint16_t Vbat = (uint16_t)(Vout * (47000 + 6200) / 6200);
+  uint32_t Vout = (ADC_REF_VOLTAGE * adcValue) / ADC_MAX;
+  const uint32_t numerator = Vout * (47000 + 6200);
+  const uint32_t denominator = 6200;
+  uint16_t Vbat = (uint16_t)(numerator / denominator);
   memcpy(frame->data, &Vbat, sizeof(adcValue));
 }
 
@@ -88,9 +90,10 @@ void ADCToBatteryVoltageMessage(uint16_t adcValue, CANFrame *frame) {
 void ADCToVCCServoVoltageMessage(uint16_t adcValue, CANFrame *frame) {
   frame->id = VCC_SERVO_VOLTAGE_MESSAGE_ID;
   frame->dlc = VCC_SERVO_VOLTAGE_MESSAGE_DLC;
-  const uint32_t Vout = (ADC_REF_VOLTAGE * adcValue) / ADC_MAX;  // Vout in mV
-  const uint16_t Vbat =
-      (uint16_t)(Vout * (39000 + 15000) / 15000);  // Vbat in mV
+  uint32_t Vout = (ADC_REF_VOLTAGE * adcValue) / ADC_MAX;  // Vout in mV
+  const uint32_t numerator = Vout * (39000 + 15000);
+  const uint32_t denominator = 15000;
+  uint16_t Vbat = (uint16_t)(numerator / denominator);  // Vbat in mV
   memcpy(frame->data, &Vbat, sizeof(adcValue));
 }
 
@@ -107,7 +110,7 @@ void ADCToHBridgeWindingCurrentMessage(uint16_t adcValue, CANFrame *frame) {
 
   // Currents in mA
   const uint16_t maxCurrent = 2800;
-  const uint16_t Isense = (uint16_t)((ADC_REF_VOLTAGE * adcValue) / ADC_MAX);
+  uint16_t Isense = (uint16_t)((ADC_REF_VOLTAGE * adcValue) / ADC_MAX);
 
   uint16_t current = Isense;
   if (current > maxCurrent) {
