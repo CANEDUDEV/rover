@@ -72,11 +72,13 @@ common_inc = include_directories('common' / 'include')
 common_src = files('common'/ 'src' / 'utils.c')
 
 subdir('io-node')
+subdir('radio-node')
 subdir('servo-node')
 
 tidy_files = [
   common_src,
   io_node_tidy_files,
+  radio_node_tidy_files,
   servo_node_tidy_files,
 ]
 
