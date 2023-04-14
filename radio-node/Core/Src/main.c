@@ -31,8 +31,10 @@
 #include <stm32f3xx_hal_uart.h>
 #include <string.h>
 
+#include "queue.h"
 #include "task.h"
 #include "utils.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,6 +50,14 @@
 
 #define CAN_BASE_ID 100U
 #define CAN_MAX_DLC 8
+
+#define CAN_MESSAGE_QUEUE_LENGTH 10
+
+typedef struct {
+  uint32_t id;
+  uint8_t dlc;
+  uint8_t data[CAN_MAX_DLC];
+} CANFrame;
 
 /* USER CODE END PD */
 
@@ -83,6 +93,15 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* USER CODE BEGIN PV */
 
+osThreadId_t CANTxTaskHandle;
+const osThreadAttr_t CANTxTask_attributes = {
+    .name = "CANTxTask",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityBelowNormal,
+};
+
+QueueHandle_t CANMessageQueue;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -101,6 +120,8 @@ static void MX_TIM1_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
+
+void StartCANTxTask(void *argument);
 
 /* USER CODE END PFP */
 
@@ -167,7 +188,9 @@ int main(void) {
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+
+  CANMessageQueue = xQueueCreate(CAN_MESSAGE_QUEUE_LENGTH, sizeof(CANFrame));
+
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -176,7 +199,9 @@ int main(void) {
       osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+
+  CANTxTaskHandle = osThreadNew(StartCANTxTask, NULL, &CANTxTask_attributes);
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -782,6 +807,52 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
   SignalTask(defaultTaskHandle);
 }
 
+void mailboxFreeCallback(CAN_HandleTypeDef *_hcan) {
+  // Only signal when going from 0 free mailboxes to 1 free
+  if (HAL_CAN_GetTxMailboxesFreeLevel(_hcan) <= 1) {
+    SignalTask(CANTxTaskHandle);
+  }
+}
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *_hcan) {
+  mailboxFreeCallback(_hcan);
+}
+
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *_hcan) {
+  mailboxFreeCallback(_hcan);
+}
+
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *_hcan) {
+  mailboxFreeCallback(_hcan);
+}
+
+void StartCANTxTask(void *argument) {
+  UNUSED(argument);
+
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_TX_MAILBOX_EMPTY);
+  HAL_CAN_Start(&hcan);
+
+  uint32_t mailbox = 0;
+
+  for (;;) {
+    if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0) {
+      // Wait for mailbox to become available
+      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    }
+
+    CANFrame frame;
+    // Wait for queue to receive message
+    xQueueReceive(CANMessageQueue, &frame, portMAX_DELAY);
+
+    CAN_TxHeaderTypeDef header = {
+        .StdId = frame.id,
+        .DLC = frame.dlc,
+    };
+
+    HAL_CAN_AddTxMessage(&hcan, &header, frame.data, &mailbox);
+  }
+}
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -795,39 +866,32 @@ void StartDefaultTask(void *argument) {
   /* USER CODE BEGIN 5 */
   UNUSED(argument);
 
-  CAN_TxHeaderTypeDef header1 = {
-      .StdId = CAN_BASE_ID,
-      .DLC = CAN_MAX_DLC,
-  };
-  CAN_TxHeaderTypeDef header2 = {
-      .StdId = CAN_BASE_ID + 1,
-      .DLC = CAN_MAX_DLC,
-  };
-  CAN_TxHeaderTypeDef header3 = {
-      .StdId = CAN_BASE_ID + 2,
-      .DLC = CAN_MAX_DLC,
-  };
-
-  uint32_t mailbox = 0;
-
+  uint8_t sbusHeader = 0;
   uint8_t sbusData[SBUS_PACKET_LENGTH];
 
-  HAL_CAN_Start(&hcan);
-
-  uint8_t sbusHeader = 0;
-  do {
+  // Wait until reception of one complete message, in case we power up in the
+  // middle of a transmission
+  while (sbusHeader != SBUS_HEADER) {
     HAL_UART_Receive(&huart1, &sbusHeader, sizeof(sbusHeader), HAL_MAX_DELAY);
-  } while (sbusHeader != SBUS_HEADER);
+  }
   HAL_UART_Receive(&huart1, sbusData, sizeof(sbusData) - 1, HAL_MAX_DELAY);
 
+  CANFrame frames[3];
+  for (int i = 0; i < 3; i++) {
+    frames[i].id = CAN_BASE_ID + i;
+    frames[i].dlc = CAN_MAX_DLC;
+  }
+
+  HAL_CAN_Start(&hcan);
   for (;;) {
     memset(sbusData, 0, sizeof(sbusData));
     HAL_UART_Receive_IT(&huart1, sbusData, sizeof(sbusData));
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    HAL_CAN_AddTxMessage(&hcan, &header1, sbusData, &mailbox);
-    HAL_CAN_AddTxMessage(&hcan, &header2, &sbusData[CAN_MAX_DLC], &mailbox);
-    HAL_CAN_AddTxMessage(&hcan, &header3, &sbusData[2 * CAN_MAX_DLC], &mailbox);
+    for (int i = 0; i < 3; i++) {
+      memcpy(frames[i].data, &sbusData[i * CAN_MAX_DLC], CAN_MAX_DLC);
+      xQueueSendToBack(CANMessageQueue, &frames[i], 0);
+    }
   }
   /* USER CODE END 5 */
 }
