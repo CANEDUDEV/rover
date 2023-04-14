@@ -23,13 +23,16 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-#include <stm32f3xx_hal_def.h>
-
 #include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <stm32f3xx_hal_uart.h>
+#include <string.h>
+
+#include "task.h"
+#include "utils.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -39,6 +42,12 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define SBUS_PACKET_LENGTH 25
+#define SBUS_HEADER 0x0F
+
+#define CAN_BASE_ID 100U
+#define CAN_MAX_DLC 8
 
 /* USER CODE END PD */
 
@@ -768,6 +777,11 @@ static void MX_GPIO_Init(void) {
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+  UNUSED(huart);
+  SignalTask(defaultTaskHandle);
+}
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -780,9 +794,40 @@ static void MX_GPIO_Init(void) {
 void StartDefaultTask(void *argument) {
   /* USER CODE BEGIN 5 */
   UNUSED(argument);
-  /* Infinite loop */
+
+  CAN_TxHeaderTypeDef header1 = {
+      .StdId = CAN_BASE_ID,
+      .DLC = CAN_MAX_DLC,
+  };
+  CAN_TxHeaderTypeDef header2 = {
+      .StdId = CAN_BASE_ID + 1,
+      .DLC = CAN_MAX_DLC,
+  };
+  CAN_TxHeaderTypeDef header3 = {
+      .StdId = CAN_BASE_ID + 2,
+      .DLC = CAN_MAX_DLC,
+  };
+
+  uint32_t mailbox = 0;
+
+  uint8_t sbusData[SBUS_PACKET_LENGTH];
+
+  HAL_CAN_Start(&hcan);
+
+  uint8_t sbusHeader = 0;
+  do {
+    HAL_UART_Receive(&huart1, &sbusHeader, sizeof(sbusHeader), HAL_MAX_DELAY);
+  } while (sbusHeader != SBUS_HEADER);
+  HAL_UART_Receive(&huart1, sbusData, sizeof(sbusData) - 1, HAL_MAX_DELAY);
+
   for (;;) {
-    osDelay(1);
+    memset(sbusData, 0, sizeof(sbusData));
+    HAL_UART_Receive_IT(&huart1, sbusData, sizeof(sbusData));
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    HAL_CAN_AddTxMessage(&hcan, &header1, sbusData, &mailbox);
+    HAL_CAN_AddTxMessage(&hcan, &header2, &sbusData[CAN_MAX_DLC], &mailbox);
+    HAL_CAN_AddTxMessage(&hcan, &header3, &sbusData[2 * CAN_MAX_DLC], &mailbox);
   }
   /* USER CODE END 5 */
 }
