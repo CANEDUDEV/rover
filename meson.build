@@ -68,9 +68,7 @@ freertos_src = files(
   'Middlewares' / 'Third_Party' / 'FreeRTOS' / 'Source' / 'portable/GCC/ARM_CM4F/port.c',
 )
 
-common_inc = include_directories('common' / 'include')
-common_src = files('common'/ 'src' / 'utils.c')
-
+subdir('common')
 subdir('io-node')
 subdir('radio-node')
 subdir('servo-node')
