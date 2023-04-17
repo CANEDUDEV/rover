@@ -53,8 +53,6 @@ extern "C" {
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -63,35 +61,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define PWM_PSC_1MHZ (72 - 1)
-#define PWM_PERIOD_50HZ (20000 - 1)
-#define PWM_MID_POS_PULSE ((PWM_PERIOD_50HZ / 10 + PWM_PERIOD_50HZ / 20) / 2)
-#define SERVO_PWM_Pin GPIO_PIN_3
-#define SERVO_PWM_GPIO_Port GPIOC
-#define SENSOR_POWER_Pin GPIO_PIN_0
-#define SENSOR_POWER_GPIO_Port GPIOA
-#define DEBUG_LED_Pin GPIO_PIN_1
-#define DEBUG_LED_GPIO_Port GPIOA
-#define SERVO_CURRENT_Pin GPIO_PIN_2
-#define SERVO_CURRENT_GPIO_Port GPIOA
-#define BAT_VOLTAGE_Pin GPIO_PIN_3
-#define BAT_VOLTAGE_GPIO_Port GPIOA
-#define VCC_SERVO_VOLTAGE_Pin GPIO_PIN_4
-#define VCC_SERVO_VOLTAGE_GPIO_Port GPIOA
-#define H_BRIDGE_VPROP_Pin GPIO_PIN_5
-#define H_BRIDGE_VPROP_GPIO_Port GPIOA
-#define H_BRIDGE_ENABLE_Pin GPIO_PIN_6
-#define H_BRIDGE_ENABLE_GPIO_Port GPIOA
-#define H_BRIDGE_MODE1_Pin GPIO_PIN_7
-#define H_BRIDGE_MODE1_GPIO_Port GPIOA
-#define H_BRIDDGE_MODE2_Pin GPIO_PIN_4
-#define H_BRIDDGE_MODE2_GPIO_Port GPIOC
-#define H_BRIDGE_PHASE_Pin GPIO_PIN_5
-#define H_BRIDGE_PHASE_GPIO_Port GPIOC
-#define H_BRIDGE_nSLEEP_Pin GPIO_PIN_0
-#define H_BRIDGE_nSLEEP_GPIO_Port GPIOB
-#define H_BRIDGE_nFAULT_Pin GPIO_PIN_1
-#define H_BRIDGE_nFAULT_GPIO_Port GPIOB
 #define CAN_FD_INT_Pin GPIO_PIN_7
 #define CAN_FD_INT_GPIO_Port GPIOC
 #define CAN_FD_SOF_Pin GPIO_PIN_8
@@ -102,8 +71,6 @@ void Error_Handler(void);
 #define CAN_FD_INT0_GPIO_Port GPIOA
 #define CAN_FD_SPI_CS_Pin GPIO_PIN_15
 #define CAN_FD_SPI_CS_GPIO_Port GPIOA
-#define SPI3_NSS_Pin GPIO_PIN_2
-#define SPI3_NSS_GPIO_Port GPIOD
 #define CAN_FD_SPI_SCK_Pin GPIO_PIN_3
 #define CAN_FD_SPI_SCK_GPIO_Port GPIOB
 #define CAN_FD_SPI_MISO_Pin GPIO_PIN_4
