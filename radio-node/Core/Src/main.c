@@ -28,14 +28,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <stm32f3xx_hal_uart.h>
 #include <string.h>
 
-// FreeRTOS includes
 #include "queue.h"
 #include "task.h"
-
-// Common utils
-#include "can-utils.h"
 #include "utils.h"
 
 /* USER CODE END Includes */
@@ -51,8 +48,16 @@
 #define SBUS_PACKET_LENGTH 25
 #define SBUS_HEADER 0x0F
 
+#define CAN_BASE_ID 100U
+#define CAN_MAX_DLC 8
+
 #define CAN_MESSAGE_QUEUE_LENGTH 10
-#define CAN_BASE_ID 100
+
+typedef struct {
+  uint32_t id;
+  uint8_t dlc;
+  uint8_t data[CAN_MAX_DLC];
+} CANFrame;
 
 /* USER CODE END PD */
 
@@ -97,6 +102,8 @@ static void MX_SPI1_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
+
+void StartCANTxTask(void *argument);
 
 /* USER CODE END PFP */
 
@@ -168,8 +175,7 @@ int main(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
 
-  CANTxTaskHandle =
-      osThreadNew(StartCANTxTask, &CANMessageQueue, &CANTxTask_attributes);
+  CANTxTaskHandle = osThreadNew(StartCANTxTask, NULL, &CANTxTask_attributes);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -372,6 +378,52 @@ static void MX_GPIO_Init(void) {
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
   UNUSED(huart);
   SignalTask(defaultTaskHandle);
+}
+
+void mailboxFreeCallback(CAN_HandleTypeDef *_hcan) {
+  // Only signal when going from 0 free mailboxes to 1 free
+  if (HAL_CAN_GetTxMailboxesFreeLevel(_hcan) <= 1) {
+    SignalTask(CANTxTaskHandle);
+  }
+}
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *_hcan) {
+  mailboxFreeCallback(_hcan);
+}
+
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *_hcan) {
+  mailboxFreeCallback(_hcan);
+}
+
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *_hcan) {
+  mailboxFreeCallback(_hcan);
+}
+
+void StartCANTxTask(void *argument) {
+  UNUSED(argument);
+
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_TX_MAILBOX_EMPTY);
+  HAL_CAN_Start(&hcan);
+
+  uint32_t mailbox = 0;
+
+  for (;;) {
+    if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0) {
+      // Wait for mailbox to become available
+      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    }
+
+    CANFrame frame;
+    // Wait for queue to receive message
+    xQueueReceive(CANMessageQueue, &frame, portMAX_DELAY);
+
+    CAN_TxHeaderTypeDef header = {
+        .StdId = frame.id,
+        .DLC = frame.dlc,
+    };
+
+    HAL_CAN_AddTxMessage(&hcan, &header, frame.data, &mailbox);
+  }
 }
 
 /* USER CODE END 4 */

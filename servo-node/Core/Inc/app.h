@@ -3,7 +3,13 @@
 
 #include <stdint.h>
 
-#include "can-utils.h"
+#define CAN_MAX_DLC 8
+
+typedef struct {
+  uint32_t id;
+  uint8_t dlc;
+  uint8_t data[CAN_MAX_DLC];
+} CANFrame;
 
 typedef enum {
   LEFT = 0,
