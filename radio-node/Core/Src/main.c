@@ -49,15 +49,8 @@
 #define SBUS_HEADER 0x0F
 
 #define CAN_BASE_ID 100U
-#define CAN_MAX_DLC 8
 
 #define CAN_MESSAGE_QUEUE_LENGTH 10
-
-typedef struct {
-  uint32_t id;
-  uint8_t dlc;
-  uint8_t data[CAN_MAX_DLC];
-} CANFrame;
 
 /* USER CODE END PD */
 
