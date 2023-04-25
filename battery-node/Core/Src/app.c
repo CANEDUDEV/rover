@@ -10,6 +10,10 @@
 #define POT_ADDR (0x53 << 1)  // Shift left to match STM32 specification
 #define POT_IVRA_ADDR 0x0
 
+// Cells that don't exist will report a value close to 0. We set a cell
+// detection threshold voltage at 100 mV.
+#define BATTERY_CELL_DETECTION_THRESHOLD 100
+
 // CAN message lengths
 #define BNS_CELLS_1_TO_4_DLC 8
 #define BNS_CELLS_5_TO_6_DLC 4
@@ -143,6 +147,45 @@ void ParseADCValues(const ADCReading *adcReading, BatteryNodeState *bns) {
   bns->vbatOutCurrent = ADCToVbatOutCurrent(adcReading->adc2Buf[3]);
 }
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
+
+BatteryCharge lowestCell(const BatteryCharge *cellCharge) {
+  BatteryCharge lowest = CHARGE_100_PERCENT;
+  for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
+    // Comparison based on enum ordering
+    if (cellCharge[i] < lowest) {
+      lowest = cellCharge[i];
+    }
+  }
+  return lowest;
+}
+
+// Always report lowest detected charge to detect the most discharged cell.
+BatteryCharge ReadBatteryCharge(const BatteryNodeState *bns) {
+  BatteryCharge cellCharge[BATTERY_CELLS_MAX];
+  for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
+    // If cell is not connected, we report it as fully charged to not use its
+    // values in the low voltage detection logic.
+    if (bns->cells[i] < BATTERY_CELL_DETECTION_THRESHOLD) {
+      cellCharge[i] = CHARGE_100_PERCENT;
+      continue;
+    }
+
+    if (bns->cells[i] <= LOW_VOLTAGE_CUTOFF) {
+      cellCharge[i] = LOW_VOLTAGE_CUTOFF;
+    } else if (bns->cells[i] <= CHARGE_20_PERCENT) {
+      cellCharge[i] = CHARGE_20_PERCENT;
+    } else if (bns->cells[i] <= CHARGE_40_PERCENT) {
+      cellCharge[i] = CHARGE_40_PERCENT;
+    } else if (bns->cells[i] <= CHARGE_60_PERCENT) {
+      cellCharge[i] = CHARGE_60_PERCENT;
+    } else if (bns->cells[i] <= CHARGE_80_PERCENT) {
+      cellCharge[i] = CHARGE_80_PERCENT;
+    } else {
+      cellCharge[i] = CHARGE_100_PERCENT;
+    }
+  }
+  return lowestCell(cellCharge);
+}
 
 void PopulateBNSMessage(const BatteryNodeState *bns,
                         BatteryNodeStateMessage *bnsMsg) {
