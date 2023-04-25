@@ -46,11 +46,13 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define MEASURE_TASK_PERIOD_MS 250
-#define DEFAULT_TASK_PERIOD_MS 500
+#define MEASURE_TASK_PERIOD_MS 100
+#define DEFAULT_TASK_PERIOD_MS 200
 
 #define CAN_BASE_ID 100
 #define CAN_MESSAGE_QUEUE_LENGTH 10
+
+#define LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD 10
 
 /* USER CODE END PD */
 
@@ -82,21 +84,23 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* USER CODE BEGIN PV */
 
-osThreadId_t CANTxTaskHandle;
-const osThreadAttr_t CANTxTask_attributes = {
+static osThreadId_t CANTxTaskHandle;
+static const osThreadAttr_t CANTxTask_attributes = {
     .name = "CANTxTask",
     .stack_size = 128 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
 
-osThreadId_t measureTaskHandle;
-const osThreadAttr_t measureTask_attributes = {
+static osThreadId_t measureTaskHandle;
+static const osThreadAttr_t measureTask_attributes = {
     .name = "measureTask",
     .stack_size = 128 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
 
-QueueHandle_t CANMessageQueue;
+static QueueHandle_t CANMessageQueue;
+
+static BatteryNodeState batteryNodeState;
 
 /* USER CODE END PV */
 
@@ -728,7 +732,6 @@ void StartMeasureTask(void *argument) {
   xTimerStart(xTimer, portMAX_DELAY);
 
   ADCReading adcBuf;
-  BatteryNodeState bns;
 
   BatteryNodeStateMessage bnsMsg;
   bnsMsg.cells1To4.id = CAN_BASE_ID;
@@ -748,14 +751,42 @@ void StartMeasureTask(void *argument) {
     // Wait for DMA
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    ParseADCValues(&adcBuf, &bns);
-    PopulateBNSMessage(&bns, &bnsMsg);
+    ParseADCValues(&adcBuf, &batteryNodeState);
+    PopulateBNSMessage(&batteryNodeState, &bnsMsg);
 
     // Enqueue CAN messages
     xQueueSendToBack(CANMessageQueue, &bnsMsg.cells1To4, 0);
     xQueueSendToBack(CANMessageQueue, &bnsMsg.cells5To6, 0);
     xQueueSendToBack(CANMessageQueue, &bnsMsg.regOutCurrent, 0);
     xQueueSendToBack(CANMessageQueue, &bnsMsg.vbatOutCurrent, 0);
+  }
+}
+
+uint8_t SetChargeStateLED(const BatteryCharge *charge) {
+  switch (*charge) {
+    case CHARGE_100_PERCENT:
+      SetLEDColor(LED6, GREEN);
+      SetLEDColor(LED7, GREEN);
+      return 0;
+    case CHARGE_80_PERCENT:
+      SetLEDColor(LED6, GREEN);
+      SetLEDColor(LED7, NONE);
+      return 0;
+    case CHARGE_60_PERCENT:
+      SetLEDColor(LED6, ORANGE);
+      SetLEDColor(LED7, ORANGE);
+      return 0;
+    case CHARGE_40_PERCENT:
+      SetLEDColor(LED6, ORANGE);
+      SetLEDColor(LED7, NONE);
+      return 0;
+    case CHARGE_20_PERCENT:
+      SetLEDColor(LED6, RED);
+      SetLEDColor(LED7, RED);
+      return 0;
+    case LOW_VOLTAGE_CUTOFF:
+    default:
+      return 1;
   }
 }
 
@@ -787,19 +818,32 @@ void StartDefaultTask(void *argument) {
 
   xTimerStart(xTimer, portMAX_DELAY);
 
-  uint8_t state = 0;
+  BatteryCharge charge = CHARGE_100_PERCENT;
+  uint8_t lowPowerReportCount = 0;
+  uint8_t blink = 0;
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
 
-    if (state > 0) {
-      state = 0;
-      SetLEDColor(LED6, GREEN);
-      SetLEDColor(LED7, GREEN);
-    } else {
-      state = 1;
-      SetLEDColor(LED6, NONE);
-      SetLEDColor(LED7, NONE);
+    // Don't try to update charge state after low voltage cutoff.
+    if (lowPowerReportCount > LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD) {
+      // Turn off the power outputs to reduce the battery power drain.
+      HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(POWER_OFF_GPIO_Port, POWER_OFF_Pin, GPIO_PIN_RESET);
+      // Blink LEDs red to show user something is wrong.
+      if (blink > 0) {
+        blink = 0;
+        SetLEDColor(LED6, RED);
+        SetLEDColor(LED7, RED);
+      } else {
+        blink = 1;
+        SetLEDColor(LED6, NONE);
+        SetLEDColor(LED7, NONE);
+      }
+      continue;
     }
+
+    charge = ReadBatteryCharge(&batteryNodeState);
+    lowPowerReportCount += SetChargeStateLED(&charge);
   }
   /* USER CODE END 5 */
 }
