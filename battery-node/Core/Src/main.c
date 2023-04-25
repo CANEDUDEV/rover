@@ -102,6 +102,9 @@ static QueueHandle_t CANMessageQueue;
 
 static BatteryNodeState batteryNodeState;
 
+// Set to 1 by GPIO external interrupt on the OVER_CURRENT pin.
+static uint8_t OverCurrentFault = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -664,6 +667,13 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
   SignalTask(measureTaskHandle);
 }
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+  if (GPIO_Pin != OVER_CURRENT_Pin) {
+    return;
+  }
+  OverCurrentFault = 1;
+}
+
 void defaultTaskTimer(TimerHandle_t xTimer) {
   UNUSED(xTimer);
   SignalTask(defaultTaskHandle);
@@ -790,6 +800,19 @@ uint8_t SetChargeStateLED(const BatteryCharge *charge) {
   }
 }
 
+void BlinkLEDsRed(void) {
+  static uint8_t blink = 0;
+  if (blink > 0) {
+    blink = 0;
+    SetLEDColor(LED6, RED);
+    SetLEDColor(LED7, RED);
+  } else {
+    blink = 1;
+    SetLEDColor(LED6, NONE);
+    SetLEDColor(LED7, NONE);
+  }
+}
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -820,25 +843,18 @@ void StartDefaultTask(void *argument) {
 
   BatteryCharge charge = CHARGE_100_PERCENT;
   uint8_t lowPowerReportCount = 0;
-  uint8_t blink = 0;
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
 
-    // Don't try to update charge state after low voltage cutoff.
-    if (lowPowerReportCount > LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD) {
+    // Don't try to update charge state after low voltage cutoff
+    // or over current fault.
+    if (lowPowerReportCount > LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD ||
+        OverCurrentFault != 0) {
       // Turn off the power outputs to reduce the battery power drain.
       HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_SET);
       HAL_GPIO_WritePin(POWER_OFF_GPIO_Port, POWER_OFF_Pin, GPIO_PIN_RESET);
       // Blink LEDs red to show user something is wrong.
-      if (blink > 0) {
-        blink = 0;
-        SetLEDColor(LED6, RED);
-        SetLEDColor(LED7, RED);
-      } else {
-        blink = 1;
-        SetLEDColor(LED6, NONE);
-        SetLEDColor(LED7, NONE);
-      }
+      BlinkLEDsRed();
       continue;
     }
 
