@@ -71,6 +71,7 @@ freertos_src = files(
 common_inc = include_directories('common' / 'include')
 common_src = files('common'/ 'src' / 'utils.c')
 
+subdir('battery-node')
 subdir('io-node')
 subdir('radio-node')
 subdir('servo-node')
