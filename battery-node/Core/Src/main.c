@@ -28,15 +28,29 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <stdio.h>
+#include <string.h>
+
+#include "app.h"
+
+// FreeRTOS includes
+#include "queue.h"
+#include "timers.h"
+#include "utils.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define MEASURE_TASK_PERIOD_MS 250
+#define DEFAULT_TASK_PERIOD_MS 500
+
+#define CAN_BASE_ID 100
+#define CAN_MESSAGE_QUEUE_LENGTH 10
 
 /* USER CODE END PD */
 
@@ -68,6 +82,22 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* USER CODE BEGIN PV */
 
+osThreadId_t CANTxTaskHandle;
+const osThreadAttr_t CANTxTask_attributes = {
+    .name = "CANTxTask",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
+};
+
+osThreadId_t measureTaskHandle;
+const osThreadAttr_t measureTask_attributes = {
+    .name = "measureTask",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
+};
+
+QueueHandle_t CANMessageQueue;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -83,6 +113,9 @@ static void MX_I2C1_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
+
+void StartCANTxTask(void *argument);
+void StartMeasureTask(void *argument);
 
 /* USER CODE END PFP */
 
@@ -146,7 +179,9 @@ int main(void) {
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+
+  CANMessageQueue = xQueueCreate(CAN_MESSAGE_QUEUE_LENGTH, sizeof(CANFrame));
+
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -155,7 +190,9 @@ int main(void) {
       osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  CANTxTaskHandle = osThreadNew(StartCANTxTask, NULL, &CANTxTask_attributes);
+  measureTaskHandle =
+      osThreadNew(StartMeasureTask, NULL, &measureTask_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -301,6 +338,10 @@ static void MX_ADC1_Init(void) {
   }
   /* USER CODE BEGIN ADC1_Init 2 */
 
+  if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK) {
+    Error_Handler();
+  }
+
   /* USER CODE END ADC1_Init 2 */
 }
 
@@ -376,6 +417,10 @@ static void MX_ADC2_Init(void) {
     Error_Handler();
   }
   /* USER CODE BEGIN ADC2_Init 2 */
+
+  if (HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED) != HAL_OK) {
+    Error_Handler();
+  }
 
   /* USER CODE END ADC2_Init 2 */
 }
@@ -610,6 +655,110 @@ static void MX_GPIO_Init(void) {
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+  UNUSED(hadc);
+  SignalTask(measureTaskHandle);
+}
+
+void defaultTaskTimer(TimerHandle_t xTimer) {
+  UNUSED(xTimer);
+  SignalTask(defaultTaskHandle);
+}
+
+void measureTaskTimer(TimerHandle_t xTimer) {
+  UNUSED(xTimer);
+  SignalTask(measureTaskHandle);
+}
+
+void mailboxFreeCallback(CAN_HandleTypeDef *_hcan) {
+  // Only signal when going from 0 free mailboxes to 1 free
+  if (HAL_CAN_GetTxMailboxesFreeLevel(_hcan) <= 1) {
+    SignalTask(CANTxTaskHandle);
+  }
+}
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *_hcan) {
+  mailboxFreeCallback(_hcan);
+}
+
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *_hcan) {
+  mailboxFreeCallback(_hcan);
+}
+
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *_hcan) {
+  mailboxFreeCallback(_hcan);
+}
+
+void StartCANTxTask(void *argument) {
+  UNUSED(argument);
+
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_TX_MAILBOX_EMPTY);
+  HAL_CAN_Start(&hcan);
+
+  uint32_t mailbox = 0;
+
+  for (;;) {
+    if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0) {
+      // Wait for mailbox to become available
+      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    }
+
+    CANFrame frame;
+    // Wait for queue to receive message
+    xQueueReceive(CANMessageQueue, &frame, portMAX_DELAY);
+
+    CAN_TxHeaderTypeDef header = {
+        .StdId = frame.id,
+        .DLC = frame.dlc,
+    };
+
+    HAL_CAN_AddTxMessage(&hcan, &header, frame.data, &mailbox);
+  }
+}
+
+void StartMeasureTask(void *argument) {
+  UNUSED(argument);
+
+  TimerHandle_t xTimer =
+      xTimerCreate("measureTaskTimer", pdMS_TO_TICKS(MEASURE_TASK_PERIOD_MS),
+                   pdTRUE,  // Auto reload timer
+                   NULL,    // Timer ID, unused
+                   measureTaskTimer);
+
+  xTimerStart(xTimer, portMAX_DELAY);
+
+  ADCReading adcBuf;
+  BatteryNodeState bns;
+
+  BatteryNodeStateMessage bnsMsg;
+  bnsMsg.cells1To4.id = CAN_BASE_ID;
+  bnsMsg.cells5To6.id = CAN_BASE_ID + 1;
+  bnsMsg.regOutCurrent.id = CAN_BASE_ID + 2;
+  bnsMsg.vbatOutCurrent.id = CAN_BASE_ID + 3;
+
+  for (;;) {
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
+
+    // Start both ADCs
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adcBuf.adc1Buf,
+                      sizeof(adcBuf.adc1Buf) / sizeof(uint16_t));
+    HAL_ADC_Start_DMA(&hadc2, (uint32_t *)adcBuf.adc2Buf,
+                      sizeof(adcBuf.adc2Buf) / sizeof(uint16_t));
+
+    // Wait for DMA
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    ParseADCValues(&adcBuf, &bns);
+    PopulateBNSMessage(&bns, &bnsMsg);
+
+    // Enqueue CAN messages
+    xQueueSendToBack(CANMessageQueue, &bnsMsg.cells1To4, 0);
+    xQueueSendToBack(CANMessageQueue, &bnsMsg.cells5To6, 0);
+    xQueueSendToBack(CANMessageQueue, &bnsMsg.regOutCurrent, 0);
+    xQueueSendToBack(CANMessageQueue, &bnsMsg.vbatOutCurrent, 0);
+  }
+}
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -622,9 +771,35 @@ static void MX_GPIO_Init(void) {
 void StartDefaultTask(void *argument) {
   /* USER CODE BEGIN 5 */
   UNUSED(argument);
-  /* Infinite loop */
+
+  Print("Starting application...\r\n");
+
+  SetJumperConfig(ALL_ON);
+  ConfigureVoltageRegulator(&hi2c1, POT_IVRA_DEFAULT);
+  HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(POWER_OFF_GPIO_Port, POWER_OFF_Pin, GPIO_PIN_SET);
+
+  TimerHandle_t xTimer =
+      xTimerCreate("defaultTaskTimer", pdMS_TO_TICKS(DEFAULT_TASK_PERIOD_MS),
+                   pdTRUE,  // Auto reload timer
+                   NULL,    // Timer ID, unused
+                   defaultTaskTimer);
+
+  xTimerStart(xTimer, portMAX_DELAY);
+
+  uint8_t state = 0;
   for (;;) {
-    osDelay(1);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
+
+    if (state > 0) {
+      state = 0;
+      SetLEDColor(LED6, GREEN);
+      SetLEDColor(LED7, GREEN);
+    } else {
+      state = 1;
+      SetLEDColor(LED6, NONE);
+      SetLEDColor(LED7, NONE);
+    }
   }
   /* USER CODE END 5 */
 }

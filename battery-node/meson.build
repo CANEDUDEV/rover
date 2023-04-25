@@ -1,5 +1,6 @@
 battery_node_inc = include_directories('Core' / 'Inc')
 battery_node_src = files(
+  'Core' / 'Src' / 'app.c',
   'Core' / 'Src' / 'freertos.c',
   'Core' / 'Src' / 'main.c',
   'Core' / 'Src' / 'stm32f3xx_hal_msp.c',
@@ -16,8 +17,8 @@ ld_script = configure_file(
 
 battery_node_elf = executable(
   'battery_node.elf',
-  [drivers_src, freertos_src, battery_node_src],
-  include_directories: [drivers_inc, freertos_inc, battery_node_inc],
+  [common_src, drivers_src, freertos_src, battery_node_src],
+  include_directories: [common_inc, drivers_inc, freertos_inc, battery_node_inc],
   link_depends: ld_script,
   link_args: ['-T@0@'.format(ld_script)],
 )
@@ -34,5 +35,6 @@ battery_node_bin = custom_target(
 # List of files that should be analyzed by clang-tidy.
 # We typically ignore all auto-generated files that we don't modify.
 battery_node_tidy_files = files(
+  'Core' / 'Src' / 'app.c',
   'Core' / 'Src' / 'main.c',
 )
