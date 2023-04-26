@@ -62,7 +62,9 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 64K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 512K
+FLASH (rx)     : ORIGIN = 0x08000000, LENGTH = 510K
+/* Reserve final flash sector for persistent configuration files */
+FLASH_RW (rw)  : ORIGIN = 0x0807F800, LENGTH = 2K
 }
 
 /* Define output sections */
