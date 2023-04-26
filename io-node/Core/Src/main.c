@@ -120,6 +120,10 @@ int main(void) {
 
   /* USER CODE BEGIN Init */
 
+  if (FlashRWInit() != APP_OK) {
+    Error_Handler();
+  }
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
