@@ -370,13 +370,13 @@ static void MX_GPIO_Init(void) {
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
   UNUSED(huart);
-  SignalTask(defaultTaskHandle);
+  NotifyTask(defaultTaskHandle);
 }
 
 void mailboxFreeCallback(CAN_HandleTypeDef *_hcan) {
-  // Only signal when going from 0 free mailboxes to 1 free
+  // Only notify when going from 0 free mailboxes to 1 free
   if (HAL_CAN_GetTxMailboxesFreeLevel(_hcan) <= 1) {
-    SignalTask(CANTxTaskHandle);
+    NotifyTask(CANTxTaskHandle);
   }
 }
 

@@ -664,7 +664,7 @@ static void MX_GPIO_Init(void) {
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
   UNUSED(hadc);
-  SignalTask(measureTaskHandle);
+  NotifyTask(measureTaskHandle);
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
@@ -676,18 +676,18 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 void defaultTaskTimer(TimerHandle_t xTimer) {
   UNUSED(xTimer);
-  SignalTask(defaultTaskHandle);
+  NotifyTask(defaultTaskHandle);
 }
 
 void measureTaskTimer(TimerHandle_t xTimer) {
   UNUSED(xTimer);
-  SignalTask(measureTaskHandle);
+  NotifyTask(measureTaskHandle);
 }
 
 void mailboxFreeCallback(CAN_HandleTypeDef *_hcan) {
-  // Only signal when going from 0 free mailboxes to 1 free
+  // Only notify when going from 0 free mailboxes to 1 free
   if (HAL_CAN_GetTxMailboxesFreeLevel(_hcan) <= 1) {
-    SignalTask(CANTxTaskHandle);
+    NotifyTask(CANTxTaskHandle);
   }
 }
 

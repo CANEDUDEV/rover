@@ -1,3 +1,8 @@
+/* utils.h
+ *
+ * Contains common utility functions and structures for writing apps.
+ *
+ */
 #ifndef UTILS_H
 #define UTILS_H
 
@@ -11,7 +16,9 @@ typedef struct {
   uint8_t data[CAN_MAX_DLC];
 } CANFrame;
 
+// Print message to uart
 void Print(char *str);
-void SignalTask(osThreadId_t taskHandle);
+// Send task notification to task
+void NotifyTask(osThreadId_t taskHandle);
 
 #endif
