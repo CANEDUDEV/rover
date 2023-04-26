@@ -5,22 +5,14 @@ io_node_src = files(
   'Core' / 'Src' / 'main.c',
   'Core' / 'Src' / 'stm32f3xx_hal_msp.c',
   'Core' / 'Src' / 'stm32f3xx_it.c',
-  'Core' / 'Src' / 'system_stm32f3xx.c',
-  'startup_stm32f302xe.s',
-)
-
-ld_script = configure_file(
-  copy: true,
-  input: files('STM32F302RETx_FLASH.ld'),
-  output: '@PLAINNAME@',
 )
 
 io_node_elf = executable(
   'io_node.elf',
-  [utils_src, drivers_src, freertos_src, io_node_src],
+  [stm32_common_src, utils_src, drivers_src, freertos_src, io_node_src],
   include_directories: [utils_inc, drivers_inc, freertos_inc, io_node_inc],
-  link_depends: ld_script,
-  link_args: ['-T@0@'.format(ld_script)],
+  link_depends: stm32_linker_script,
+  link_args: ['-T@0@'.format(stm32_linker_script)],
 )
 
 io_node_bin = custom_target(

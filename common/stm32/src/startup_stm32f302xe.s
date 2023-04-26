@@ -7,7 +7,7 @@
   *                - Set the initial SP
   *                - Set the initial PC == Reset_Handler,
   *                - Set the vector table entries with the exceptions ISR address,
-  *                - Configure the clock system  
+  *                - Configure the clock system
   *                - Branches to main in the C library (which eventually
   *                  calls main()).
   *            After Reset the Cortex-M4 processor is in Thread mode,
@@ -80,7 +80,7 @@ LoopCopyDataInit:
   adds r4, r0, r3
   cmp r4, r1
   bcc CopyDataInit
-  
+
 /* Zero fill the bss segment. */
   ldr r2, =_sbss
   ldr r4, =_ebss
@@ -102,7 +102,7 @@ LoopFillZerobss:
 
 LoopForever:
     b LoopForever
-    
+
 .size	Reset_Handler, .-Reset_Handler
 
 /**
@@ -429,40 +429,40 @@ g_pfnVectors:
 
 	.weak	COMP1_2_IRQHandler
 	.thumb_set COMP1_2_IRQHandler,Default_Handler
-	
+
 	.weak	COMP4_6_IRQHandler
 	.thumb_set COMP4_6_IRQHandler,Default_Handler
-	
+
 	.weak	I2C3_EV_IRQHandler
-	.thumb_set I2C3_EV_IRQHandler,Default_Handler	
-	
+	.thumb_set I2C3_EV_IRQHandler,Default_Handler
+
 	.weak	I2C3_ER_IRQHandler
-	.thumb_set I2C3_ER_IRQHandler,Default_Handler	
-	
+	.thumb_set I2C3_ER_IRQHandler,Default_Handler
+
 	.weak	USB_HP_IRQHandler
 	.thumb_set USB_HP_IRQHandler,Default_Handler
-	
+
 	.weak	USB_LP_IRQHandler
 	.thumb_set USB_LP_IRQHandler,Default_Handler
-	
+
 	.weak	USBWakeUp_RMP_IRQHandler
 	.thumb_set USBWakeUp_RMP_IRQHandler,Default_Handler
-	
+
 	.weak	TIM20_BRK_IRQHandler
 	.thumb_set TIM20_BRK_IRQHandler,Default_Handler
-	
+
 	.weak	TIM20_UP_IRQHandler
 	.thumb_set TIM20_UP_IRQHandler,Default_Handler
-	
+
 	.weak	TIM20_TRG_COM_IRQHandler
 	.thumb_set TIM20_TRG_COM_IRQHandler,Default_Handler
-	
+
 	.weak	TIM20_CC_IRQHandler
 	.thumb_set TIM20_CC_IRQHandler,Default_Handler
-	
+
 	.weak	FPU_IRQHandler
 	.thumb_set FPU_IRQHandler,Default_Handler
-	
+
 	.weak	SPI4_IRQHandler
 	.thumb_set SPI4_IRQHandler,Default_Handler
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
