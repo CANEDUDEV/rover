@@ -17,8 +17,8 @@ ld_script = configure_file(
 
 battery_node_elf = executable(
   'battery_node.elf',
-  [common_src, drivers_src, freertos_src, battery_node_src],
-  include_directories: [common_inc, drivers_inc, freertos_inc, battery_node_inc],
+  [utils_src, drivers_src, freertos_src, battery_node_src],
+  include_directories: [utils_inc, drivers_inc, freertos_inc, battery_node_inc],
   link_depends: ld_script,
   link_args: ['-T@0@'.format(ld_script)],
 )

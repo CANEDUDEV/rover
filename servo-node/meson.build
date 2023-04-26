@@ -17,8 +17,8 @@ ld_script = configure_file(
 
 servo_node_elf = executable(
   'servo_node.elf',
-  [common_src, drivers_src, freertos_src, servo_node_src],
-  include_directories: [common_inc, drivers_inc, freertos_inc, servo_node_inc],
+  [utils_src, drivers_src, freertos_src, servo_node_src],
+  include_directories: [utils_inc, drivers_inc, freertos_inc, servo_node_inc],
   link_depends: ld_script,
   link_args: ['-T@0@'.format(ld_script)],
 )

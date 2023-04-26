@@ -16,8 +16,8 @@ ld_script = configure_file(
 
 radio_node_elf = executable(
   'radio_node.elf',
-  [common_src, drivers_src, freertos_src, radio_node_src],
-  include_directories: [common_inc, drivers_inc, freertos_inc, radio_node_inc],
+  [utils_src, drivers_src, freertos_src, radio_node_src],
+  include_directories: [utils_inc, drivers_inc, freertos_inc, radio_node_inc],
   link_depends: ld_script,
   link_args: ['-T@0@'.format(ld_script)],
 )

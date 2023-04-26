@@ -17,8 +17,8 @@ ld_script = configure_file(
 
 io_node_elf = executable(
   'io_node.elf',
-  [common_src, drivers_src, freertos_src, io_node_src],
-  include_directories: [common_inc, drivers_inc, freertos_inc, io_node_inc],
+  [utils_src, drivers_src, freertos_src, io_node_src],
+  include_directories: [utils_inc, drivers_inc, freertos_inc, io_node_inc],
   link_depends: ld_script,
   link_args: ['-T@0@'.format(ld_script)],
 )
