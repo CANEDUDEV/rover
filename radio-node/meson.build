@@ -6,12 +6,14 @@ radio_node_src = files(
   'Core' / 'Src' / 'stm32f3xx_it.c',
 )
 
+# Override the werror option since some of the warnings come from the STM32 HAL driver.
 radio_node_elf = executable(
   'radio_node.elf',
   [stm32_common_src, utils_src, drivers_src, freertos_src, radio_node_src],
   include_directories: [utils_inc, drivers_inc, freertos_inc, radio_node_inc],
   link_depends: stm32_linker_script,
   link_args: ['-T@0@'.format(stm32_linker_script)],
+  override_options: ['werror=false'],
 )
 
 radio_node_bin = custom_target(
