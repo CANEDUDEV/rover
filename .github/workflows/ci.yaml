@@ -20,6 +20,9 @@ jobs:
       - name: Build source
         run: meson compile -C build
 
+      - name: Run tests
+        run: meson test -v -C build
+
       - name: Check source
         run: ./scripts/check-src.sh
 
