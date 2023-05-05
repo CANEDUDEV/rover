@@ -27,7 +27,7 @@ void SendAnalogPortMessage(const uint16_t *data) {
   };
   uint32_t mailbox = 0;
   uint8_t canData[ANALOG_PORT_MESSAGE_DLC];
-  for (int i = 0; i < ANALOG_PORT_MESSAGE_DLC; i++) {
+  for (uint8_t i = 0; i < ANALOG_PORT_MESSAGE_DLC; i++) {
     canData[i] = data[i];
   }
   HAL_CAN_AddTxMessage(&hcan, &header, canData, &mailbox);
