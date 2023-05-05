@@ -91,7 +91,7 @@ int WriteFlash(uint32_t addr, const void *data, size_t len) {
   uint32_t word = 0;
   HAL_FLASH_Unlock();
   for (size_t i = 0; i < len; i += wordLength) {
-    memcpy(&word, data + i, wordLength);
+    memcpy(&word, (uint8_t *)data + i, wordLength);
     HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr + i, (uint64_t)word);
   }
   HAL_FLASH_Lock();
