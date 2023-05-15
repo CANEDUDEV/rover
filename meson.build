@@ -1,5 +1,5 @@
 project(
-  'canedudev',
+  'Rover',
   'c',
   meson_version: '==0.61.2',
   version: '0.1',
@@ -74,6 +74,8 @@ subdir('battery-node')
 subdir('io-node')
 subdir('radio-node')
 subdir('servo-node')
+
+subdir('docs')
 
 tidy_files = [
   common_tidy_files,

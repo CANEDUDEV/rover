@@ -9,10 +9,14 @@ sudo apt-get -qq install -y \
 	curl \
 	clang-format \
 	clang-tidy \
+	doxygen \
 	gcc-arm-none-eabi \
 	libc6-dev-armhf-cross \
 	meson \
 	ninja-build \
+	python3-breathe \
+	python3-sphinx \
+	python3-sphinx-rtd-theme \
 	shellcheck \
 	shfmt
 

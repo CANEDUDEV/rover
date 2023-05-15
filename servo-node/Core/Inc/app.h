@@ -1,3 +1,9 @@
+/******************************************************************************
+ * @file app.h
+ *
+ * Contains functions that compose the servo node application.
+ *
+ *****************************************************************************/
 #ifndef APP_H
 #define APP_H
 
@@ -10,6 +16,12 @@ typedef enum {
   RIGHT,
 } STEERING_DIRECTION;
 
+/*******************************************************
+ * Convert ADC reading to a sensor power CAN message.
+ *
+ * @param adcValue The raw ADC reading.
+ * @param frame CAN frame populated by the function.
+ ******************************************************/
 void ADCToSensorPowerMessage(uint16_t adcValue, CANFrame *frame);
 void ADCToServoCurrentMessage(uint16_t adcValue, CANFrame *frame);
 void ADCToBatteryVoltageMessage(uint16_t adcValue, CANFrame *frame);

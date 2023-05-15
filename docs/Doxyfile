@@ -1,0 +1,12 @@
+PROJECT_NAME           = "Rover"
+OUTPUT_DIRECTORY       = "docs"
+JAVADOC_AUTOBRIEF      = YES
+JAVADOC_BANNER         = YES
+OPTIMIZE_OUTPUT_FOR_C  = YES
+INPUT                  = $(DOXYGEN_INPUT)
+RECURSIVE              = YES
+EXCLUDE_PATTERNS       = *Middlewares* *Drivers* *stm32f3xx*
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+HAVE_DOT               = NO
