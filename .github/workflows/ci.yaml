@@ -15,7 +15,19 @@ jobs:
         run: ./scripts/bootstrap.sh
 
       - name: Build source
-        run: ninja -C build
+        run: meson compile -C build
 
       - name: Check source
         run: ./scripts/check-src.sh
+
+      - name: Build documentation
+        run: meson compile -C build docs
+
+      - name: Deploy documentation to GH Pages
+        uses: peaceiris/actions-gh-pages@v3
+        if: ${{ github.ref == 'refs/heads/main' }}
+        with:
+          publish_branch: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/docs/html
+          force_orphan: true
