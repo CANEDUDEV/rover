@@ -18,6 +18,7 @@ Indices and tables
 * :ref:`search`
 * :ref:`can-kingdom`
 
+  * :ref:`types`
   * :ref:`mayor`
   * :ref:`king`
 
@@ -30,6 +31,13 @@ common/can-kingdom
 Provides an implementation of the CAN Kingdom library. Contains implementations
 of the mayor, the king and the data structures, as well as an interface for
 creating a postmaster implementation.
+
+.. _types:
+
+types.h
+-------
+.. doxygenfile:: types.h
+   :project: Rover
 
 .. _mayor:
 

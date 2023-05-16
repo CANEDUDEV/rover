@@ -1,5 +1,7 @@
-/*
- * CAN Kingdom building blocks
+/*******************************************************************************
+ * @file types.h
+ *
+ * CAN Kingdom building blocks.
  *
  * Bit: a bit.
  * Line: A line is 8 bits, a byte.
@@ -66,7 +68,7 @@
  * for the system designer to be able to differentiate between various documents
  * in code, however the description for how to interpret the pages in the
  * document should be provided in the documentation.
- */
+ ******************************************************************************/
 
 #ifndef CK_TYPES_H
 #define CK_TYPES_H
@@ -78,24 +80,31 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-// Some helpers
+/// The max value for the CAN DLC. Corresponds to 8 bytes.
 #define CK_CAN_MAX_DLC 8
-#define CK_CAN_MAX_STD_ID ((1UL << 11) - 1)  // 11-bit IDs
-#define CK_CAN_MAX_EXT_ID ((1UL << 29) - 1)  // 29-bit IDs
-#define CK_CAN_ID_MASK 0x1FFFFFFF  // For extracting IDs out of King's pages
+/// The max value for a CAN ID when using standard (11-bit) identifiers.
+#define CK_CAN_MAX_STD_ID ((1UL << 11) - 1)
+/// The max value for a CAN ID when using extended (29-bit) identifiers.
+#define CK_CAN_MAX_EXT_ID ((1UL << 29) - 1)
+/// For extracting IDs out of King's pages.
+#define CK_CAN_ID_MASK 0x1FFFFFFF
 
-#define CK_MAX_EAN_NO ((1ULL << 40) - 1)  // 40-bit EAN
+/// The highest possible 40-bit EAN number.
+#define CK_MAX_EAN_NO ((1ULL << 40) - 1)
 
-// Default folders
+/// Default number of the king's folder.
 #define CK_KINGS_FOLDER_NO 0
+
+/// Default number of the mayor's folder.
 #define CK_MAYORS_FOLDER_NO 1
 
-#define CK_DEFAULT_KP_COUNT 5  // Number of king's pages in a standard system
+/// The default letter's CAN ID.
+#define CK_DEFAULT_LETTER_ENVELOPE 2031
 
-#define CK_DEFAULT_LETTER_ENVELOPE 2031  // For constructing the default letter
+/// For use with king's page 1 when requesting a mayor's response.
+#define CK_NO_RESPONSE_REQUESTED 0xFF
 
-#define CK_NO_RESPONSE_REQUESTED 0xFF  // For use with king's page 1
-
+/// Max number of lines per page.
 #define CK_MAX_LINES_PER_PAGE CK_CAN_MAX_DLC
 
 /* Limit some structures' maximum sizes by default. This makes it easier to
@@ -103,201 +112,286 @@ extern "C" {
  * The limits can be overriden during compilation.
  */
 #ifndef CK_MAX_ENVELOPES_PER_FOLDER
+/// Max number of envelopes that can be assigned to a folder.
 #define CK_MAX_ENVELOPES_PER_FOLDER 8
 #endif
 #ifndef CK_MAX_PAGES_PER_DOCUMENT
+/// Max number of pages in a document.
 #define CK_MAX_PAGES_PER_DOCUMENT 8
 #endif
 #ifndef CK_MAX_RECORDS_PER_LIST
+/// Max number of records in a list.
 #define CK_MAX_RECORDS_PER_LIST 8
 #endif
 
-// Error codes
+/// Error codes.
 typedef enum {
+  /// OK.
   CK_OK = 0,
+  /// Invalid CAN ID.
   CK_ERR_INVALID_CAN_ID,
+  /// Invalid CAN DLC.
   CK_ERR_INVALID_CAN_DLC,
+  /// Invalid King's letter.
   CK_ERR_INVALID_KINGS_LETTER,
+  /// Unsupported King's page.
   CK_ERR_UNSUPPORTED_KINGS_PAGE,
+  /// Some parameters are not compatible.
   CK_ERR_INCOMPATIBLE_PARAMS,
+  /// User tried to set a reserved folder number.
   CK_ERR_INVALID_FOLDER_NUMBER,
+  /// Invalid ck_action_mode_t
   CK_ERR_INVALID_ACTION_MODE,
+  /// Invalid ck_comm_mode_t.
   CK_ERR_INVALID_COMM_MODE,
+  /// Invalid ck_list_type_t.
   CK_ERR_INVALID_LIST_TYPE,
+  /// Input argument to function is wrong in some way.
   CK_ERR_INVALID_PARAMETER,
+  /// Missing input argument to function.
   CK_ERR_MISSING_PARAMETER,
+  /// List, folder, document or page is full.
   CK_ERR_CAPACITY_REACHED,
+  /// Item not found in list or folder.
   CK_ERR_ITEM_NOT_FOUND,
+  /// Library has not been initialized yet.
   CK_ERR_NOT_INITIALIZED,
 } ck_err_t;
 
-// Supported king's pages
+/// Supported king's pages.
 typedef enum {
+  /// King's page 0.
   CK_KP0 = 0,
+  /// King's page 1.
   CK_KP1 = 1,
+  /// King's page 2.
   CK_KP2 = 2,
+  /// King's page 16.
   CK_KP16 = 16,
+  /// King's page 17.
   CK_KP17 = 17,
 } ck_kings_page_t;
 
+/// Action mode as defined by the CAN Kingdom specification.
 typedef enum {
+  /// Keep the current mode.
   CK_ACTION_MODE_KEEP_CURRENT = 0x00,
+  /// Start the city.
   CK_ACTION_MODE_RUN = 0x01,
+  /// Stop the city.
   CK_ACTION_MODE_FREEZE = 0x10,
+  /// Reset the city.
   CK_ACTION_MODE_RESET = 0x11,
 } ck_action_mode_t;
 
+/// Communication mode as defined by the CAN Kingdom specification.
 typedef enum {
+  /// Keep the current mode.
   CK_COMM_MODE_KEEP_CURRENT = 0x00,
+  /// Set the CAN controller in silent mode.
   CK_COMM_MODE_SILENT = 0x01,
+  /// Set the CAN controller in listen-only mode.
   CK_COMM_MODE_LISTEN_ONLY = 0x10,
+  /// Enable CAN communication.
   CK_COMM_MODE_COMMUNICATE = 0x11,
 } ck_comm_mode_t;
 
-// Only keep current mode is defined, the rest is defined by the user.
+/// Only #CK_CITY_MODE_KEEP_CURRENT is defined, the rest is defined by the user.
 typedef enum {
+  /// Keep the current mode.
   CK_CITY_MODE_KEEP_CURRENT = 0,
 } ck_city_mode_t;
 
+/// Direction enum.
 typedef enum {
+  /// Receive direction.
   CK_DIRECTION_RECEIVE = 0,
+  /// Transmit direction.
   CK_DIRECTION_TRANSMIT = 1,
 } ck_direction_t;
 
+/// Page structure, represents the data in a CAN frame.
 typedef struct {
-  uint8_t line_count;  // Number of lines on page
+  /// Number of lines on page.
+  uint8_t line_count;
+  /// Line data.
   uint8_t lines[CK_MAX_LINES_PER_PAGE];
 } ck_page_t;
 
+/// Envelope structure, represents the header of a CAN frame.
 typedef struct {
-  uint32_t envelope_no;  // CAN ID
-  bool enable;           // Whether envelope is enabled or not.
-  bool has_extended_id;  // Whether envelope uses standard or extended CAN IDs.
-  bool is_remote;        // Remote envelope (RTR bit).
-  bool is_compressed;    // Compressed envelope. Not supported at the moment.
+  /// CAN ID
+  uint32_t envelope_no;
+  /// Whether envelope is enabled or not.
+  bool enable;
+  /// Whether envelope uses standard or extended CAN IDs.
+  bool has_extended_id;
+  /// Remote envelope (RTR bit).
+  bool is_remote;
+  /// Compressed envelope. Not supported at the moment.
+  bool is_compressed;
 } ck_envelope_t;
 
+/// Letter structure, for creating CAN messages from folders.
 typedef struct {
   ck_envelope_t envelope;
   ck_page_t page;
 } ck_letter_t;
 
-/*
+/*******************************************************************************
  * The document structure contains a list of pages that should be sent using the
  * same envelope. If a document contains more than one page, the pages should
  * have a pagination number in order to detect errors during transmission, such
  * as omission of pages or duplicates transmission.
- */
+ ******************************************************************************/
 typedef struct {
+  /// Direction of the document.
   ck_direction_t direction;
-  uint8_t page_count;  // How many pages the document contains.
-  ck_page_t *pages[CK_MAX_PAGES_PER_DOCUMENT];  // List of pointers to pages.
+  /// How many pages the document contains.
+  uint8_t page_count;
+  /// List of pointers to pages.
+  ck_page_t *pages[CK_MAX_PAGES_PER_DOCUMENT];
 } ck_document_t;
 
-/*
+/*******************************************************************************
  * The folder structure links a document to a set of envelopes. It contains
  * information that can be set by both the king and the mayor. Describes how to
  * send or receive a document. In practice, it is used to assign CAN IDs to
  * various messages and control whether or not they should be sent.
- */
+ ******************************************************************************/
 typedef struct {
+  /// Folder number.
   uint8_t folder_no;
-  uint8_t doc_list_no;  // Document list number.
-  uint8_t doc_no;       // Document number.
+  /// Document list number.
+  uint8_t doc_list_no;
+  /// Document number.
+  uint8_t doc_no;
+  /// Direction of the folder.
   ck_direction_t direction;
-  uint8_t dlc;             // CAN DLC
-  bool has_rtr;            // CAN RTR bit
-  bool enable;             // Folder enabled / disabled.
-  uint8_t envelope_count;  // How many envelopes have been assigned.
-  ck_envelope_t
-      envelopes[CK_MAX_ENVELOPES_PER_FOLDER];  // Assigned envelopes. The
-                                               // specification allows more than
-                                               // one envelope to be assigned to
-                                               // a folder.
+  /// CAN DLC
+  uint8_t dlc;
+  /// CAN RTR bit
+  bool has_rtr;
+  /// Folder enabled / disabled.
+  bool enable;
+  /// How many envelopes have been assigned.
+  uint8_t envelope_count;
+  /// Assigned envelopes. The specification allows more than one envelope to be
+  /// assigned to a folder.
+  ck_envelope_t envelopes[CK_MAX_ENVELOPES_PER_FOLDER];
 } ck_folder_t;
 
-/*
+/*******************************************************************************
  * Some list types for storing predefined data in a city, which can be used by
  * the king to construct new pages or documents.
- */
+ ******************************************************************************/
 typedef enum {
+  /// Bit list.
   CK_LIST_BIT = 0,
+  /// Line list.
   CK_LIST_LINE = 1,
+  /// Page list.
   CK_LIST_PAGE = 2,
+  /// Document list.
   CK_LIST_DOCUMENT = 3,
 } ck_list_type_t;
 
-/*
+/*******************************************************************************
  * A generic struct for storing line form lists, page form lists and document
  * lists.
  *
- * The type of the `record` parameter depends on the value of the `list_type`
- * parameter.
+ * The type of the records parameter depends on the value of the type parameter.
  *
- * | `list_type` value | `record` type   |
+ * | list_type value   | record value    |
  * |-------------------|-----------------|
- * | CK_BIT_LIST       | uint8_t *       |
- * | CK_LINE_LIST      | uint8_t *       |
- * | CK_PAGE_LIST      | ck_page_t *     |
- * | CK_DOCUMENT_LIST  | ck_document_t * |
+ * | #CK_LIST_BIT      | uint8_t *       |
+ * | #CK_LIST_LINE     | uint8_t *       |
+ * | #CK_LIST_PAGE     | ck_page_t *     |
+ * | #CK_LIST_DOCUMENT | ck_document_t * |
  *
- * The uint8_t * in a CK_BIT_LIST will be treated as a contiguous bit array.
+ * The `uint8_t *` in a #CK_BIT_LIST will be treated as a contiguous bit array.
  * This means the record count should reflect the number of bits, not the number
  * of bytes in the list.
  *
- */
+ ******************************************************************************/
 typedef struct {
-  ck_list_type_t type;       // The type of items this list contains.
-  ck_direction_t direction;  // CK_DIRECTION_RECEIVE or CK_DIRECTION_TRANSMIT.
-  uint8_t list_no;   // List number. Must be unique for each direction and type.
-  uint8_t capacity;  // Number of records this list can hold.
-  void *records[CK_MAX_RECORDS_PER_LIST];  // List of pointers to records.
+  /// The type of items this list contains.
+  ck_list_type_t type;
+  /// #CK_DIRECTION_RECEIVE or #CK_DIRECTION_TRANSMIT.
+  ck_direction_t direction;
+  /// List number. Must be unique for each direction and type.
+  uint8_t list_no;
+  /// Number of records this list can hold.
+  uint8_t capacity;
+  /// List of pointers to records.
+  void *records[CK_MAX_RECORDS_PER_LIST];
 } ck_list_t;
 
-/*
+/*******************************************************************************
  * Defines envelope actions for use with KP2.
- */
+ ******************************************************************************/
 typedef enum {
   CK_ENVELOPE_NO_ACTION = 0,
-  CK_ENVELOPE_ASSIGN = 1,  // Assign envelope to folder.
-  CK_ENVELOPE_EXPEL =
-      2,  // Expel envelope from previous assignment. Envelope must
-          // be disabled in the same message for this to work.
-  CK_ENVELOPE_TRANSFER = 3,  // Move envelope to new folder.
+  /// Assign envelope to folder.
+  CK_ENVELOPE_ASSIGN = 1,
+  /// Expel envelope from previous assignment. Envelope must be disabled in the
+  /// same message for this to work.
+  CK_ENVELOPE_EXPEL = 2,
+  /// Move envelope to new folder.
+  CK_ENVELOPE_TRANSFER = 3,
 } ck_envelope_action_t;
 
-/*
+/*******************************************************************************
  * Defines document actions for use with KP16.
- */
+ ******************************************************************************/
 typedef enum {
   CK_DOCUMENT_NO_ACTION = 0,
-  CK_DOCUMENT_REMOVE = 2,  // Remove document from folder.
-  CK_DOCUMENT_INSERT =
-      3,  // Insert document into folder. A folder contains at most one
-          // document. Inserting a document into a folder with a document
-          // already in it will replace the old document with the new one.
-
+  /// Remove document from folder.
+  CK_DOCUMENT_REMOVE = 2,
+  /// Insert document into folder. A folder contains at most one document.
+  /// Inserting a document into a folder with a document already in it will
+  /// replace the old document with the new one.
+  CK_DOCUMENT_INSERT = 3,
 } ck_document_action_t;
 
-/*
+/*******************************************************************************
  * Check if the specified action mode is a valid action mode.
- */
+ *
+ * @param mode #ck_action_mode_t to check.
+ *
+ * @return #CK_ERR_INVALID_ACTION_MODE if mode is invalid.
+ * @return #CK_OK on success.
+ ******************************************************************************/
 ck_err_t ck_check_action_mode(ck_action_mode_t mode);
 
-/*
+/*******************************************************************************
  * Check if the specified communication mode is a valid communication mode.
- */
+ *
+ * @param mode #ck_comm_mode_t to check.
+ *
+ * @return #CK_ERR_INVALID_COMM_MODE if mode is invalid.
+ * @return #CK_OK on success.
+ ******************************************************************************/
 ck_err_t ck_check_comm_mode(ck_comm_mode_t mode);
 
-/*
+/*******************************************************************************
  * Check if the specified list type is valid.
- */
+ *
+ * @param type #ck_list_type_t to check.
+ *
+ * @return #CK_ERR_INVALID_LIST_TYPE if type is invalid.
+ * @return #CK_OK on success.
+ ******************************************************************************/
 ck_err_t ck_check_list_type(ck_list_type_t type);
 
-/*
- * Returns the CAN Kingdom default letter, i.e. a letter with CAN ID 2031
- * and 8 lines each containing 0xAA.
- */
+/*******************************************************************************
+ * Creates a CAN Kingdom default letter.
+ *
+ * The default letter is a letter with CAN ID 2031 and 8 lines each containing
+ * `0xAA`.
+ *
+ * @return the created letter.
+ ******************************************************************************/
 ck_letter_t default_letter(void);
 
 #ifdef __cplusplus
