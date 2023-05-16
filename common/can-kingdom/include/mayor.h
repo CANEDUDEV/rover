@@ -109,6 +109,13 @@ typedef struct {
  * - It sets up the folders for the king's document and the mayor's
  *   document.
  *
+ *   @param mayor parameters for setting up the mayor.
+ *
+ *   @return #CK_ERR_MISSING_PARAMETER if some required parameter is not set.
+ *   @return #CK_ERR_INVALID_PARAMETER if some parameter is set incorrectly.
+ *   @return #CK_ERR_ITEM_NOT_FOUND if missing a requred list.
+ *   @return #CK_ERR_CAPACITY_REACHED if a requred list is too small.
+ *   @return #CK_OK on success.
  ******************************************************************************/
 ck_err_t ck_mayor_init(const ck_mayor_t *mayor);
 
@@ -119,6 +126,14 @@ ck_err_t ck_start(void);
 
 /*******************************************************************************
  * Parse the king's letter and act on it.
+ *
+ * @param letter the received king's letter.
+ * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
+ * @return #CK_ERR_INVALID_KINGS_LETTER if the letter is not a valid king's
+ *         letter.
+ * @return #CK_ERR_UNSUPPORTED_KINGS_PAGE if the letter contains a king's page
+ *         not supported by this implementation.
+ * @return #CK_OK on success or if the letter is not addressed to the caller.
  ******************************************************************************/
 ck_err_t ck_process_kings_letter(const ck_letter_t *letter);
 
@@ -126,6 +141,13 @@ ck_err_t ck_process_kings_letter(const ck_letter_t *letter);
  * Adds a user-defined mayor's page to the mayor's document.
  * The function will store a pointer to the page instead of copying it.
  * Therefore, the page needs to persist in memory.
+ *
+ * @param page the page to add to the mayor's document.
+ *
+ * @return #CK_ERR_INVALID_PARAMETER if page is NULL.
+ * @return #CK_ERR_CAPACITY_REACHED if the mayor's document cannot hold more
+ *         pages.
+ * @return #CK_OK on success.
  ******************************************************************************/
 ck_err_t ck_add_mayors_page(ck_page_t *page);
 
