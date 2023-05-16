@@ -4,7 +4,7 @@
 
 struct mayor_state {
   ck_mayor_t user_data;  // Data provided by the user.
-  ck_page_t pages[2];    // For storing the pre-defined mayor's pages.
+  ck_page_t pages[2];    // For storing the predefined mayor's pages.
   ck_document_t mayors_doc;
   ck_document_t kings_doc;  // Dummy king's document.
 };
@@ -153,7 +153,7 @@ static void init_documents(void) {
   mayor.mayors_doc.direction = CK_DIRECTION_TRANSMIT;
   mayor.mayors_doc.page_count = 2;
 
-  // Point mayor's document to the pre-defined mayor's pages
+  // Point mayor's document to the predefined mayor's pages
   mayor.mayors_doc.pages[0] = &mayor.pages[0];
   mayor.mayors_doc.pages[1] = &mayor.pages[1];
 

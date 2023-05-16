@@ -42,6 +42,8 @@ mayor.h
 
 king.h
 ------
+.. doxygenfile:: king.h
+   :project: Rover
 
 .. _servo:
 
