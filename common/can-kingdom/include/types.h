@@ -297,8 +297,7 @@ typedef enum {
 } ck_list_type_t;
 
 /*******************************************************************************
- * A generic struct for storing line form lists, page form lists and document
- * lists.
+ * A generic structure for storing line lists, page flists or document lists.
  *
  * The type of the records parameter depends on the value of the type parameter.
  *
