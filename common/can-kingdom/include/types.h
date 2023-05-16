@@ -140,11 +140,11 @@ typedef enum {
   CK_ERR_INCOMPATIBLE_PARAMS,
   /// User tried to set a reserved folder number.
   CK_ERR_INVALID_FOLDER_NUMBER,
-  /// Invalid ck_action_mode_t
+  /// Invalid #ck_action_mode_t
   CK_ERR_INVALID_ACTION_MODE,
-  /// Invalid ck_comm_mode_t.
+  /// Invalid #ck_comm_mode_t.
   CK_ERR_INVALID_COMM_MODE,
-  /// Invalid ck_list_type_t.
+  /// Invalid #ck_list_type_t.
   CK_ERR_INVALID_LIST_TYPE,
   /// Input argument to function is wrong in some way.
   CK_ERR_INVALID_PARAMETER,
