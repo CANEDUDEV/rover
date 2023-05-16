@@ -145,7 +145,7 @@ ck_err_t ck_create_kings_page_1(const ck_kp1_args_t *args, ck_page_t *page);
  * @param args ck_kp2_args_t value with the desired values.
  * @param page will be populated with the created king's page.
  *
- * @return #CK_ERR_KP_INCOMPATIBLE_PARAMS if some of the args are incompatible.
+ * @return #CK_ERR_INCOMPATIBLE_PARAMS if some of the args are incompatible.
  * @return #CK_ERR_INVALID_CAN_ID if the given CAN ID is out of bounds.
  * @return #CK_OK on success.
  *******************************************************************************/
@@ -157,7 +157,7 @@ ck_err_t ck_create_kings_page_2(const ck_kp2_args_t *args, ck_page_t *page);
  * @param args ck_kp16_args_t value with the desired values.
  * @param page will be populated with the created king's page.
  *
- * @return #CK_ERR_KP_INVALID_FOLDER_NUMBER if a reserved folder number is
+ * @return #CK_ERR_INVALID_FOLDER_NUMBER if a reserved folder number is
  *given.
  * @return #CK_ERR_INVALID_CAN_DLC if the given DLC value is out of bounds.
  * @return #CK_OK on success.
