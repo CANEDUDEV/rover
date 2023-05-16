@@ -16,8 +16,38 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`search`
+* :ref:`can-kingdom`
 
-Servo App
-=========
+  * :ref:`mayor`
+  * :ref:`king`
+
+* :ref:`servo`
+
+.. _can-kingdom:
+
+common/can-kingdom
+==================
+Provides an implementation of the CAN Kingdom library. Contains implementations
+of the mayor, the king and the data structures, as well as an interface for
+creating a postmaster implementation.
+
+.. _mayor:
+
+mayor.h
+-------
+.. doxygenfile:: mayor.h
+   :project: Rover
+
+.. _king:
+
+king.h
+------
+
+.. _servo:
+
+servo-node
+==========
+Contains the code for the servo board hardware and a generic servo application.
+
 .. doxygenfile:: servo-node/Core/Inc/app.h
    :project: Rover
