@@ -53,7 +53,7 @@ typedef struct {
   /// The city always belongs to group 0 as well.
   uint8_t group_addresses[CK_MAX_GROUPS_PER_CITY];
 
-  /// The base number of the system. Can be set by the mayor if known
+  /// The base number of the kingdom. Can be set by the mayor if known
   /// beforehand, otherwise the king will set it.
   uint32_t base_no;
 
