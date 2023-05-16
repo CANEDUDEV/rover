@@ -6,6 +6,10 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "cmsis_os.h"
 
 #define CAN_MAX_DLC 8
@@ -40,5 +44,9 @@ int ReadFlash(uint32_t addr, void *data, size_t len);
 // Write to FLASH_RW area. The len parameter needs to be word-aligned (32-bit)
 // since we program in word mode. Return 0 on success, 1 otherwise.
 int WriteFlash(uint32_t addr, const void *data, size_t len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -11,6 +11,10 @@
 #ifndef CK_MAYOR_H
 #define CK_MAYOR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "types.h"
 
 // Limited to 6 groups for ease of implementation.
@@ -97,5 +101,9 @@ ck_err_t ck_process_kings_letter(const ck_letter_t *letter);
  * Therefore, the page needs to persist in memory.
  */
 ck_err_t ck_add_mayors_page(ck_page_t *page);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CK_MAYOR_H */

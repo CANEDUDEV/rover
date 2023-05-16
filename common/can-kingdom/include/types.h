@@ -71,6 +71,10 @@
 #ifndef CK_TYPES_H
 #define CK_TYPES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -295,5 +299,9 @@ ck_err_t ck_check_list_type(ck_list_type_t type);
  * and 8 lines each containing 0xAA.
  */
 ck_letter_t default_letter(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CK_TYPES_H */
