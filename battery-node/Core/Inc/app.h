@@ -1,6 +1,10 @@
 #ifndef APP_H
 #define APP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 #include "stm32f3xx_hal.h"
@@ -86,5 +90,9 @@ typedef struct {
 // populated. The user needs to provide CAN IDs themselves.
 void PopulateBNSMessage(const BatteryNodeState *bns,
                         BatteryNodeStateMessage *bnsMsg);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* APP_H */

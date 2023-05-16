@@ -7,6 +7,10 @@
 #ifndef APP_H
 #define APP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 #include "utils.h"
@@ -29,5 +33,9 @@ void ADCToVCCServoVoltageMessage(uint16_t adcValue, CANFrame *frame);
 void ADCToHBridgeWindingCurrentMessage(uint16_t adcValue, CANFrame *frame);
 void InitPotentiometers(void);
 void UpdatePWMDutyCycle(uint32_t *pulse, STEERING_DIRECTION *direction);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* APP_H */

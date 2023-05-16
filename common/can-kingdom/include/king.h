@@ -7,6 +7,10 @@
 #ifndef CK_KING_H
 #define CK_KING_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "postmaster.h"
 #include "types.h"
 
@@ -128,5 +132,9 @@ ck_err_t ck_create_kings_page_16(const ck_kp16_args_t *args, ck_page_t *page);
  *      - CK_OK.
  */
 ck_err_t ck_create_kings_page_17(const ck_kp17_args_t *args, ck_page_t *page);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CK_KING_H */
