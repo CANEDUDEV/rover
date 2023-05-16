@@ -26,8 +26,8 @@ typedef struct {
   ck_action_mode_t action_mode;
   /// Communication mode.
   ck_comm_mode_t comm_mode;
-  /// City mode. Only CK_CITY_MODE_KEEP_CURRENT is predefined. Modes are defined
-  /// by mayor and specified in their city's documentation.
+  /// City mode. Only #CK_CITY_MODE_KEEP_CURRENT is predefined. Modes are
+  /// defined by mayor and specified in their city's documentation.
   ck_city_mode_t city_mode;
 } ck_kp0_args_t;
 
@@ -120,9 +120,9 @@ typedef struct {
  * @param args ck_kp0_args_t value with the desired values.
  * @param page will be populated with the created king's page.
  *
- * @return CK_ERR_INVALID_ACTION_MODE if the given action mode is invalid.
- * @return CK_ERR_INVALID_COMM_MODE if the given comm mode is invalid.
- * @return CK_OK on success.
+ * @return #CK_ERR_INVALID_ACTION_MODE if the given action mode is invalid.
+ * @return #CK_ERR_INVALID_COMM_MODE if the given comm mode is invalid.
+ * @return #CK_OK on success.
  ******************************************************************************/
 ck_err_t ck_create_kings_page_0(const ck_kp0_args_t *args, ck_page_t *page);
 
@@ -134,8 +134,8 @@ ck_err_t ck_create_kings_page_0(const ck_kp0_args_t *args, ck_page_t *page);
  * @param args ck_kp1_args_t value with the desired values.
  * @param page will be populated with the created king's page.
  *
- * @return CK_ERR_INVALID_CAN_ID if the given CAN ID is out of bounds.
- * @return CK_OK on success.
+ * @return #CK_ERR_INVALID_CAN_ID if the given CAN ID is out of bounds.
+ * @return #CK_OK on success.
  ******************************************************************************/
 ck_err_t ck_create_kings_page_1(const ck_kp1_args_t *args, ck_page_t *page);
 
@@ -145,9 +145,9 @@ ck_err_t ck_create_kings_page_1(const ck_kp1_args_t *args, ck_page_t *page);
  * @param args ck_kp2_args_t value with the desired values.
  * @param page will be populated with the created king's page.
  *
- * @return CK_ERR_KP_INCOMPATIBLE_PARAMS if some of the args are incompatible.
- * @return CK_ERR_INVALID_CAN_ID if the given CAN ID is out of bounds.
- * @return CK_OK on success.
+ * @return #CK_ERR_KP_INCOMPATIBLE_PARAMS if some of the args are incompatible.
+ * @return #CK_ERR_INVALID_CAN_ID if the given CAN ID is out of bounds.
+ * @return #CK_OK on success.
  *******************************************************************************/
 ck_err_t ck_create_kings_page_2(const ck_kp2_args_t *args, ck_page_t *page);
 
@@ -157,9 +157,10 @@ ck_err_t ck_create_kings_page_2(const ck_kp2_args_t *args, ck_page_t *page);
  * @param args ck_kp16_args_t value with the desired values.
  * @param page will be populated with the created king's page.
  *
- * @return CK_ERR_KP_INVALID_FOLDER_NUMBER if a reserved folder number is given.
- * @return CK_ERR_INVALID_CAN_DLC if the given DLC value is out of bounds.
- * @return CK_OK on success.
+ * @return #CK_ERR_KP_INVALID_FOLDER_NUMBER if a reserved folder number is
+ *given.
+ * @return #CK_ERR_INVALID_CAN_DLC if the given DLC value is out of bounds.
+ * @return #CK_OK on success.
  ******************************************************************************/
 ck_err_t ck_create_kings_page_16(const ck_kp16_args_t *args, ck_page_t *page);
 
@@ -170,8 +171,8 @@ ck_err_t ck_create_kings_page_16(const ck_kp16_args_t *args, ck_page_t *page);
  * @param args ck_kp17_args_t value with the desired values.
  * @param page will be populated with the created king's page.
  *
- * @return CK_ERR_INVALID_LIST_TYPE if the given list type is invalid.
- * @return CK_OK on success.
+ * @return #CK_ERR_INVALID_LIST_TYPE if the given list type is invalid.
+ * @return #CK_OK on success.
  *******************************************************************************/
 ck_err_t ck_create_kings_page_17(const ck_kp17_args_t *args, ck_page_t *page);
 
