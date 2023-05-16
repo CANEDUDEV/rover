@@ -84,11 +84,11 @@ typedef struct {
   /// one transmit document list and one receive document list.
   uint8_t list_count;
 
-  /// Pointer to all the mayor's lists, such as document lists, page form lists,
-  /// and line form lists. The mandatory lists are the transmit document list
-  /// and the receive document list, which both need to have capacity 1. Record
-  /// no 0 in the transmit document list and the receive document list is
-  /// reserved by CAN Kingdom and will be set up by ck_mayor_init().
+  /// Pointer to all the mayor's lists, such as document lists, page lists, and
+  /// line lists. The mandatory lists are the transmit document list and the
+  /// receive document list, which both need to have capacity 1. Record no 0 in
+  /// the transmit document list and the receive document list is reserved by
+  /// CAN Kingdom and will be set up by ck_mayor_init().
   ck_list_t *lists;
 
 } ck_mayor_t;
