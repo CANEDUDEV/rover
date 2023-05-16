@@ -3,11 +3,11 @@
  *
  * CAN Kingdom building blocks.
  *
- * Bit: a bit.
- * Line: A line is 8 bits, a byte.
- * Envelope: a CAN ID (or rather, the arbitration field)
- * Page: 0-8 lines (a CAN data field, i.e. maximum 8 bytes).
- * Letter: A page in an envelope (a CAN frame).
+ * - Bit: a bit.
+ * - Line: A line is 8 bits, a byte.
+ * - Envelope: a CAN ID (or rather, the arbitration field)
+ * - Page: 0-8 lines (a CAN data field, i.e. maximum 8 bytes).
+ * - Letter: A page in an envelope (a CAN frame).
  *
  * Form: Explains the contents of a a page, line by line. It also specified
  * whether the city produces this information or requires it. Forms are numbered
