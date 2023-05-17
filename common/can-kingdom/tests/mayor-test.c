@@ -45,6 +45,7 @@ static struct city_data data;
 static test_err_t test_mayor_init(void);
 static test_err_t test_process_kings_letter(void);
 static test_err_t test_add_mayors_page(void);
+static test_err_t test_ck_send_document(void);
 static test_err_t test_process_kp0(void);
 static test_err_t test_process_kp1(void);
 static test_err_t test_process_kp2(void);
@@ -84,7 +85,7 @@ int main(void) {
   if (test_add_mayors_page() != TEST_PASS) {
     return TEST_FAIL;
   }
-  return TEST_PASS;
+  return test_ck_send_document();
 }
 
 static test_err_t test_mayor_init(void) {
@@ -244,6 +245,20 @@ static test_err_t test_add_mayors_page(void) {
   return TEST_PASS;
 }
 
+static test_err_t test_ck_send_document(void) {
+  test_err_t err = setup_test();
+  if (err != TEST_PASS) {
+    return err;
+  }
+
+  if (ck_send_document(FOLDER_COUNT + 1) == CK_OK) {
+    printf("send_document: invalid folder number returned OK.\n");
+    return TEST_FAIL;
+  }
+
+  return TEST_PASS;
+}
+
 static test_err_t test_process_kp0(void) {
   ck_letter_t letter = {.page = {.line_count = CK_MAX_LINES_PER_PAGE}};
   letter.page.lines[0] = test_city_address;
@@ -284,6 +299,13 @@ static test_err_t test_process_kp1(void) {
   letter.page.lines[7] |= 0x80;  // Extended ID flag  // NOLINT(*-magic-numbers)
   if (ck_process_kings_letter(&letter) == CK_OK) {
     printf("process_kp1: invalid ext base no page returned OK.\n");
+    return TEST_FAIL;
+  }
+
+  // Invalid mayor response page
+  letter.page.lines[2] = 3;
+  if (ck_process_kings_letter(&letter) == CK_OK) {
+    printf("process_kp1: invalid mayor's response page returned OK.\n");
     return TEST_FAIL;
   }
 
