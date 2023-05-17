@@ -322,8 +322,8 @@ typedef struct {
   ck_direction_t direction;
   /// List number. Must be unique for each direction and type.
   uint8_t list_no;
-  /// Number of records this list can hold.
-  uint8_t capacity;
+  /// Number of records in the list.
+  uint8_t record_count;
   /// List of pointers to records.
   void *records[CK_MAX_RECORDS_PER_LIST];
 } ck_list_t;

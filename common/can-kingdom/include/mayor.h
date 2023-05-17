@@ -133,8 +133,8 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor);
  * @return #CK_ERR_UNSUPPORTED_KINGS_PAGE if the letter contains a king's page
  *         not supported by this implementation.
  *
- * @return #CK_ERR_CAPACITY_REACHED if the king tries to add a new item to a
- *         list that's full.
+ * @return #CK_ERR_CAPACITY_REACHED if the king tries to assign more envelopes
+ *         than possible.
  *
  * @return #CK_ERR_INVALID_CAN_ID received CAN ID is out of bounds.
  * @return #CK_ERR_INVALID_FOLDER_NUMBER reserved folder number was received.

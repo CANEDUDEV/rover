@@ -153,7 +153,7 @@ ck_err_t ck_send_document(uint8_t folder_no) {
   if (!doc_list) {
     return CK_ERR_ITEM_NOT_FOUND;
   }
-  if (folder->doc_no >= doc_list->capacity) {
+  if (folder->doc_no >= doc_list->record_count) {
     return CK_ERR_ITEM_NOT_FOUND;
   }
   ck_document_t *doc = (ck_document_t *)doc_list->records[folder->doc_no];
@@ -224,8 +224,12 @@ static ck_err_t init_lists(void) {
   }
 
   // Need at least one record in the list to put the mayor's document in it
-  if (tx_list->capacity < 1 || rx_list->capacity < 1) {
-    return CK_ERR_CAPACITY_REACHED;
+  if (tx_list->record_count < 1) {
+    tx_list->record_count = 1;
+  }
+  // Need at least one record in the list to put the king's document in it
+  if (rx_list->record_count < 1) {
+    rx_list->record_count = 1;
   }
 
   // Set up the mayor's document in the document transmit list
@@ -436,12 +440,15 @@ static ck_err_t process_kp17(const ck_page_t *page) {
     return CK_ERR_ITEM_NOT_FOUND;
   }
 
-  // Record number bounds check
-  if (source_record_no >= source_list->capacity) {
-    return CK_ERR_CAPACITY_REACHED;
+  // Record numbers bounds check
+  if (source_record_no >= CK_MAX_RECORDS_PER_LIST ||
+      target_record_no >= CK_MAX_RECORDS_PER_LIST) {
+    return CK_ERR_INVALID_PARAMETER;
   }
-  if (target_record_no >= target_list->capacity) {
-    return CK_ERR_CAPACITY_REACHED;
+
+  // Adjust count based on target no. We assume the king knows what he's doing.
+  if (target_record_no >= target_list->record_count) {
+    target_list->record_count = target_record_no + 1;
   }
 
   // Create the new record
