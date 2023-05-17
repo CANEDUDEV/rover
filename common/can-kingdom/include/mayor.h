@@ -185,6 +185,17 @@ ck_err_t ck_add_mayors_page(ck_page_t *page);
  ******************************************************************************/
 ck_err_t ck_send_document(uint8_t folder_no);
 
+/*******************************************************************************
+ * Sends the specified mayor's page.
+ *
+ * @param page_no mayor's page number.
+ *
+ * @return #CK_ERR_ITEM_NOT_FOUND if the page doesn't exist.
+ * @return #CK_ERR_SEND_FAILED if sending the letter fails.
+ * @return #CK_OK on success or if mayor's folder is disabled for some reason.
+ ******************************************************************************/
+ck_err_t ck_send_mayors_page(uint8_t page_no);
+
 #ifdef __cplusplus
 }
 #endif
