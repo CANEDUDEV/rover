@@ -120,12 +120,29 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor);
 /*******************************************************************************
  * Parse the king's letter and act on it.
  *
+ * Not all return codes are listed, since some of the errors may be user
+ * defined.
+ *
  * @param letter the received king's letter.
+ *
  * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
+ *
  * @return #CK_ERR_INVALID_KINGS_LETTER if the letter is not a valid king's
  *         letter.
+ *
  * @return #CK_ERR_UNSUPPORTED_KINGS_PAGE if the letter contains a king's page
  *         not supported by this implementation.
+ *
+ * @return #CK_ERR_CAPACITY_REACHED if the king tries to add a new item to a
+ *         list that's full.
+ *
+ * @return #CK_ERR_INVALID_CAN_ID received CAN ID is out of bounds.
+ * @return #CK_ERR_INVALID_FOLDER_NUMBER reserved folder number was received.
+ * @return #CK_ERR_ITEM_NOT_FOUND folder or record not found.
+ *
+ * @return #CK_ERR_INVALID_PARAMETER some parameters on the king's page are
+ *         invalid.
+ *
  * @return #CK_OK on success or if the letter is not addressed to the caller.
  ******************************************************************************/
 ck_err_t ck_process_kings_letter(const ck_letter_t *letter);
