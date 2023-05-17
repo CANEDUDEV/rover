@@ -29,10 +29,8 @@ extern "C" {
 #endif
 
 /*******************************************************************************
- *
  * Struct contains pointers to parameters that should be defined by the user.
  * The parameters are used by the mayor library to initialize the library state.
- *
  ******************************************************************************/
 typedef struct {
   // The EAN and serial numbers are used to identify the device. They are each
@@ -118,11 +116,6 @@ typedef struct {
  *   @return #CK_OK on success.
  ******************************************************************************/
 ck_err_t ck_mayor_init(const ck_mayor_t *mayor);
-
-/******************************************************************************
- * Startup procedure.
- ******************************************************************************/
-ck_err_t ck_start(void);
 
 /*******************************************************************************
  * Parse the king's letter and act on it.
