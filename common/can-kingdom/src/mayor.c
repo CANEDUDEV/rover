@@ -103,31 +103,20 @@ ck_err_t ck_process_kings_letter(const ck_letter_t *letter) {
 
   uint8_t page_no = letter->page.lines[1];
 
-  ck_err_t err = CK_OK;
   switch (page_no) {
     case CK_KP0:
-      err = process_kp0(&letter->page);
-      break;
+      return process_kp0(&letter->page);
     case CK_KP1:
-      err = process_kp1(&letter->page);
-      break;
+      return process_kp1(&letter->page);
     case CK_KP2:
-      err = process_kp2(&letter->page);
-      break;
+      return process_kp2(&letter->page);
     case CK_KP16:
-      err = process_kp16(&letter->page);
-      break;
+      return process_kp16(&letter->page);
     case CK_KP17:
-      err = process_kp17(&letter->page);
-      break;
+      return process_kp17(&letter->page);
     default:
-      err = CK_ERR_UNSUPPORTED_KINGS_PAGE;
-      break;
+      return CK_ERR_UNSUPPORTED_KINGS_PAGE;
   }
-  if (err != CK_OK) {
-    return CK_ERR_INVALID_KINGS_LETTER;
-  }
-  return CK_OK;
 }
 
 ck_err_t ck_add_mayors_page(ck_page_t *page) {
