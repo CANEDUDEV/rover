@@ -802,14 +802,14 @@ static void init_lists(void) {
   data.lists[0].type = CK_LIST_DOCUMENT;
   data.lists[0].direction = CK_DIRECTION_TRANSMIT;
   data.lists[0].list_no = 0;
-  data.lists[0].capacity = TX_DOCUMENT_COUNT;
+  data.lists[0].record_count = TX_DOCUMENT_COUNT;
 
   // Receive doc list number 0
   data.rx_doc_list = &data.lists[1];
   data.rx_doc_list->type = CK_LIST_DOCUMENT;
   data.rx_doc_list->direction = CK_DIRECTION_RECEIVE;
   data.rx_doc_list->list_no = 0;
-  data.rx_doc_list->capacity = RX_DOCUMENT_COUNT;
+  data.rx_doc_list->record_count = RX_DOCUMENT_COUNT;
   for (int i = 0; i < RX_DOCUMENT_COUNT; i++) {
     data.rx_doc_list->records[i] = &data.rx_docs[i];
   }
@@ -819,7 +819,7 @@ static void init_lists(void) {
   data.rx_bit_list->type = CK_LIST_BIT;
   data.rx_bit_list->direction = CK_DIRECTION_RECEIVE;
   data.rx_bit_list->list_no = 0;
-  data.rx_bit_list->capacity = RX_BIT_COUNT;
+  data.rx_bit_list->record_count = RX_BIT_COUNT;
   data.rx_bit_list->records[0] = data.rx_bits;
 
   // Predefined line list
@@ -827,7 +827,7 @@ static void init_lists(void) {
   data.rx_line_list->type = CK_LIST_LINE;
   data.rx_line_list->direction = CK_DIRECTION_RECEIVE;
   data.rx_line_list->list_no = 0;
-  data.rx_line_list->capacity = RX_LINE_COUNT;
+  data.rx_line_list->record_count = RX_LINE_COUNT;
   for (int i = 0; i < RX_LINE_COUNT; i++) {
     data.rx_line_list->records[i] = &data.rx_lines[i];
   }
@@ -837,7 +837,7 @@ static void init_lists(void) {
   data.rx_page_list->type = CK_LIST_PAGE;
   data.rx_page_list->direction = CK_DIRECTION_RECEIVE;
   data.rx_page_list->list_no = 0;
-  data.rx_page_list->capacity = RX_PAGE_COUNT;
+  data.rx_page_list->record_count = RX_PAGE_COUNT;
   for (int i = 0; i < RX_PAGE_COUNT; i++) {
     data.rx_page_list->records[i] = &data.rx_pages[i];
   }
