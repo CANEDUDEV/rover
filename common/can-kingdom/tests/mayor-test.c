@@ -172,7 +172,10 @@ static test_err_t test_mayor_init(void) {
 }
 
 static test_err_t test_process_kings_letter(void) {
-  setup_test();
+  test_err_t err = setup_test();
+  if (err != TEST_PASS) {
+    return err;
+  }
 
   // Begin with invalid letters
   ck_letter_t empty_letter;
@@ -219,7 +222,10 @@ static test_err_t test_process_kings_letter(void) {
 }
 
 static test_err_t test_add_mayors_page(void) {
-  setup_test();
+  test_err_t err = setup_test();
+  if (err != TEST_PASS) {
+    return err;
+  }
   ck_err_t ret = ck_add_mayors_page(NULL);
   if (ret == CK_OK) {
     printf("add_mayors_page: add NULL page returned OK.\n");
@@ -315,7 +321,10 @@ static test_err_t test_process_kp1(void) {
 // First assign envelopes 2 and 3 to folder 2, then transfer envelope 3 to
 // folder 3, then expel envelope 2.
 static test_err_t test_process_kp2(void) {
-  setup_test();
+  test_err_t err = setup_test();
+  if (err != TEST_PASS) {
+    return err;
+  }
 
   // Assign envelope no 2 to folder no 2.
   ck_letter_t letter;
@@ -434,7 +443,12 @@ static test_err_t test_process_kp2(void) {
 
 // Moves the document in folder 2 to folder 3.
 static test_err_t test_process_kp16(void) {
-  setup_test();  // Places the tx doc in folder 2 and rx doc in folder 3.
+  // Places the tx doc in folder 2 and rx doc in folder 3.
+  test_err_t err = setup_test();
+  if (err != TEST_PASS) {
+    return err;
+  }
+
   // NOLINTBEGIN(*-magic-numbers)
   // Insert document T0.1 into folder 3.
   ck_letter_t letter;
@@ -515,7 +529,11 @@ static test_err_t test_process_kp16(void) {
 
 // Test creating a line, creating a page, and creating a document.
 static test_err_t test_process_kp17(void) {
-  setup_test();
+  test_err_t err = setup_test();
+  if (err != TEST_PASS) {
+    return err;
+  }
+
   ck_letter_t letter;
   letter.page.line_count = CK_MAX_LINES_PER_PAGE;
   letter.page.lines[0] = test_city_address;
