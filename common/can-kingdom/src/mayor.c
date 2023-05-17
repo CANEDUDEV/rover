@@ -178,6 +178,34 @@ ck_err_t ck_send_document(uint8_t folder_no) {
   return CK_OK;
 }
 
+ck_err_t ck_send_mayors_page(uint8_t page_no) {
+  ck_folder_t *folder = &mayor.user_data.folders[CK_MAYORS_FOLDER_NO];
+  // If folder is disabled or is a receive folder, return OK.
+  if (!folder->enable || folder->direction != CK_DIRECTION_TRANSMIT) {
+    return CK_OK;
+  }
+
+  // Page doesn't exist
+  if (page_no >= mayor.mayors_doc.page_count) {
+    return CK_ERR_ITEM_NOT_FOUND;
+  }
+
+  ck_letter_t letter = {
+      .page = *mayor.mayors_doc.pages[page_no],
+  };
+
+  for (int i = 0; i < folder->envelope_count; i++) {
+    if (!folder->envelopes[i].enable) {
+      continue;
+    }
+    letter.envelope = folder->envelopes[i];
+    if (ck_send_letter(&letter) != CK_OK) {
+      return CK_ERR_SEND_FAILED;
+    }
+  }
+  return CK_OK;
+}
+
 static void init_mayors_pages(void) {
   // Init mayor's pages
   mayor.pages[0].line_count = CK_MAX_LINES_PER_PAGE;
@@ -287,31 +315,12 @@ static ck_err_t process_kp1(const ck_page_t *page) {
   mayor.user_data.folders[1].envelopes[0].envelope_no =
       mayor.user_data.base_no + mayor.user_data.city_address;
 
+  // Send response page if it's requested.
   uint8_t response_page = page->lines[2];
-  // If no response is requested, we can return early.
-  if (response_page == CK_NO_RESPONSE_REQUESTED) {
-    return CK_OK;
+  if (response_page != CK_NO_RESPONSE_REQUESTED) {
+    return ck_send_mayors_page(response_page);
   }
 
-  ck_folder_t *folder = &mayor.user_data.folders[CK_MAYORS_FOLDER_NO];
-  // If folder is disabled or is a receive folder, return OK.
-  if (!folder->enable || folder->direction != CK_DIRECTION_TRANSMIT) {
-    return CK_OK;
-  }
-
-  // Send response page
-  ck_letter_t letter = {
-      .page = *mayor.mayors_doc.pages[response_page],
-  };
-  for (int i = 0; i < folder->envelope_count; i++) {
-    if (!folder->envelopes[i].enable) {
-      continue;
-    }
-    letter.envelope = folder->envelopes[i];
-    if (ck_send_letter(&letter) != CK_OK) {
-      return CK_ERR_SEND_FAILED;
-    }
-  }
   return CK_OK;
 }
 
