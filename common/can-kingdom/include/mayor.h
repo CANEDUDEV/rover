@@ -161,6 +161,30 @@ ck_err_t ck_process_kings_letter(const ck_letter_t *letter);
  ******************************************************************************/
 ck_err_t ck_add_mayors_page(ck_page_t *page);
 
+/*******************************************************************************
+ * Send the document in the specified folder.
+ *
+ * Will look for the given folder, check if it's a transmit folder and enabled,
+ * then send the document within it. For each enabled envelope in the folder,
+ * the document will be sent using that envelope, and for each page in the
+ * document a separate letter will be sent. Take for example a folder with 2
+ * envelopes assigned to it and enabled (0xA and 0xB), and whose document has 2
+ * pages. Then, the letters will be sent in the following order:
+ *
+ * 1. Letter with envelope 0xA, page 0
+ * 2. Letter with envelope 0xA, page 1
+ * 3. Letter with envelope 0xB, page 0
+ * 4. Letter with envelope 0xB, page 1
+ *
+ * @param folder_no the requested folder number.
+ *
+ * @return #CK_ERR_ITEM_NOT_FOUND if the folder or it's document don't exist.
+ * @return #CK_ERR_SEND_FAILED if sending a letter fails.
+ * @return #CK_OK on success or if document is not sent due to being a receive
+ *         document or in a receive folder.
+ ******************************************************************************/
+ck_err_t ck_send_document(uint8_t folder_no);
+
 #ifdef __cplusplus
 }
 #endif

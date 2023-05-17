@@ -156,6 +156,8 @@ typedef enum {
   CK_ERR_ITEM_NOT_FOUND,
   /// Library has not been initialized yet.
   CK_ERR_NOT_INITIALIZED,
+  /// Failed to send a letter.
+  CK_ERR_SEND_FAILED,
 } ck_err_t;
 
 /// Supported king's pages.

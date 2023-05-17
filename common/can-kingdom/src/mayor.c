@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#include "postmaster.h"
+
 struct mayor_state {
   ck_mayor_t user_data;  // Data provided by the user.
   ck_page_t pages[2];    // For storing the predefined mayor's pages.
@@ -134,6 +136,48 @@ ck_err_t ck_add_mayors_page(ck_page_t *page) {
   return CK_OK;
 }
 
+ck_err_t ck_send_document(uint8_t folder_no) {
+  int folder_index = find_folder(folder_no);
+  if (folder_index < 0) {
+    return CK_ERR_ITEM_NOT_FOUND;
+  }
+  ck_folder_t *folder = &mayor.user_data.folders[folder_index];
+
+  // If folder is disabled or is a receive folder, return OK.
+  if (folder->direction != CK_DIRECTION_TRANSMIT || !folder->enable) {
+    return CK_OK;
+  }
+
+  ck_list_t *doc_list =
+      find_list(CK_LIST_DOCUMENT, CK_DIRECTION_TRANSMIT, folder->doc_list_no);
+  if (!doc_list) {
+    return CK_ERR_ITEM_NOT_FOUND;
+  }
+  if (folder->doc_no >= doc_list->capacity) {
+    return CK_ERR_ITEM_NOT_FOUND;
+  }
+  ck_document_t *doc = (ck_document_t *)doc_list->records[folder->doc_no];
+  // If it's a receive document, return OK.
+  if (doc->direction != CK_DIRECTION_TRANSMIT) {
+    return CK_OK;
+  }
+
+  ck_letter_t letter;
+  for (int i = 0; i < folder->envelope_count; i++) {
+    if (!folder->envelopes[i].enable) {
+      continue;
+    }
+    letter.envelope = folder->envelopes[i];
+    for (int j = 0; j < doc->page_count; j++) {
+      memcpy(&letter.page, &doc->pages[j], sizeof(ck_page_t));
+      if (ck_send_letter(&letter) != CK_OK) {
+        return CK_ERR_SEND_FAILED;
+      }
+    }
+  }
+  return CK_OK;
+}
+
 static void init_mayors_pages(void) {
   // Init mayor's pages
   mayor.pages[0].line_count = CK_MAX_LINES_PER_PAGE;
@@ -239,11 +283,31 @@ static ck_err_t process_kp1(const ck_page_t *page) {
   mayor.user_data.folders[1].envelopes[0].envelope_no =
       mayor.user_data.base_no + mayor.user_data.city_address;
 
-  if (page->lines[2] != CK_NO_RESPONSE_REQUESTED) {
-    // TODO: Implement responding with mayor's document
-    // return send_mayors_doc(page->line[2]);
+  uint8_t response_page = page->lines[2];
+  // If no response is requested, we can return early.
+  if (response_page == CK_NO_RESPONSE_REQUESTED) {
+    return CK_OK;
   }
 
+  ck_folder_t *folder = &mayor.user_data.folders[CK_MAYORS_FOLDER_NO];
+  // If folder is disabled or is a receive folder, return OK.
+  if (!folder->enable || folder->direction != CK_DIRECTION_TRANSMIT) {
+    return CK_OK;
+  }
+
+  // Send response page
+  ck_letter_t letter = {
+      .page = *mayor.mayors_doc.pages[response_page],
+  };
+  for (int i = 0; i < folder->envelope_count; i++) {
+    if (!folder->envelopes[i].enable) {
+      continue;
+    }
+    letter.envelope = folder->envelopes[i];
+    if (ck_send_letter(&letter) != CK_OK) {
+      return CK_ERR_SEND_FAILED;
+    }
+  }
   return CK_OK;
 }
 
@@ -401,7 +465,8 @@ static ck_err_t process_kp17(const ck_page_t *page) {
       uint8_t *target_line =
           ((uint8_t **)(target_list->records))[target_record_no];
 
-      // First clears the bit at the target position, then set it to source_bit.
+      // First clears the bit at the target position, then set it to
+      // source_bit.
       *target_line &= ~(1 << target_position);
       *target_line |= source_bit << target_position;
 
