@@ -1,3 +1,5 @@
+stm32_common_inc = include_directories('include')
+
 stm32_linker_script = configure_file(
   copy: true,
   input: files('src' / 'STM32F302RETx_FLASH.ld'),

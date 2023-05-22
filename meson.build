@@ -72,17 +72,20 @@ subdir('common')
 
 common_inc = [
   can_kingdom_inc,
+  stm32_common_inc,
   stm32_postmaster_inc,
   stm32_utils_inc,
+
   drivers_inc,
   freertos_inc,
 ]
 
 common_src = [
-  stm32_common_src,
   can_kingdom_src,
+  stm32_common_src,
   stm32_postmaster_src,
   stm32_utils_src,
+
   drivers_src,
   freertos_src,
 ]
