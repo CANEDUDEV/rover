@@ -1,5 +1,5 @@
-#ifndef STM32_POSTMASTER_CAN_HAL_H
-#define STM32_POSTMASTER_CAN_HAL_H
+#ifndef POSTMASTER_HAL_H
+#define POSTMASTER_HAL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,4 +18,4 @@ void set_comm_mode(ck_comm_mode_t mode);
 }
 #endif
 
-#endif /* STM32_POSTMASTER_CAN_HAL_H */
+#endif /* POSTMASTER_HAL_H*/

@@ -1,6 +1,6 @@
 #include "postmaster.h"
 
-#include "can-hal.h"
+#include "postmaster-hal.h"
 
 ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc) {
   CAN_HandleTypeDef *hcan = get_can_handle();
