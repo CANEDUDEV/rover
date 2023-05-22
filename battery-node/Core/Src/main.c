@@ -32,9 +32,10 @@
 #include <string.h>
 
 #include "app.h"
+#include "mayor.h"
+#include "postmaster-hal.h"
 
 // FreeRTOS includes
-#include "queue.h"
 #include "timers.h"
 #include "utils.h"
 /* USER CODE END Includes */
@@ -49,8 +50,7 @@
 #define MEASURE_TASK_PERIOD_MS 100
 #define DEFAULT_TASK_PERIOD_MS 200
 
-#define CAN_BASE_ID 100
-#define CAN_MESSAGE_QUEUE_LENGTH 10
+#define CAN_BASE_ID 0x100
 
 #define LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD 10
 
@@ -84,13 +84,6 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* USER CODE BEGIN PV */
 
-static osThreadId_t CANTxTaskHandle;
-static const osThreadAttr_t CANTxTask_attributes = {
-    .name = "CANTxTask",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
 static osThreadId_t measureTaskHandle;
 static const osThreadAttr_t measureTask_attributes = {
     .name = "measureTask",
@@ -98,12 +91,33 @@ static const osThreadAttr_t measureTask_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
-static QueueHandle_t CANMessageQueue;
-
 static BatteryNodeState batteryNodeState;
 
 // Set to 1 by GPIO external interrupt on the OVER_CURRENT pin.
 static uint8_t OverCurrentFault = 0;
+
+// CAN Kingdom data
+static ck_page_t pages[4];
+static ck_document_t docs[3];
+static ck_folder_t folders[5];
+static ck_list_t lists[2];
+
+// Convenience pointers
+static ck_list_t *tx_list = &lists[0];
+static ck_list_t *rx_list = &lists[1];
+
+static ck_page_t *cell_page0 = &pages[0];
+static ck_page_t *cell_page1 = &pages[1];
+static ck_page_t *reg_out_current_page = &pages[2];
+static ck_page_t *vbat_out_current_page = &pages[3];
+
+static ck_document_t *cell_doc = &docs[0];
+static ck_document_t *reg_out_current_doc = &docs[1];
+static ck_document_t *vbat_out_current_doc = &docs[2];
+
+static ck_folder_t *cell_folder = &folders[2];
+static ck_folder_t *reg_out_current_folder = &folders[3];
+static ck_folder_t *vbat_out_current_folder = &folders[4];
 
 /* USER CODE END PV */
 
@@ -121,7 +135,9 @@ void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
-void StartCANTxTask(void *argument);
+// Init CAN kingdom stack
+void mayor_init(void);
+
 void StartMeasureTask(void *argument);
 
 /* USER CODE END PFP */
@@ -172,6 +188,8 @@ int main(void) {
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
+  mayor_init();
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -191,8 +209,6 @@ int main(void) {
 
   /* USER CODE BEGIN RTOS_QUEUES */
 
-  CANMessageQueue = xQueueCreate(CAN_MESSAGE_QUEUE_LENGTH, sizeof(CANFrame));
-
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -201,7 +217,6 @@ int main(void) {
       osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  CANTxTaskHandle = osThreadNew(StartCANTxTask, NULL, &CANTxTask_attributes);
   measureTaskHandle =
       osThreadNew(StartMeasureTask, NULL, &measureTask_attributes);
   /* USER CODE END RTOS_THREADS */
@@ -666,6 +681,111 @@ static void MX_GPIO_Init(void) {
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
+ck_err_t set_action_mode(ck_action_mode_t mode) {
+  (void)mode;
+  return CK_OK;
+}
+
+ck_err_t set_city_mode(ck_city_mode_t mode) {
+  (void)mode;
+  return CK_OK;
+}
+
+void mayor_init(void) {
+  // Set up the pages
+  // NOLINTBEGIN(*-magic-numbers)
+  cell_page0->line_count = 7;
+  cell_page0->lines[0] = 0;
+  // Pagination
+  cell_page1->line_count = 7;
+  cell_page1->lines[0] = 1;
+  reg_out_current_page->line_count = 2;
+  vbat_out_current_page->line_count = 4;
+  // NOLINTEND(*-magic-numbers)
+
+  // Set up the documents
+  cell_doc->direction = CK_DIRECTION_TRANSMIT;
+  cell_doc->page_count = 2;
+  cell_doc->pages[0] = cell_page0;
+  cell_doc->pages[1] = cell_page1;
+
+  reg_out_current_doc->direction = CK_DIRECTION_TRANSMIT;
+  reg_out_current_doc->page_count = 1;
+  reg_out_current_doc->pages[0] = reg_out_current_page;
+
+  vbat_out_current_doc->direction = CK_DIRECTION_TRANSMIT;
+  vbat_out_current_doc->page_count = 1;
+  vbat_out_current_doc->pages[0] = vbat_out_current_page;
+
+  // Set up the lists
+  rx_list->type = CK_LIST_DOCUMENT;
+  rx_list->direction = CK_DIRECTION_RECEIVE;
+  rx_list->list_no = 0;
+  rx_list->record_count = 1;  // Only 1 slot, for the king's doc.
+
+  tx_list->type = CK_LIST_DOCUMENT;
+  tx_list->direction = CK_DIRECTION_TRANSMIT;
+  tx_list->list_no = 0;
+  // We have 3 documents, and CK needs 1 slot for the mayor's doc.
+  tx_list->record_count = 4;
+  tx_list->records[1] = cell_doc;
+  tx_list->records[2] = reg_out_current_doc;
+  tx_list->records[3] = vbat_out_current_doc;
+
+  // Set up the folders
+  cell_folder->direction = CK_DIRECTION_TRANSMIT;
+  cell_folder->doc_list_no = 0;
+  cell_folder->doc_no = 1;  // 0 reserved by mayor's doc
+  cell_folder->enable = true;
+  cell_folder->folder_no = 2;
+  // 3 cells per page + 1 byte for pagination.
+  cell_folder->dlc = 3 * sizeof(batteryNodeState.cells[0]) + 1;
+
+  reg_out_current_folder->direction = CK_DIRECTION_TRANSMIT;
+  reg_out_current_folder->doc_list_no = 0;
+  reg_out_current_folder->doc_no = 2;
+  reg_out_current_folder->enable = true;
+  reg_out_current_folder->folder_no = 3;
+  reg_out_current_folder->dlc = sizeof(batteryNodeState.regOutCurrent);
+
+  vbat_out_current_folder->direction = CK_DIRECTION_TRANSMIT;
+  vbat_out_current_folder->doc_list_no = 0;
+  vbat_out_current_folder->doc_no = 3;
+  vbat_out_current_folder->enable = true;
+  vbat_out_current_folder->folder_no = 4;
+  vbat_out_current_folder->dlc = sizeof(batteryNodeState.vbatOutCurrent);
+
+  // TODO: Set envelopes using king's pages.
+  cell_folder->envelope_count = 1;
+  cell_folder->envelopes[0].envelope_no = CAN_BASE_ID;
+  cell_folder->envelopes[0].enable = true;
+  reg_out_current_folder->envelope_count = 1;
+  reg_out_current_folder->envelopes[0].envelope_no = CAN_BASE_ID + 1;
+  reg_out_current_folder->envelopes[0].enable = true;
+  vbat_out_current_folder->envelope_count = 1;
+  vbat_out_current_folder->envelopes[0].envelope_no = CAN_BASE_ID + 2;
+  vbat_out_current_folder->envelopes[0].enable = true;
+
+  postmaster_init(&hcan);  // Set up the postmaster
+
+  ck_mayor_t mayor = {
+      .ean_no = 123,       // NOLINT(*-magic-numbers)
+      .serial_no = 456,    // NOLINT(*-magic-numbers)
+      .city_address = 13,  // NOLINT(*-magic-numbers)
+      .base_no = 25,       // NOLINT(*-magic-numbers)
+      .set_action_mode = set_action_mode,
+      .set_city_mode = set_city_mode,
+      .folder_count = 5,  // NOLINT(*-magic-numbers)
+      .folders = folders,
+      .list_count = 2,
+      .lists = lists,
+  };
+
+  if (ck_mayor_init(&mayor) != CK_OK) {
+    Error_Handler();
+  }
+}
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
   UNUSED(hadc);
   NotifyTask(measureTaskHandle);
@@ -688,52 +808,6 @@ void measureTaskTimer(TimerHandle_t xTimer) {
   NotifyTask(measureTaskHandle);
 }
 
-void mailboxFreeCallback(CAN_HandleTypeDef *_hcan) {
-  // Only notify when going from 0 free mailboxes to 1 free
-  if (HAL_CAN_GetTxMailboxesFreeLevel(_hcan) <= 1) {
-    NotifyTask(CANTxTaskHandle);
-  }
-}
-
-void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *_hcan) {
-  mailboxFreeCallback(_hcan);
-}
-
-void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *_hcan) {
-  mailboxFreeCallback(_hcan);
-}
-
-void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *_hcan) {
-  mailboxFreeCallback(_hcan);
-}
-
-void StartCANTxTask(void *argument) {
-  UNUSED(argument);
-
-  HAL_CAN_ActivateNotification(&hcan, CAN_IT_TX_MAILBOX_EMPTY);
-  HAL_CAN_Start(&hcan);
-
-  uint32_t mailbox = 0;
-
-  for (;;) {
-    if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0) {
-      // Wait for mailbox to become available
-      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    }
-
-    CANFrame frame;
-    // Wait for queue to receive message
-    xQueueReceive(CANMessageQueue, &frame, portMAX_DELAY);
-
-    CAN_TxHeaderTypeDef header = {
-        .StdId = frame.id,
-        .DLC = frame.dlc,
-    };
-
-    HAL_CAN_AddTxMessage(&hcan, &header, frame.data, &mailbox);
-  }
-}
-
 void StartMeasureTask(void *argument) {
   UNUSED(argument);
 
@@ -747,12 +821,6 @@ void StartMeasureTask(void *argument) {
 
   ADCReading adcBuf;
 
-  BatteryNodeStateMessage bnsMsg;
-  bnsMsg.cells1To4.id = CAN_BASE_ID;
-  bnsMsg.cells5To6.id = CAN_BASE_ID + 1;
-  bnsMsg.regOutCurrent.id = CAN_BASE_ID + 2;
-  bnsMsg.vbatOutCurrent.id = CAN_BASE_ID + 3;
-
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
 
@@ -762,17 +830,30 @@ void StartMeasureTask(void *argument) {
     HAL_ADC_Start_DMA(&hadc2, (uint32_t *)adcBuf.adc2Buf,
                       sizeof(adcBuf.adc2Buf) / sizeof(uint16_t));
 
-    // Wait for DMA
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for DMA
 
     ParseADCValues(&adcBuf, &batteryNodeState);
-    PopulateBNSMessage(&batteryNodeState, &bnsMsg);
 
-    // Enqueue CAN messages
-    xQueueSendToBack(CANMessageQueue, &bnsMsg.cells1To4, 0);
-    xQueueSendToBack(CANMessageQueue, &bnsMsg.cells5To6, 0);
-    xQueueSendToBack(CANMessageQueue, &bnsMsg.regOutCurrent, 0);
-    xQueueSendToBack(CANMessageQueue, &bnsMsg.vbatOutCurrent, 0);
+    // Copy cells 0,1,2 to page 0 of cell doc, cells 3,4,5 to page 1.
+    memcpy(&cell_page0->lines[1], &batteryNodeState.cells[0], cell_folder->dlc);
+    memcpy(&cell_page1->lines[1], &batteryNodeState.cells[3], cell_folder->dlc);
+
+    memcpy(reg_out_current_page->lines, &batteryNodeState.regOutCurrent,
+           reg_out_current_folder->dlc);
+
+    memcpy(vbat_out_current_page->lines, &batteryNodeState.vbatOutCurrent,
+           vbat_out_current_folder->dlc);
+
+    // Send the documents
+    if (ck_send_document(cell_folder->folder_no) != CK_OK) {
+      Error_Handler();
+    }
+    if (ck_send_document(reg_out_current_folder->folder_no) != CK_OK) {
+      Error_Handler();
+    }
+    if (ck_send_document(vbat_out_current_folder->folder_no) != CK_OK) {
+      Error_Handler();
+    }
   }
 }
 
@@ -847,6 +928,9 @@ void StartDefaultTask(void *argument) {
 
   BatteryCharge charge = CHARGE_100_PERCENT;
   uint8_t lowPowerReportCount = 0;
+
+  HAL_CAN_Start(&hcan);
+
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
 
@@ -875,6 +959,7 @@ void StartDefaultTask(void *argument) {
 void Error_Handler(void) {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  Print("error\r\n");
   __disable_irq();
   while (1) {
   }

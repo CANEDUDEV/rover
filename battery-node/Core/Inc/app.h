@@ -79,18 +79,6 @@ typedef enum {
 
 BatteryCharge ReadBatteryCharge(const BatteryNodeState *bns);
 
-typedef struct {
-  CANFrame cells1To4;
-  CANFrame cells5To6;
-  CANFrame regOutCurrent;
-  CANFrame vbatOutCurrent;
-} BatteryNodeStateMessage;
-
-// Only the DLC and the Data of the BatteryNodeStateMessage members are
-// populated. The user needs to provide CAN IDs themselves.
-void PopulateBNSMessage(const BatteryNodeState *bns,
-                        BatteryNodeStateMessage *bnsMsg);
-
 #ifdef __cplusplus
 }
 #endif

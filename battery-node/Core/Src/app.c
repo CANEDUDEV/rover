@@ -186,18 +186,3 @@ BatteryCharge ReadBatteryCharge(const BatteryNodeState *bns) {
   }
   return lowestCell(cellCharge);
 }
-
-void PopulateBNSMessage(const BatteryNodeState *bns,
-                        BatteryNodeStateMessage *bnsMsg) {
-  bnsMsg->cells1To4.dlc = BNS_CELLS_1_TO_4_DLC;
-  bnsMsg->cells5To6.dlc = BNS_CELLS_5_TO_6_DLC;
-  bnsMsg->regOutCurrent.dlc = BNS_REG_OUT_CURRENT_DLC;
-  bnsMsg->vbatOutCurrent.dlc = BNS_VBAT_OUT_CURRENT_DLC;
-
-  memcpy(bnsMsg->cells1To4.data, bns->cells, BNS_CELLS_1_TO_4_DLC);
-  memcpy(bnsMsg->cells5To6.data, &bns->cells[4], BNS_CELLS_5_TO_6_DLC);
-  memcpy(bnsMsg->regOutCurrent.data, &bns->regOutCurrent,
-         BNS_REG_OUT_CURRENT_DLC);
-  memcpy(bnsMsg->vbatOutCurrent.data, &bns->vbatOutCurrent,
-         BNS_VBAT_OUT_CURRENT_DLC);
-}

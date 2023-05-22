@@ -1,7 +1,7 @@
 VERSION ""
 
 
-NS_ : 
+NS_ :
 	NS_DESC_
 	CM_
 	BA_DEF_
@@ -36,24 +36,24 @@ BS_:
 BU_:
 
 
-BO_ 100 Cells1To4: 8 Vector__XXX
- SG_ Cell1Voltage : 0|16@1+ (1,0) [0|0] "mV" Vector__XXX
- SG_ Cell2Voltage : 16|16@1+ (1,0) [0|0] "mV" Vector__XXX
- SG_ Cell3Voltage : 32|16@1+ (1,0) [0|0] "mV" Vector__XXX
- SG_ Cell4Voltage : 48|16@1+ (1,0) [0|0] "mV" Vector__XXX
+BO_ 0x100 Cells: 7 Vector__XXX
+ SG_ PageNumber M : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Cell1Voltage m0 : 8|16@1+ (1,0) [0|0] "mV" Vector__XXX
+ SG_ Cell2Voltage m0 : 24|16@1+ (1,0) [0|0] "mV" Vector__XXX
+ SG_ Cell3Voltage m0 : 40|16@1+ (1,0) [0|0] "mV" Vector__XXX
+ SG_ Cell4Voltage m1 : 8|16@1+ (1,0) [0|0] "mV" Vector__XXX
+ SG_ Cell5Voltage m1 : 24|16@1+ (1,0) [0|0] "mV" Vector__XXX
+ SG_ Cell6Voltage m1 : 40|16@1+ (1,0) [0|0] "mV" Vector__XXX
 
-BO_ 101 Cells5To6: 4 Vector__XXX
- SG_ Cell5Voltage : 0|16@1+ (1,0) [0|0] "mV" Vector__XXX
- SG_ Cell6Voltage : 16|16@1+ (1,0) [0|0] "mV" Vector__XXX
-
-BO_ 102 RegOutCurrent: 2 Vector__XXX
+BO_ 0x101 RegOutCurrent: 2 Vector__XXX
  SG_ regOutCurrent : 0|16@1+ (1,0) [0|0] "mA" Vector__XXX
 
-BO_ 103 VbatOutCurrent: 4 Vector__XXX
+BO_ 0x102 VbatOutCurrent: 4 Vector__XXX
  SG_ vbatOutCurrent : 0|32@1+ (1,0) [0|0] "mA" Vector__XXX
 
 
 
 BA_DEF_  "BusType" STRING ;
 BA_DEF_DEF_  "BusType" "CAN";
+VAL_ 0x100 PageNumber 0 "Page 0" 1 "Page 1" ;
 
