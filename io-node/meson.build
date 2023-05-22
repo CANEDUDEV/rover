@@ -10,8 +10,8 @@ io_node_src = files(
 # Override the werror option since some of the warnings come from the STM32 HAL driver.
 io_node_elf = executable(
   'io_node.elf',
-  [stm32_common_src, utils_src, drivers_src, freertos_src, io_node_src],
-  include_directories: [utils_inc, drivers_inc, freertos_inc, io_node_inc],
+  [common_src, io_node_src],
+  include_directories: [common_inc, io_node_inc],
   link_depends: stm32_linker_script,
   link_args: ['-T@0@'.format(stm32_linker_script)],
   override_options: ['werror=false'],
