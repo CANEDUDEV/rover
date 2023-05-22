@@ -70,6 +70,23 @@ freertos_src = files(
 
 subdir('common')
 
+common_inc = [
+  can_kingdom_inc,
+  stm32_postmaster_inc,
+  utils_inc,
+  drivers_inc,
+  freertos_inc,
+]
+
+common_src = [
+  stm32_common_src,
+  can_kingdom_src,
+  stm32_postmaster_src,
+  utils_src,
+  drivers_src,
+  freertos_src,
+]
+
 subdir('battery-node')
 subdir('io-node')
 subdir('radio-node')

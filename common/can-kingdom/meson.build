@@ -15,12 +15,6 @@ can_kingdom_src = files(
   'src' / 'types.c',
 )
 
-can_kingdom_lib = library(
-  'can-kingdom',
-  can_kingdom_src,
-  include_directories: can_kingdom_inc,
-)
-
 # Build native lib for unit testing
 can_kingdom_native_lib = library(
   'can-kingdom-native',
