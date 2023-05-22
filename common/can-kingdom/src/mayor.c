@@ -169,7 +169,7 @@ ck_err_t ck_send_document(uint8_t folder_no) {
     }
     letter.envelope = folder->envelopes[i];
     for (int j = 0; j < doc->page_count; j++) {
-      memcpy(&letter.page, &doc->pages[j], sizeof(ck_page_t));
+      memcpy(&letter.page, doc->pages[j], sizeof(ck_page_t));
       if (ck_send_letter(&letter, folder->dlc) != CK_OK) {
         return CK_ERR_SEND_FAILED;
       }
