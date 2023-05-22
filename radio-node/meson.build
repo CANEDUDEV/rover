@@ -1,6 +1,5 @@
 radio_node_inc = include_directories('Core' / 'Inc')
 radio_node_src = files(
-  'Core' / 'Src' / 'freertos.c',
   'Core' / 'Src' / 'main.c',
   'Core' / 'Src' / 'stm32f3xx_hal_msp.c',
   'Core' / 'Src' / 'stm32f3xx_it.c',

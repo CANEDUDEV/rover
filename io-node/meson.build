@@ -1,7 +1,6 @@
 io_node_inc = include_directories('Core' / 'Inc')
 io_node_src = files(
   'Core' / 'Src' / 'app.c',
-  'Core' / 'Src' / 'freertos.c',
   'Core' / 'Src' / 'main.c',
   'Core' / 'Src' / 'stm32f3xx_hal_msp.c',
   'Core' / 'Src' / 'stm32f3xx_it.c',
