@@ -31,6 +31,18 @@ extern "C" {
  ******************************************************************************/
 ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc);
 
+/*******************************************************************************
+ * Set the communication mode of the city.
+ *
+ * @param mode the desired communication mode.
+ *
+ * @return #CK_OK on success.
+ * @return #CK_ERR_SET_MODE_FAILED if failed setting the communication mode.
+ * @return #CK_ERR_INVALID_COMM_MODE if the requested communication mode is
+ *         invalid.
+ ******************************************************************************/
+ck_err_t ck_set_comm_mode(ck_comm_mode_t mode);
+
 #ifdef __cplusplus
 }
 #endif
