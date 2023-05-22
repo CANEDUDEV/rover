@@ -158,6 +158,8 @@ typedef enum {
   CK_ERR_NOT_INITIALIZED,
   /// Failed to send a letter.
   CK_ERR_SEND_FAILED,
+  /// Returned when setting a mode fails.
+  CK_ERR_SET_MODE_FAILED,
 } ck_err_t;
 
 /// Supported king's pages.

@@ -56,7 +56,7 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
   // Check for unset parameters.
   if (mayor_->ean_no == 0 || mayor_->serial_no == 0 ||
       mayor_->city_address == 0 || !mayor_->set_action_mode ||
-      !mayor_->set_comm_mode || !mayor_->set_city_mode || !mayor_->folders) {
+      !mayor_->set_city_mode || !mayor_->folders) {
     return CK_ERR_MISSING_PARAMETER;
   }
 
@@ -285,7 +285,7 @@ static ck_err_t process_kp0(const ck_page_t *page) {
     return CK_ERR_INVALID_KINGS_LETTER;
   }
 
-  ret = mayor.user_data.set_comm_mode(comm_mode);
+  ret = ck_set_comm_mode(comm_mode);
   if (ret != CK_OK) {
     return ret;
   }

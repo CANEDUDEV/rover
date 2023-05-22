@@ -55,7 +55,6 @@ static test_err_t test_process_kp17(void);
 
 // Helpers
 static ck_err_t set_action_mode(ck_action_mode_t mode);
-static ck_err_t set_comm_mode(ck_comm_mode_t mode);
 static ck_err_t set_city_mode(ck_city_mode_t mode);
 
 static test_err_t check_kings_doc_folder(ck_folder_t *folder);
@@ -104,7 +103,6 @@ static test_err_t test_mayor_init(void) {
       .has_extended_id = false,
       // Illegal function pointers
       .set_action_mode = NULL,
-      .set_comm_mode = NULL,
       .set_city_mode = NULL,
       .folder_count = 0,  // Wrong folder count
       .folders = data.folders,
@@ -131,12 +129,6 @@ static test_err_t test_mayor_init(void) {
   }
 
   mayor.set_action_mode = set_action_mode;
-  if (ck_mayor_init(&mayor) == CK_OK) {
-    printf("mayor_init: illegal parameter returned OK.\n");
-    return TEST_FAIL;
-  }
-
-  mayor.set_comm_mode = set_comm_mode;
   if (ck_mayor_init(&mayor) == CK_OK) {
     printf("mayor_init: illegal parameter returned OK.\n");
     return TEST_FAIL;
@@ -706,10 +698,6 @@ static ck_err_t set_action_mode(ck_action_mode_t mode) {
   return CK_OK;
 }
 
-static ck_err_t set_comm_mode(ck_comm_mode_t mode) {
-  (void)mode;
-  return CK_OK;
-}
 static ck_err_t set_city_mode(ck_city_mode_t mode) {
   (void)mode;
   return CK_OK;
@@ -913,7 +901,6 @@ static test_err_t setup_test(void) {
       .base_no = test_base_no,
       .has_extended_id = false,
       .set_action_mode = set_action_mode,
-      .set_comm_mode = set_comm_mode,
       .set_city_mode = set_city_mode,
       .folder_count = FOLDER_COUNT,
       .folders = data.folders,

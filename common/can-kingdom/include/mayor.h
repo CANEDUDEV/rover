@@ -61,10 +61,6 @@ typedef struct {
   /// Should return CK_OK on success.
   ck_err_t (*set_action_mode)(ck_action_mode_t);
 
-  /// Pointer to function for setting the communication mode.
-  /// Should return CK_OK on success.
-  ck_err_t (*set_comm_mode)(ck_comm_mode_t);
-
   /// Pointer to function for setting the city mode. City modes are defined by
   /// the mayor. Should return CK_OK on success.
   ck_err_t (*set_city_mode)(ck_city_mode_t);
