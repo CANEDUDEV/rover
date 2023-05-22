@@ -5,11 +5,11 @@
  *
  * The idea is that the user will define some parameters for their mayor as
  * specified by the ck_mayor_t struct, then the library will initialize its
- * state from these parameters when the user call ck_mayor_init. Then,
- * ck_process_kings_letter can be used to act on commands from the king. The
+ * state from these parameters when the user calls ck_mayor_init(). Then,
+ * ck_process_kings_letter() can be used to act on commands from the king. The
  * postmaster implementation is responsible for parsing CAN messages and
  * converting them to letters, then the user needs to call
- * ck_process_kings_letter to process the letter if it's a king's letter.
+ * ck_process_kings_letter() to process the letter if it's a king's letter.
  *
  ******************************************************************************/
 
@@ -55,7 +55,8 @@ typedef struct {
   /// beforehand, otherwise the king will set it.
   uint32_t base_no;
 
-  bool has_extended_id;  // Whether to use extended CAN IDs for the base number.
+  /// Whether to use extended CAN IDs for the base number.
+  bool has_extended_id;
 
   /// Pointer to function for setting the action mode.
   /// Should return CK_OK on success.
@@ -80,9 +81,9 @@ typedef struct {
 
   /// Pointer to all the mayor's lists, such as document lists, page lists, and
   /// line lists. The mandatory lists are the transmit document list and the
-  /// receive document list, which both need to have capacity 1. Record no 0 in
-  /// the transmit document list and the receive document list is reserved by
-  /// CAN Kingdom and will be set up by ck_mayor_init().
+  /// receive document list. Record no 0 in the transmit document list and the
+  /// receive document list is reserved by CAN Kingdom and will be set up by
+  /// ck_mayor_init().
   ck_list_t *lists;
 
 } ck_mayor_t;
