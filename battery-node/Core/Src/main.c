@@ -1,4 +1,4 @@
-/* USER CODE BEGIN Header */
+
 /**
  ******************************************************************************
  * @file           : main.c
@@ -19,14 +19,12 @@
 // Disable warnings for generated code
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
-/* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
 #include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
 
 #include <stdio.h>
 #include <string.h>
@@ -38,14 +36,10 @@
 // FreeRTOS includes
 #include "timers.h"
 #include "utils.h"
-/* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-/* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
 
 #define MEASURE_TASK_PERIOD_MS 100
 #define DEFAULT_TASK_PERIOD_MS 200
@@ -54,12 +48,7 @@
 
 #define LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD 10
 
-/* USER CODE END PD */
-
 /* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
@@ -82,7 +71,6 @@ const osThreadAttr_t defaultTask_attributes = {
     .stack_size = 128 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
-/* USER CODE BEGIN PV */
 
 static osThreadId_t measureTaskHandle;
 static const osThreadAttr_t measureTask_attributes = {
@@ -119,8 +107,6 @@ static ck_folder_t *cell_folder = &folders[2];
 static ck_folder_t *reg_out_current_folder = &folders[3];
 static ck_folder_t *vbat_out_current_folder = &folders[4];
 
-/* USER CODE END PV */
-
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -133,49 +119,30 @@ static void MX_ADC2_Init(void);
 static void MX_I2C1_Init(void);
 void StartDefaultTask(void *argument);
 
-/* USER CODE BEGIN PFP */
-
 // Init CAN kingdom stack
 void mayor_init(void);
 
 void StartMeasureTask(void *argument);
 
-/* USER CODE END PFP */
-
 /* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
 
 /**
  * @brief  The application entry point.
  * @retval int
  */
 int main(void) {
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick.
    */
   HAL_Init();
 
-  /* USER CODE BEGIN Init */
-
   if (FlashRWInit() != APP_OK) {
     Error_Handler();
   }
 
-  /* USER CODE END Init */
-
   /* Configure the system clock */
   SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -186,56 +153,35 @@ int main(void) {
   MX_ADC1_Init();
   MX_ADC2_Init();
   MX_I2C1_Init();
-  /* USER CODE BEGIN 2 */
 
   mayor_init();
-
-  /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();
 
-  /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
 
-  /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-
-  /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle =
       osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* USER CODE BEGIN RTOS_THREADS */
   measureTaskHandle =
       osThreadNew(StartMeasureTask, NULL, &measureTask_attributes);
-  /* USER CODE END RTOS_THREADS */
 
-  /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
   osKernelStart();
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1) {
-    /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+  while (1) {
   }
-  /* USER CODE END 3 */
 }
 
 /**
@@ -289,16 +235,8 @@ void SystemClock_Config(void) {
  * @retval None
  */
 static void MX_ADC1_Init(void) {
-  /* USER CODE BEGIN ADC1_Init 0 */
-
-  /* USER CODE END ADC1_Init 0 */
-
   ADC_MultiModeTypeDef multimode = {0};
   ADC_ChannelConfTypeDef sConfig = {0};
-
-  /* USER CODE BEGIN ADC1_Init 1 */
-
-  /* USER CODE END ADC1_Init 1 */
 
   /** Common config
    */
@@ -362,13 +300,10 @@ static void MX_ADC1_Init(void) {
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN ADC1_Init 2 */
 
   if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK) {
     Error_Handler();
   }
-
-  /* USER CODE END ADC1_Init 2 */
 }
 
 /**
@@ -377,15 +312,7 @@ static void MX_ADC1_Init(void) {
  * @retval None
  */
 static void MX_ADC2_Init(void) {
-  /* USER CODE BEGIN ADC2_Init 0 */
-
-  /* USER CODE END ADC2_Init 0 */
-
   ADC_ChannelConfTypeDef sConfig = {0};
-
-  /* USER CODE BEGIN ADC2_Init 1 */
-
-  /* USER CODE END ADC2_Init 1 */
 
   /** Common config
    */
@@ -442,13 +369,10 @@ static void MX_ADC2_Init(void) {
   if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN ADC2_Init 2 */
 
   if (HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED) != HAL_OK) {
     Error_Handler();
   }
-
-  /* USER CODE END ADC2_Init 2 */
 }
 
 /**
@@ -457,13 +381,6 @@ static void MX_ADC2_Init(void) {
  * @retval None
  */
 static void MX_CAN_Init(void) {
-  /* USER CODE BEGIN CAN_Init 0 */
-
-  /* USER CODE END CAN_Init 0 */
-
-  /* USER CODE BEGIN CAN_Init 1 */
-
-  /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN;
   hcan.Init.Prescaler = 18;
   hcan.Init.Mode = CAN_MODE_NORMAL;
@@ -479,9 +396,6 @@ static void MX_CAN_Init(void) {
   if (HAL_CAN_Init(&hcan) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN CAN_Init 2 */
-
-  /* USER CODE END CAN_Init 2 */
 }
 
 /**
@@ -490,13 +404,6 @@ static void MX_CAN_Init(void) {
  * @retval None
  */
 static void MX_I2C1_Init(void) {
-  /* USER CODE BEGIN I2C1_Init 0 */
-
-  /* USER CODE END I2C1_Init 0 */
-
-  /* USER CODE BEGIN I2C1_Init 1 */
-
-  /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
   hi2c1.Init.Timing = 0x10808DD3;
   hi2c1.Init.OwnAddress1 = 0;
@@ -521,9 +428,6 @@ static void MX_I2C1_Init(void) {
   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN I2C1_Init 2 */
-
-  /* USER CODE END I2C1_Init 2 */
 }
 
 /**
@@ -532,13 +436,6 @@ static void MX_I2C1_Init(void) {
  * @retval None
  */
 static void MX_SPI1_Init(void) {
-  /* USER CODE BEGIN SPI1_Init 0 */
-
-  /* USER CODE END SPI1_Init 0 */
-
-  /* USER CODE BEGIN SPI1_Init 1 */
-
-  /* USER CODE END SPI1_Init 1 */
   /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
@@ -557,9 +454,6 @@ static void MX_SPI1_Init(void) {
   if (HAL_SPI_Init(&hspi1) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN SPI1_Init 2 */
-
-  /* USER CODE END SPI1_Init 2 */
 }
 
 /**
@@ -568,13 +462,6 @@ static void MX_SPI1_Init(void) {
  * @retval None
  */
 static void MX_USART1_UART_Init(void) {
-  /* USER CODE BEGIN USART1_Init 0 */
-
-  /* USER CODE END USART1_Init 0 */
-
-  /* USER CODE BEGIN USART1_Init 1 */
-
-  /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
   huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
@@ -588,9 +475,6 @@ static void MX_USART1_UART_Init(void) {
   if (HAL_UART_Init(&huart1) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART1_Init 2 */
-
-  /* USER CODE END USART1_Init 2 */
 }
 
 /**
@@ -617,8 +501,6 @@ static void MX_DMA_Init(void) {
  */
 static void MX_GPIO_Init(void) {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -672,12 +554,7 @@ static void MX_GPIO_Init(void) {
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-  /* USER CODE END MX_GPIO_Init_2 */
 }
-
-/* USER CODE BEGIN 4 */
 
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
@@ -898,17 +775,13 @@ void BlinkLEDsRed(void) {
   }
 }
 
-/* USER CODE END 4 */
-
-/* USER CODE BEGIN Header_StartDefaultTask */
 /**
  * @brief  Function implementing the defaultTask thread.
  * @param  argument: Not used
  * @retval None
  */
-/* USER CODE END Header_StartDefaultTask */
+
 void StartDefaultTask(void *argument) {
-  /* USER CODE BEGIN 5 */
   UNUSED(argument);
 
   Print("Starting application...\r\n");
@@ -949,7 +822,6 @@ void StartDefaultTask(void *argument) {
     charge = ReadBatteryCharge(&batteryNodeState);
     lowPowerReportCount += SetChargeStateLED(&charge);
   }
-  /* USER CODE END 5 */
 }
 
 /**
@@ -957,13 +829,11 @@ void StartDefaultTask(void *argument) {
  * @retval None
  */
 void Error_Handler(void) {
-  /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   Print("error\r\n");
   __disable_irq();
   while (1) {
   }
-  /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef USE_FULL_ASSERT
@@ -975,10 +845,8 @@ void Error_Handler(void) {
  * @retval None
  */
 void assert_failed(uint8_t *file, uint32_t line) {
-  /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line
      number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
      line) */
-  /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

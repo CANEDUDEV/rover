@@ -1,4 +1,4 @@
-/* USER CODE BEGIN Header */
+
 /**
  ******************************************************************************
  * @file    stm32f3xx_it.c
@@ -15,7 +15,6 @@
  *
  ******************************************************************************
  */
-/* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f3xx_it.h"
@@ -24,46 +23,23 @@
 #include "main.h"
 #include "task.h"
 /* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-/* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN TD */
-
-/* USER CODE END TD */
 
 /* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_adc1;
 extern DMA_HandleTypeDef hdma_adc2;
 extern CAN_HandleTypeDef hcan;
-/* USER CODE BEGIN EV */
-
-/* USER CODE END EV */
 
 /******************************************************************************/
 /*           Cortex-M4 Processor Interruption and Exception Handlers          */
@@ -72,25 +48,15 @@ extern CAN_HandleTypeDef hcan;
  * @brief This function handles Non maskable interrupt.
  */
 void NMI_Handler(void) {
-  /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
-
-  /* USER CODE END NonMaskableInt_IRQn 0 */
-  /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
   while (1) {
   }
-  /* USER CODE END NonMaskableInt_IRQn 1 */
 }
 
 /**
  * @brief This function handles Hard fault interrupt.
  */
 void HardFault_Handler(void) {
-  /* USER CODE BEGIN HardFault_IRQn 0 */
-
-  /* USER CODE END HardFault_IRQn 0 */
   while (1) {
-    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-    /* USER CODE END W1_HardFault_IRQn 0 */
   }
 }
 
@@ -98,12 +64,7 @@ void HardFault_Handler(void) {
  * @brief This function handles Memory management fault.
  */
 void MemManage_Handler(void) {
-  /* USER CODE BEGIN MemoryManagement_IRQn 0 */
-
-  /* USER CODE END MemoryManagement_IRQn 0 */
   while (1) {
-    /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
-    /* USER CODE END W1_MemoryManagement_IRQn 0 */
   }
 }
 
@@ -111,12 +72,7 @@ void MemManage_Handler(void) {
  * @brief This function handles Pre-fetch fault, memory access fault.
  */
 void BusFault_Handler(void) {
-  /* USER CODE BEGIN BusFault_IRQn 0 */
-
-  /* USER CODE END BusFault_IRQn 0 */
   while (1) {
-    /* USER CODE BEGIN W1_BusFault_IRQn 0 */
-    /* USER CODE END W1_BusFault_IRQn 0 */
   }
 }
 
@@ -124,34 +80,19 @@ void BusFault_Handler(void) {
  * @brief This function handles Undefined instruction or illegal state.
  */
 void UsageFault_Handler(void) {
-  /* USER CODE BEGIN UsageFault_IRQn 0 */
-
-  /* USER CODE END UsageFault_IRQn 0 */
   while (1) {
-    /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
-    /* USER CODE END W1_UsageFault_IRQn 0 */
   }
 }
 
 /**
  * @brief This function handles Debug monitor.
  */
-void DebugMon_Handler(void) {
-  /* USER CODE BEGIN DebugMonitor_IRQn 0 */
-
-  /* USER CODE END DebugMonitor_IRQn 0 */
-  /* USER CODE BEGIN DebugMonitor_IRQn 1 */
-
-  /* USER CODE END DebugMonitor_IRQn 1 */
-}
+void DebugMon_Handler(void) {}
 
 /**
  * @brief This function handles System tick timer.
  */
 void SysTick_Handler(void) {
-  /* USER CODE BEGIN SysTick_IRQn 0 */
-
-  /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
 #if (INCLUDE_xTaskGetSchedulerState == 1)
   if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
@@ -160,9 +101,6 @@ void SysTick_Handler(void) {
 #if (INCLUDE_xTaskGetSchedulerState == 1)
   }
 #endif /* INCLUDE_xTaskGetSchedulerState */
-  /* USER CODE BEGIN SysTick_IRQn 1 */
-
-  /* USER CODE END SysTick_IRQn 1 */
 }
 
 /******************************************************************************/
@@ -175,42 +113,14 @@ void SysTick_Handler(void) {
 /**
  * @brief This function handles DMA1 channel1 global interrupt.
  */
-void DMA1_Channel1_IRQHandler(void) {
-  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
-
-  /* USER CODE END DMA1_Channel1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_adc1);
-  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
-
-  /* USER CODE END DMA1_Channel1_IRQn 1 */
-}
+void DMA1_Channel1_IRQHandler(void) { HAL_DMA_IRQHandler(&hdma_adc1); }
 
 /**
  * @brief This function handles USB high priority or CAN_TX interrupts.
  */
-void USB_HP_CAN_TX_IRQHandler(void) {
-  /* USER CODE BEGIN USB_HP_CAN_TX_IRQn 0 */
-
-  /* USER CODE END USB_HP_CAN_TX_IRQn 0 */
-  HAL_CAN_IRQHandler(&hcan);
-  /* USER CODE BEGIN USB_HP_CAN_TX_IRQn 1 */
-
-  /* USER CODE END USB_HP_CAN_TX_IRQn 1 */
-}
+void USB_HP_CAN_TX_IRQHandler(void) { HAL_CAN_IRQHandler(&hcan); }
 
 /**
  * @brief This function handles DMA2 channel1 global interrupt.
  */
-void DMA2_Channel1_IRQHandler(void) {
-  /* USER CODE BEGIN DMA2_Channel1_IRQn 0 */
-
-  /* USER CODE END DMA2_Channel1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_adc2);
-  /* USER CODE BEGIN DMA2_Channel1_IRQn 1 */
-
-  /* USER CODE END DMA2_Channel1_IRQn 1 */
-}
-
-/* USER CODE BEGIN 1 */
-
-/* USER CODE END 1 */
+void DMA2_Channel1_IRQHandler(void) { HAL_DMA_IRQHandler(&hdma_adc2); }

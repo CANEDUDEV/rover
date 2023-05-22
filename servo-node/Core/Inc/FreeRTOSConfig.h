@@ -1,4 +1,4 @@
-/* USER CODE BEGIN Header */
+
 /*
  * FreeRTOS Kernel V10.0.1
  * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
@@ -26,7 +26,6 @@
  *
  * 1 tab == 4 spaces!
  */
-/* USER CODE END Header */
 
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
@@ -43,9 +42,7 @@
  * See http://www.freertos.org/a00110.html
  *----------------------------------------------------------*/
 
-/* USER CODE BEGIN Includes */
 /* Section where include file can be added */
-/* USER CODE END Includes */
 
 /* Ensure definitions are only used by the compiler, and not by the assembler.
  */
@@ -133,14 +130,13 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
-/* USER CODE BEGIN 1 */
+
 #define configASSERT(x)       \
   if ((x) == 0) {             \
     taskDISABLE_INTERRUPTS(); \
     for (;;)                  \
       ;                       \
   }
-/* USER CODE END 1 */
 
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
 standard names. */
@@ -153,9 +149,7 @@ standard names. */
 
 /* #define xPortSysTickHandler SysTick_Handler */
 
-/* USER CODE BEGIN Defines */
 /* Section where parameter definitions can be added (for instance, to override
  * default ones in FreeRTOS.h) */
-/* USER CODE END Defines */
 
 #endif /* FREERTOS_CONFIG_H */
