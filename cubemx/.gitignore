@@ -1,0 +1,6 @@
+Core/
+Drivers/
+Middlewares/
+Makefile
+startup_stm32f302xe.s
+STM32F302RETx_FLASH.ld
