@@ -1,0 +1,10 @@
+# Unused parts of the CMSIS package
+CMSIS/Core/
+CMSIS/Core_A/
+CMSIS/Device/ST/STM32F3xx/Source
+CMSIS/docs/
+CMSIS/DSP/
+CMSIS/Lib/
+CMSIS/NN/
+CMSIS/RTOS/
+CMSIS/RTOS2/
