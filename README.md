@@ -26,7 +26,7 @@ Run `meson test -C build` to run all tests.
 
 ## Using STM32CubeMX to generate code
 
-Hardware initialization code for the various boards is generated using the [STM32CubeMX](https://www.st.com/en/development-tools/stm32cubemx.html) program. STM32CubeMX projects are defined in `.ioc` files. To modify a board's hardware initialization, load the project's `.ioc` file from within STM32CubeMX.
+Hardware initialization code for the various boards is generated using the [STM32CubeMX](https://www.st.com/en/development-tools/stm32cubemx.html) program. STM32CubeMX projects are defined in `.ioc` files. To modify a board's hardware initialization, load the project's `.ioc` file from within STM32CubeMX. The rover's `.ioc` files are in the `cubemx` directory.
 
 After loading a project, generate code by clicking on "GENERATE CODE" in the top right. If asked to download firmware, always download.
 
