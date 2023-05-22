@@ -67,13 +67,13 @@ typedef struct {
 void ParseADCValues(const ADCReading *adcReading, BatteryNodeState *bns);
 
 // Define some charge states in mV. Based on LiPo batteries. Assumes maximum
-// cell voltage of 4200 mV and a low voltage cutoff at 3700 mV.
+// cell voltage of 4200 mV and a low voltage cutoff at 3200 mV.
 typedef enum {
-  LOW_VOLTAGE_CUTOFF = 3700,
-  CHARGE_20_PERCENT = 3800,
-  CHARGE_40_PERCENT = 3900,
-  CHARGE_60_PERCENT = 4000,
-  CHARGE_80_PERCENT = 4100,
+  LOW_VOLTAGE_CUTOFF = 3200,
+  CHARGE_20_PERCENT = 3400,
+  CHARGE_40_PERCENT = 3600,
+  CHARGE_60_PERCENT = 3800,
+  CHARGE_80_PERCENT = 4000,
   CHARGE_100_PERCENT = 4200,
 } BatteryCharge;
 
