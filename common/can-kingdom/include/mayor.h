@@ -138,7 +138,8 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor);
  *
  * @return #CK_ERR_INVALID_CAN_ID received CAN ID is out of bounds.
  * @return #CK_ERR_INVALID_FOLDER_NUMBER reserved folder number was received.
- * @return #CK_ERR_ITEM_NOT_FOUND folder or record not found.
+ * @return #CK_ERR_ITEM_NOT_FOUND folder, record or mayor's page not found.
+ * @return #CK_ERR_SEND_FAILED failed to send mayor's page.
  *
  * @return #CK_ERR_INVALID_PARAMETER some parameters on the king's page are
  *         invalid.
