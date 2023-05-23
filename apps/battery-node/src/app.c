@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#include "main.h"
+#include "ports.h"
 
 #define ADC_REF_VOLTAGE 3300  // in mV
 #define ADC_MAX 4095          // 12-bit ADC
@@ -69,6 +69,19 @@ void SetLEDColor(LED led, LEDColor color) {
       HAL_GPIO_WritePin(redLEDPort, redLED, GPIO_PIN_SET);
       HAL_GPIO_WritePin(greenLEDPort, greenLED, GPIO_PIN_SET);
       break;
+  }
+}
+
+void BlinkLEDsRed(void) {
+  static uint8_t blink = 0;
+  if (blink > 0) {
+    blink = 0;
+    SetLEDColor(LED6, RED);
+    SetLEDColor(LED7, RED);
+  } else {
+    blink = 1;
+    SetLEDColor(LED6, NONE);
+    SetLEDColor(LED7, NONE);
   }
 }
 
@@ -157,6 +170,34 @@ BatteryCharge lowestCell(const BatteryCharge *cellCharge) {
     }
   }
   return lowest;
+}
+
+uint8_t SetChargeStateLED(const BatteryCharge *charge) {
+  switch (*charge) {
+    case CHARGE_100_PERCENT:
+      SetLEDColor(LED6, GREEN);
+      SetLEDColor(LED7, GREEN);
+      return 0;
+    case CHARGE_80_PERCENT:
+      SetLEDColor(LED6, GREEN);
+      SetLEDColor(LED7, NONE);
+      return 0;
+    case CHARGE_60_PERCENT:
+      SetLEDColor(LED6, ORANGE);
+      SetLEDColor(LED7, ORANGE);
+      return 0;
+    case CHARGE_40_PERCENT:
+      SetLEDColor(LED6, ORANGE);
+      SetLEDColor(LED7, NONE);
+      return 0;
+    case CHARGE_20_PERCENT:
+      SetLEDColor(LED6, RED);
+      SetLEDColor(LED7, RED);
+      return 0;
+    case LOW_VOLTAGE_CUTOFF:
+    default:
+      return 1;
+  }
 }
 
 // Always report lowest detected charge to detect the most discharged cell.

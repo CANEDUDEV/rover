@@ -1,47 +1,17 @@
-
-/**
- ******************************************************************************
- * @file           : main.h
- * @brief          : Header for main.c file.
- *                   This file contains the common defines of the application.
- ******************************************************************************
- * @attention
+/*******************************************************************************
+ * @file ports.h
  *
- * Copyright (c) 2023 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
- */
-
-// Disable warnings for generated code
-// NOLINTBEGIN(bugprone-reserved-identifier)
-
-/* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __MAIN_H
-#define __MAIN_H
+ * Contains preprocessor definitions for the various GPIO ports.
+ ******************************************************************************/
+#ifndef PORTS_H
+#define PORTS_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Includes ------------------------------------------------------------------*/
 #include "stm32f3xx_hal.h"
 
-/* Private includes ----------------------------------------------------------*/
-
-/* Exported types ------------------------------------------------------------*/
-
-/* Exported constants --------------------------------------------------------*/
-
-/* Exported macro ------------------------------------------------------------*/
-
-/* Exported functions prototypes ---------------------------------------------*/
-
-/* Private defines -----------------------------------------------------------*/
 #define SWITCH4_PIN2_Pin GPIO_PIN_13
 #define SWITCH4_PIN2_GPIO_Port GPIOC
 #define SWITCH2_PIN1_Pin GPIO_PIN_15
@@ -103,10 +73,8 @@ extern "C" {
 #define CAN_FD_SPI_MOSI_Pin GPIO_PIN_5
 #define CAN_FD_SPI_MOSI_GPIO_Port GPIOB
 
-// NOLINTEND(bugprone-reserved-identifier)
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __MAIN_H */
+#endif /* PORTS_H */

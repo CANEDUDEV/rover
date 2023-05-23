@@ -1,3 +1,9 @@
+/*******************************************************************************
+ * @file app.h
+ *
+ * Provides data structures and application logic for the battery node
+ * application.
+ ******************************************************************************/
 #ifndef APP_H
 #define APP_H
 
@@ -51,6 +57,7 @@ typedef enum {
 } LED;
 
 void SetLEDColor(LED led, LEDColor color);
+void BlinkLEDsRed(void);
 
 typedef struct {
   uint16_t adc1Buf[ADC1_NUM_CHANNELS];
@@ -76,6 +83,8 @@ typedef enum {
   CHARGE_80_PERCENT = 4000,
   CHARGE_100_PERCENT = 4200,
 } BatteryCharge;
+
+uint8_t SetChargeStateLED(const BatteryCharge *charge);
 
 BatteryCharge ReadBatteryCharge(const BatteryNodeState *bns);
 

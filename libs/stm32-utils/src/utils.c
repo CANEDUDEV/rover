@@ -8,17 +8,14 @@
 #define FLASH_ERASE_OK 0xFFFFFFFF  // Specified by STM32 HAL
 #define FLASH_ERASED_SYMBOL 0xDEADBEEF
 
-extern UART_HandleTypeDef huart1;
-
 void Error_Handler(void) {
-  Print("Fatal error occured, stopping application.\r\n");
   __disable_irq();
   while (1) {
   }
 }
 
-void Print(char *str) {
-  HAL_UART_Transmit(&huart1, (uint8_t *)str, strlen(str), HAL_MAX_DELAY);
+void Print(UART_HandleTypeDef *huart, char *str) {
+  HAL_UART_Transmit(huart, (uint8_t *)str, strlen(str), HAL_MAX_DELAY);
 }
 
 void NotifyTask(TaskHandle_t taskHandle) {
