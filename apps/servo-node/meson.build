@@ -8,7 +8,7 @@ servo_node_src = files(
 
 # Override the werror option since some of the warnings come from the STM32 HAL driver.
 servo_node_elf = executable(
-  'servo_node.elf',
+  'servo-node.elf',
   [common_src, third_party_src, servo_node_src],
   include_directories: [common_inc, third_party_inc, servo_node_inc],
   link_depends: stm32_linker_script,
@@ -17,8 +17,8 @@ servo_node_elf = executable(
 )
 
 servo_node_bin = custom_target(
-  'servo_node.bin',
-  output: 'servo_node.bin',
+  'servo-node.bin',
+  output: 'servo-node.bin',
   input: servo_node_elf,
   command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],
   depends: servo_node_elf,
