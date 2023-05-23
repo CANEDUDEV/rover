@@ -59,5 +59,5 @@ servo-node
 ==========
 Contains the code for the servo board hardware and a generic servo application.
 
-.. doxygenfile:: apps/servo-node/Core/Inc/app.h
+.. doxygenfile:: apps/servo-node/include/app.h
    :project: Rover
