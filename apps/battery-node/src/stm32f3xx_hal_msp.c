@@ -19,6 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "utils.h"
 
 extern DMA_HandleTypeDef hdma_adc1;
 

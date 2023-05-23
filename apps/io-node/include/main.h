@@ -40,7 +40,6 @@ extern "C" {
 /* Exported macro ------------------------------------------------------------*/
 
 /* Exported functions prototypes ---------------------------------------------*/
-void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 #define SWITCH4_PIN2_Pin GPIO_PIN_13

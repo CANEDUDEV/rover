@@ -28,6 +28,8 @@ typedef struct {
   uint8_t data[CAN_MAX_DLC];
 } CANFrame;
 
+// General error handler
+void Error_Handler(void);
 // Print message to uart
 void Print(char *str);
 // Send task notification to task
