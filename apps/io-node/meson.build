@@ -8,7 +8,7 @@ io_node_src = files(
 
 # Override the werror option since some of the warnings come from the STM32 HAL driver.
 io_node_elf = executable(
-  'io_node.elf',
+  'io-node.elf',
   [common_src, third_party_src, io_node_src],
   include_directories: [common_inc, third_party_inc, io_node_inc],
   link_depends: stm32_linker_script,
@@ -17,8 +17,8 @@ io_node_elf = executable(
 )
 
 io_node_bin = custom_target(
-  'io_node.bin',
-  output: 'io_node.bin',
+  'io-node.bin',
+  output: 'io-node.bin',
   input: io_node_elf,
   command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],
   depends: io_node_elf,

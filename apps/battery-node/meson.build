@@ -8,7 +8,7 @@ battery_node_src = files(
 
 # Override the werror option since some of the warnings come from the STM32 HAL driver.
 battery_node_elf = executable(
-  'battery_node.elf',
+  'battery-node.elf',
   [common_src, third_party_src, battery_node_src],
   include_directories: [common_inc, third_party_inc, battery_node_inc],
   link_depends: stm32_linker_script,
@@ -17,8 +17,8 @@ battery_node_elf = executable(
 )
 
 battery_node_bin = custom_target(
-  'battery_node.bin',
-  output: 'battery_node.bin',
+  'battery-node.bin',
+  output: 'battery-node.bin',
   input: battery_node_elf,
   command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],
   depends: battery_node_elf,

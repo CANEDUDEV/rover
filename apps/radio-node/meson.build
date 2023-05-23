@@ -7,7 +7,7 @@ radio_node_src = files(
 
 # Override the werror option since some of the warnings come from the STM32 HAL driver.
 radio_node_elf = executable(
-  'radio_node.elf',
+  'radio-node.elf',
   [common_src, third_party_src, radio_node_src],
   include_directories: [common_inc, third_party_inc, radio_node_inc],
   link_depends: stm32_linker_script,
@@ -16,8 +16,8 @@ radio_node_elf = executable(
 )
 
 radio_node_bin = custom_target(
-  'radio_node.bin',
-  output: 'radio_node.bin',
+  'radio-node.bin',
+  output: 'radio-node.bin',
   input: radio_node_elf,
   command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],
   depends: radio_node_elf,
