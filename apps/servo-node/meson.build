@@ -1,9 +1,9 @@
 servo_node_inc = include_directories('include')
 servo_node_src = files(
   'src' / 'app.c',
+  'src' / 'interrupts.c',
   'src' / 'main.c',
   'src' / 'stm32f3xx_hal_msp.c',
-  'src' / 'stm32f3xx_it.c',
 )
 
 servo_node_elf = executable(

@@ -1,8 +1,8 @@
 radio_node_inc = include_directories('include')
 radio_node_src = files(
+  'src' / 'interrupts.c',
   'src' / 'main.c',
   'src' / 'stm32f3xx_hal_msp.c',
-  'src' / 'stm32f3xx_it.c',
 )
 
 radio_node_elf = executable(

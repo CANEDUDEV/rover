@@ -1,9 +1,9 @@
 battery_node_inc = include_directories('include')
 battery_node_src = files(
   'src' / 'app.c',
+  'src' / 'interrupts.c',
   'src' / 'main.c',
   'src' / 'stm32f3xx_hal_msp.c',
-  'src' / 'stm32f3xx_it.c',
 )
 
 battery_node_elf = executable(
