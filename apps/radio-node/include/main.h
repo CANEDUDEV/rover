@@ -40,7 +40,6 @@ extern "C" {
 /* Exported macro ------------------------------------------------------------*/
 
 /* Exported functions prototypes ---------------------------------------------*/
-void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 #define CAN_FD_INT_Pin GPIO_PIN_7

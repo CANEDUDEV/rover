@@ -7,6 +7,7 @@ stm32_linker_script = configure_file(
 )
 
 stm32_common_src = files(
+  'src' / 'assert.c',
   'src' / 'startup_stm32f302xe.s',
   'src' / 'system_stm32f3xx.c',
 )
