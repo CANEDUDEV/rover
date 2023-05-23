@@ -2,7 +2,7 @@ doxyfile = files('Doxyfile')
 
 doxygen = find_program('doxygen', required: false)
 
-doxygen_input_src = '@0@/battery-node @0@/common @0@/io-node @0@/radio-node @0@/servo-node'.format(meson.project_source_root())
+doxygen_input_src = '@0@/apps @0@/common'.format(meson.project_source_root())
 
 doxygen_xml = custom_target(
   'doxygen',
