@@ -3,7 +3,7 @@ battery_node_src = files(
   'src' / 'app.c',
   'src' / 'interrupts.c',
   'src' / 'main.c',
-  'src' / 'stm32f3xx_hal_msp.c',
+  'src' / 'peripherals.c',
 )
 
 battery_node_elf = executable(
@@ -23,10 +23,4 @@ battery_node_bin = custom_target(
   build_by_default: true,
 )
 
-# List of files that should be analyzed by clang-tidy.
-# We typically ignore all auto-generated files that we don't modify.
-battery_node_tidy_files = files(
-  'src' / 'app.c',
-  'src' / 'interrupts.c',
-  'src' / 'main.c',
-)
+battery_node_tidy_files = battery_node_src

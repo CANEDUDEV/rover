@@ -11,6 +11,7 @@ extern "C" {
 #endif
 
 #include "FreeRTOS.h"
+#include "stm32f3xx_hal.h"
 #include "task.h"
 
 #define CAN_MAX_DLC 8
@@ -32,7 +33,7 @@ typedef struct {
 // General error handler
 void Error_Handler(void);
 // Print message to uart
-void Print(char *str);
+void Print(UART_HandleTypeDef *huart, char *str);
 // Send task notification to task
 void NotifyTask(TaskHandle_t taskHandle);
 

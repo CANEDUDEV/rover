@@ -2,8 +2,7 @@
 
 #include <string.h>
 
-#include "FreeRTOS.h"
-#include "main.h"
+#include "peripherals.h"
 
 #define ADC_REF_VOLTAGE 3300     // mV
 #define ADC_MAX ((1 << 12) - 1)  // 12-bit ADC
@@ -30,10 +29,6 @@
 
 #define POT_IVRA_DEFAULT 40
 #define POT_IVRB_DEFAULT 40
-
-// Externals defined in main.c.
-extern TIM_HandleTypeDef htim1;
-extern I2C_HandleTypeDef hi2c1;
 
 // No sensor connected, so we send the raw ADC value.
 void ADCToSensorPowerMessage(uint16_t adcValue, CANFrame *frame) {
@@ -136,21 +131,29 @@ void ADCToHBridgeWindingCurrentMessage(uint16_t adcValue, CANFrame *frame) {
  * voltage of 6.0-8.4V.
  */
 void InitPotentiometers(void) {
+  peripherals_t *peripherals = get_peripherals();
   uint8_t ivraWrite[2] = {POT_IVRA_ADDR, POT_IVRA_DEFAULT};
   uint8_t ivrbWrite[2] = {POT_IVRB_ADDR, POT_IVRB_DEFAULT};
-  HAL_I2C_Master_Transmit(&hi2c1, POT_ADDR, ivraWrite, sizeof(ivraWrite),
-                          portMAX_DELAY);
-  HAL_I2C_Master_Transmit(&hi2c1, POT_ADDR, ivrbWrite, sizeof(ivrbWrite),
-                          portMAX_DELAY);
+  HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivraWrite,
+                          sizeof(ivraWrite), portMAX_DELAY);
+  HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivrbWrite,
+                          sizeof(ivrbWrite), portMAX_DELAY);
 }
 
 /* Going towards the minimum pulse gives steering to the right. Going towards
  * maximum pulse gives steering to the left.
  */
 void UpdatePWMDutyCycle(uint32_t *pulse, STEERING_DIRECTION *direction) {
-  const uint32_t minPulse = htim1.Init.Period / 20;  // 5% duty cycle
-  const uint32_t maxPulse = htim1.Init.Period / 10;  // 10% duty cycle
+  peripherals_t *peripherals = get_peripherals();
+
+  const uint32_t minPulse =
+      peripherals->htim1.Init.Period / 20;  // 5% duty cycle
+
+  const uint32_t maxPulse =
+      peripherals->htim1.Init.Period / 10;  // 10% duty cycle
+
   const uint8_t pulseStep = 10;
+
   if (*pulse <= minPulse) {
     *pulse = minPulse;
     *direction = LEFT;
@@ -158,11 +161,13 @@ void UpdatePWMDutyCycle(uint32_t *pulse, STEERING_DIRECTION *direction) {
     *pulse = maxPulse;
     *direction = RIGHT;
   }
+
   if (*direction == LEFT) {
     *pulse += pulseStep;
   } else {
     *pulse -= pulseStep;
   }
+
   // Write new pulse to CCR register
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, *pulse);
+  __HAL_TIM_SET_COMPARE(&peripherals->htim1, TIM_CHANNEL_4, *pulse);
 }

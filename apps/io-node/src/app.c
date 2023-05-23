@@ -1,6 +1,7 @@
 #include "app.h"
 
-#include "main.h"
+#include "peripherals.h"
+#include "ports.h"
 
 // When mounting a switch vertically, SWITCH_PRESS_LEFT should correspond to
 // pressing the switch up, and SWITCH_PRESS_RIGHT should correspond to pressing
@@ -17,9 +18,6 @@ enum SWITCH_STATE {
 #define SWITCH_MESSAGE_ID 200U
 #define SWITCH_MESSAGE_DLC 4U
 
-// Handles defined in main.c by STM32CubeMX
-extern CAN_HandleTypeDef hcan;
-
 void SendAnalogPortMessage(const uint16_t *data) {
   CAN_TxHeaderTypeDef header = {
       .StdId = ANALOG_PORT_MESSAGE_ID,
@@ -30,7 +28,8 @@ void SendAnalogPortMessage(const uint16_t *data) {
   for (uint8_t i = 0; i < ANALOG_PORT_MESSAGE_DLC; i++) {
     canData[i] = data[i];
   }
-  HAL_CAN_AddTxMessage(&hcan, &header, canData, &mailbox);
+  peripherals_t *peripherals = get_peripherals();
+  HAL_CAN_AddTxMessage(&peripherals->hcan, &header, canData, &mailbox);
 }
 
 void SendSwitchPortMessage(const uint8_t *data) {
@@ -39,7 +38,8 @@ void SendSwitchPortMessage(const uint8_t *data) {
       .DLC = SWITCH_MESSAGE_DLC,
   };
   uint32_t mailbox = 0;
-  HAL_CAN_AddTxMessage(&hcan, &header, data, &mailbox);
+  peripherals_t *peripherals = get_peripherals();
+  HAL_CAN_AddTxMessage(&peripherals->hcan, &header, data, &mailbox);
 }
 
 enum SWITCH_STATE getSwitchState(GPIO_PinState pin1, GPIO_PinState pin2) {
