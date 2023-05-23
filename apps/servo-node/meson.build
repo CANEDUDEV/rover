@@ -1,9 +1,9 @@
-servo_node_inc = include_directories('Core' / 'Inc')
+servo_node_inc = include_directories('include')
 servo_node_src = files(
-  'Core' / 'Src' / 'app.c',
-  'Core' / 'Src' / 'main.c',
-  'Core' / 'Src' / 'stm32f3xx_hal_msp.c',
-  'Core' / 'Src' / 'stm32f3xx_it.c',
+  'src' / 'app.c',
+  'src' / 'main.c',
+  'src' / 'stm32f3xx_hal_msp.c',
+  'src' / 'stm32f3xx_it.c',
 )
 
 # Override the werror option since some of the warnings come from the STM32 HAL driver.
@@ -28,5 +28,5 @@ servo_node_bin = custom_target(
 # List of files that should be analyzed by clang-tidy.
 # We typically ignore all auto-generated files that we don't modify.
 servo_node_tidy_files = files(
-  'Core' / 'Src' / 'main.c',
+  'src' / 'main.c',
 )
