@@ -7,7 +7,7 @@
 #define DMA1_Channel1_IRQ_PRIORITY 5
 #define DMA2_Channel1_IRQ_PRIORITY 5
 #define EXTI15_10_IRQ_PRIORITY 5
-#define USB_HP_CAN_TX_IRQ_PRIORITY 5
+#define USB_LP_CAN_RX0_IRQ_PRIORITY 5
 #define PENDSV_IRQ_PRIORITY 15
 
 static peripherals_t peripherals;
@@ -184,6 +184,22 @@ void can_init(void) {
   hcan->Init.ReceiveFifoLocked = DISABLE;
   hcan->Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(hcan) != HAL_OK) {
+    error();
+  }
+
+  CAN_FilterTypeDef allow_all = {
+      .FilterIdHigh = 0,
+      .FilterIdLow = 0,
+      .FilterMaskIdHigh = 0,
+      .FilterMaskIdLow = 0,
+      .FilterFIFOAssignment = CAN_RX_FIFO0,
+      .FilterBank = 0,
+      .FilterMode = CAN_FILTERMODE_IDMASK,
+      .FilterScale = CAN_FILTERSCALE_32BIT,
+      .FilterActivation = CAN_FILTER_ENABLE,
+  };
+
+  if (HAL_CAN_ConfigFilter(hcan, &allow_all) != HAL_OK) {
     error();
   }
 }
@@ -528,8 +544,8 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* hcan) {
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /* CAN interrupt Init */
-    HAL_NVIC_SetPriority(USB_HP_CAN_TX_IRQn, USB_HP_CAN_TX_IRQ_PRIORITY, 0);
-    HAL_NVIC_EnableIRQ(USB_HP_CAN_TX_IRQn);
+    HAL_NVIC_SetPriority(USB_LP_CAN_RX0_IRQn, USB_LP_CAN_RX0_IRQ_PRIORITY, 0);
+    HAL_NVIC_EnableIRQ(USB_LP_CAN_RX0_IRQn);
   }
 }
 
@@ -551,7 +567,7 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* hcan) {
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8 | GPIO_PIN_9);
 
     /* CAN interrupt DeInit */
-    HAL_NVIC_DisableIRQ(USB_HP_CAN_TX_IRQn);
+    HAL_NVIC_DisableIRQ(USB_LP_CAN_RX0_IRQn);
   }
 }
 
