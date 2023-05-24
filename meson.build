@@ -15,14 +15,13 @@ project(
 objcopy = find_program('objcopy')
 clang_tidy = find_program('clang-tidy')
 
-subdir('third-party')
-subdir('common')
+subdir('libs')
 subdir('apps')
 subdir('docs')
 
 tidy_files = [
-  app_tidy_files,
-  common_tidy_files,
+  apps_tidy_files,
+  common_libs_tidy_files,
 ]
 
 # Override default meson clang-tidy target

@@ -2,7 +2,7 @@ doxyfile = files('Doxyfile')
 
 doxygen = find_program('doxygen', required: false)
 
-doxygen_input_src = '@0@/apps @0@/common'.format(meson.project_source_root())
+doxygen_input_src = '@0@/apps @0@/libs/can-kingdom'.format(meson.project_source_root())
 
 doxygen_xml = custom_target(
   'doxygen',
