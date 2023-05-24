@@ -24,16 +24,16 @@ static peripherals_t *peripherals;
 #define TASK_PRIORITY 24
 
 static TaskHandle_t battery_monitor_task;
-static StaticTask_t battery_monitor_buffer;
+static StaticTask_t battery_monitor_buf;
 static StackType_t battery_monitor_stack[configMINIMAL_STACK_SIZE];
+void battery_monitor(void *unused);
 
 static TaskHandle_t power_measure_task;
-static StaticTask_t power_measure_buffer;
+static StaticTask_t power_measure_buf;
 static StackType_t power_measure_stack[configMINIMAL_STACK_SIZE];
+void power_measure(void *unused);
 
 void task_init(void);
-void battery_monitor(void *argument);
-void power_measure(void *argument);
 
 // Application
 #define CAN_BASE_ID 0x100
@@ -220,11 +220,11 @@ void mayor_init(void) {
 void task_init(void) {
   battery_monitor_task = xTaskCreateStatic(
       battery_monitor, "battery monitor", configMINIMAL_STACK_SIZE, NULL,
-      TASK_PRIORITY, battery_monitor_stack, &battery_monitor_buffer);
+      TASK_PRIORITY, battery_monitor_stack, &battery_monitor_buf);
 
   power_measure_task = xTaskCreateStatic(
       power_measure, "power measure", configMINIMAL_STACK_SIZE, NULL,
-      TASK_PRIORITY, power_measure_stack, &power_measure_buffer);
+      TASK_PRIORITY, power_measure_stack, &power_measure_buf);
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
@@ -255,20 +255,21 @@ void power_measure_timer(TimerHandle_t xTimer) {
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void power_measure(void *argument) {
-  (void)argument;
+void power_measure(void *unused) {
+  (void)unused;
 
-  TimerHandle_t xTimer = xTimerCreate("power measure timer",
-                                      pdMS_TO_TICKS(POWER_MEASURE_TASK_PERIOD),
-                                      pdTRUE,  // Auto reload timer
-                                      NULL,    // Timer ID, unused
-                                      power_measure_timer);
-
-  xTimerStart(xTimer, portMAX_DELAY);
+  StaticTimer_t timer_buf;
+  TimerHandle_t xTimer = xTimerCreateStatic(
+      "power measure timer", pdMS_TO_TICKS(POWER_MEASURE_TASK_PERIOD),
+      pdTRUE,  // Auto reload timer
+      NULL,    // Timer ID, unused
+      power_measure_timer, &timer_buf);
 
   ADCReading adcBuf;
 
   HAL_CAN_Start(&peripherals->hcan);
+
+  xTimerStart(xTimer, portMAX_DELAY);
 
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
@@ -306,8 +307,8 @@ void power_measure(void *argument) {
   }
 }
 
-void battery_monitor(void *argument) {
-  (void)argument;
+void battery_monitor(void *unused) {
+  (void)unused;
 
   SetJumperConfig(ALL_ON);
 
@@ -315,16 +316,18 @@ void battery_monitor(void *argument) {
   HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(POWER_OFF_GPIO_Port, POWER_OFF_Pin, GPIO_PIN_SET);
 
-  TimerHandle_t xTimer = xTimerCreate(
+  StaticTimer_t timer_buf;
+  TimerHandle_t xTimer = xTimerCreateStatic(
       "battery monitor timer", pdMS_TO_TICKS(BATTERY_MONITOR_TASK_PERIOD),
       pdTRUE,  // Auto reload timer
       NULL,    // Timer ID, unused
-      battery_monitor_timer);
+      battery_monitor_timer, &timer_buf);
 
-  xTimerStart(xTimer, portMAX_DELAY);
 
   BatteryCharge charge = CHARGE_100_PERCENT;
   uint8_t lowPowerReportCount = 0;
+
+  xTimerStart(xTimer, portMAX_DELAY);
 
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
