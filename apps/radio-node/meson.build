@@ -7,8 +7,8 @@ radio_node_src = files(
 
 radio_node_elf = executable(
   'radio-node.elf',
-  [common_src, third_party_src, radio_node_src],
-  include_directories: [common_inc, third_party_inc, radio_node_inc],
+  [common_libs_src, radio_node_src],
+  include_directories: [common_libs_inc, radio_node_inc],
   link_depends: stm32_linker_script,
   link_args: ['-T@0@'.format(stm32_linker_script)],
 )
@@ -25,5 +25,6 @@ radio_node_bin = custom_target(
 # List of files that should be analyzed by clang-tidy.
 # We typically ignore all auto-generated files that we don't modify.
 radio_node_tidy_files = files(
+  'src' / 'interrupts.c',
   'src' / 'main.c',
 )

@@ -26,7 +26,7 @@ Indices and tables
 
 .. _can-kingdom:
 
-common/can-kingdom
+libs/can-kingdom
 ==================
 Provides an implementation of the CAN Kingdom library. Contains implementations
 of the mayor, the king and the data structures, as well as an interface for

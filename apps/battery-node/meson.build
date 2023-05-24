@@ -8,8 +8,8 @@ battery_node_src = files(
 
 battery_node_elf = executable(
   'battery-node.elf',
-  [common_src, third_party_src, battery_node_src],
-  include_directories: [common_inc, third_party_inc, battery_node_inc],
+  [common_libs_src, battery_node_src],
+  include_directories: [common_libs_inc, battery_node_inc],
   link_depends: stm32_linker_script,
   link_args: ['-T@0@'.format(stm32_linker_script)],
 )
@@ -27,5 +27,6 @@ battery_node_bin = custom_target(
 # We typically ignore all auto-generated files that we don't modify.
 battery_node_tidy_files = files(
   'src' / 'app.c',
+  'src' / 'interrupts.c',
   'src' / 'main.c',
 )

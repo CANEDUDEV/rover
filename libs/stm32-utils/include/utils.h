@@ -10,7 +10,8 @@
 extern "C" {
 #endif
 
-#include "cmsis_os.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 #define CAN_MAX_DLC 8
 
@@ -33,7 +34,7 @@ void Error_Handler(void);
 // Print message to uart
 void Print(char *str);
 // Send task notification to task
-void NotifyTask(osThreadId_t taskHandle);
+void NotifyTask(TaskHandle_t taskHandle);
 
 // Setup the writeable flash memory area
 int FlashRWInit(void);

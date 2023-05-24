@@ -8,8 +8,8 @@ io_node_src = files(
 
 io_node_elf = executable(
   'io-node.elf',
-  [common_src, third_party_src, io_node_src],
-  include_directories: [common_inc, third_party_inc, io_node_inc],
+  [common_libs_src, io_node_src],
+  include_directories: [common_libs_inc, io_node_inc],
   link_depends: stm32_linker_script,
   link_args: ['-T@0@'.format(stm32_linker_script)],
 )
@@ -27,5 +27,6 @@ io_node_bin = custom_target(
 # We typically ignore all auto-generated files that we don't modify.
 io_node_tidy_files = files(
   'src' / 'app.c',
+  'src' / 'interrupts.c',
   'src' / 'main.c',
 )

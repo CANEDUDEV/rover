@@ -5,23 +5,23 @@
 #include "FreeRTOS.h"
 #include "main.h"
 
-#define ADC_REF_VOLTAGE 3300   // mV
-#define ADC_MAX (1 << 12) - 1  // 12-bit ADC
+#define ADC_REF_VOLTAGE 3300     // mV
+#define ADC_MAX ((1 << 12) - 1)  // 12-bit ADC
 
 #define SERVO_BASE_ID 100
-#define SENSOR_POWER_MESSAGE_ID SERVO_BASE_ID + 0
+#define SENSOR_POWER_MESSAGE_ID (SERVO_BASE_ID + 0)
 #define SENSOR_POWER_MESSAGE_DLC 2
 
-#define SERVO_CURRENT_MESSAGE_ID SERVO_BASE_ID + 1
+#define SERVO_CURRENT_MESSAGE_ID (SERVO_BASE_ID + 1)
 #define SERVO_CURRENT_MESSAGE_DLC 2
 
-#define BAT_VOLTAGE_MESSAGE_ID SERVO_BASE_ID + 2
+#define BAT_VOLTAGE_MESSAGE_ID (SERVO_BASE_ID + 2)
 #define BAT_VOLTAGE_MESSAGE_DLC 2
 
-#define VCC_SERVO_VOLTAGE_MESSAGE_ID SERVO_BASE_ID + 3
+#define VCC_SERVO_VOLTAGE_MESSAGE_ID (SERVO_BASE_ID + 3)
 #define VCC_SERVO_VOLTAGE_MESSAGE_DLC 2
 
-#define H_BRIDGE_WINDING_CURRENT_MESSAGE_ID SERVO_BASE_ID + 4
+#define H_BRIDGE_WINDING_CURRENT_MESSAGE_ID (SERVO_BASE_ID + 4)
 #define H_BRIDGE_WINDING_CURRENT_MESSAGE_DLC 2
 
 #define POT_ADDR (0x50 << 1)  // Shift left to match STM32 specification
@@ -116,7 +116,7 @@ void ADCToHBridgeWindingCurrentMessage(uint16_t adcValue, CANFrame *frame) {
   if (current > maxCurrent) {
     current = maxCurrent;
   }
-  memcpy(frame->data, &Isense, sizeof(adcValue));
+  memcpy(frame->data, &current, sizeof(current));
 }
 
 /* Set up potentiomenter terminals with default values.
