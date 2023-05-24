@@ -4,42 +4,39 @@
 #include "peripherals.h"
 #include "utils.h"
 
-// FreeRTOS includes
-#include "cmsis_os.h"
+// FreeRTOS
+#include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
 
-#define SBUS_PACKET_LENGTH 25
-#define SBUS_HEADER 0x0F
-
-#define CAN_BASE_ID 100U
-
-#define CAN_MESSAGE_QUEUE_LENGTH 10
-
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-    .name = "defaultTask",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-osThreadId_t CANTxTaskHandle;
-const osThreadAttr_t CANTxTask_attributes = {
-    .name = "CANTxTask",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityBelowNormal,
-};
-
-QueueHandle_t CANMessageQueue;
-
+// Hardware
 static peripherals_t *peripherals;
 
 void system_clock_config(void);
 
-void StartDefaultTask(void *argument);
+// Application
+#define CAN_BASE_ID 100U
+#define SBUS_PACKET_LENGTH 25
+#define SBUS_HEADER 0x0F
 
-void StartCANTxTask(void *argument);
+// FreeRTOS
+#define CAN_MESSAGE_QUEUE_LENGTH 10
+#define IO_READ_TASK_PERIOD_MS 20
+#define TASK_PRIORITY 24
+
+QueueHandle_t can_message_queue;
+
+static TaskHandle_t sbus_read_task;
+static StaticTask_t sbus_read_buffer;
+static StackType_t sbus_read_stack[configMINIMAL_STACK_SIZE];
+
+static TaskHandle_t can_tx_task;
+static StaticTask_t can_tx_buffer;
+static StackType_t can_tx_stack[configMINIMAL_STACK_SIZE];
+
+void task_init(void);
+void sbus_read(void *argument);
+void can_tx(void *argument);
 
 /**
  * @brief  The application entry point.
@@ -63,23 +60,26 @@ int main(void) {
   uart1_init();
   spi1_init();
 
-  // Init scheduler
-  osKernelInitialize();
+  task_init();
 
-  CANMessageQueue = xQueueCreate(CAN_MESSAGE_QUEUE_LENGTH, sizeof(CANFrame));
-
-  // Create tasks
-  defaultTaskHandle =
-      osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-
-  CANTxTaskHandle = osThreadNew(StartCANTxTask, NULL, &CANTxTask_attributes);
+  can_message_queue = xQueueCreate(CAN_MESSAGE_QUEUE_LENGTH, sizeof(CANFrame));
 
   // Start scheduler
-  osKernelStart();
+  vTaskStartScheduler();
 
   // We should never get here as control is now taken by the scheduler
   while (1) {
   }
+}
+
+void task_init(void) {
+  sbus_read_task =
+      xTaskCreateStatic(sbus_read, "sbus read", configMINIMAL_STACK_SIZE, NULL,
+                        TASK_PRIORITY, sbus_read_stack, &sbus_read_buffer);
+
+  can_tx_task =
+      xTaskCreateStatic(can_tx, "can tx", configMINIMAL_STACK_SIZE, NULL,
+                        TASK_PRIORITY, can_tx_stack, &can_tx_buffer);
 }
 
 /**
@@ -126,13 +126,13 @@ void system_clock_config(void) {
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
   UNUSED(huart);
-  NotifyTask(defaultTaskHandle);
+  NotifyTask(sbus_read_task);
 }
 
 void mailboxFreeCallback(CAN_HandleTypeDef *_hcan) {
   // Only notify when going from 0 free mailboxes to 1 free
   if (HAL_CAN_GetTxMailboxesFreeLevel(_hcan) <= 1) {
-    NotifyTask(CANTxTaskHandle);
+    NotifyTask(can_tx_task);
   }
 }
 
@@ -148,7 +148,7 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *_hcan) {
   mailboxFreeCallback(_hcan);
 }
 
-void StartCANTxTask(void *argument) {
+void can_tx(void *argument) {
   UNUSED(argument);
 
   peripherals_t *peripherals = get_peripherals();
@@ -165,7 +165,7 @@ void StartCANTxTask(void *argument) {
 
     CANFrame frame;
     // Wait for queue to receive message
-    xQueueReceive(CANMessageQueue, &frame, portMAX_DELAY);
+    xQueueReceive(can_message_queue, &frame, portMAX_DELAY);
 
     CAN_TxHeaderTypeDef header = {
         .StdId = frame.id,
@@ -176,13 +176,7 @@ void StartCANTxTask(void *argument) {
   }
 }
 
-/**
- * @brief  Function implementing the defaultTask thread.
- * @param  argument: Not used
- * @retval None
- */
-
-void StartDefaultTask(void *argument) {
+void sbus_read(void *argument) {
   UNUSED(argument);
 
   uint8_t sbusHeader = 0;
@@ -212,7 +206,7 @@ void StartDefaultTask(void *argument) {
 
     for (int i = 0; i < 3; i++) {
       memcpy(frames[i].data, &sbusData[i * CAN_MAX_DLC], CAN_MAX_DLC);
-      xQueueSendToBack(CANMessageQueue, &frames[i], 0);
+      xQueueSendToBack(can_message_queue, &frames[i], 0);
     }
   }
 }

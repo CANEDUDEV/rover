@@ -1,11 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-// FreeRTOS includes
-#include "cmsis_os.h"
-#include "timers.h"
-
-// Our own includes
 #include "app.h"
 #include "mayor.h"
 #include "peripherals.h"
@@ -13,31 +8,37 @@
 #include "postmaster-hal.h"
 #include "utils.h"
 
-#define MEASURE_TASK_PERIOD_MS 100
-#define DEFAULT_TASK_PERIOD_MS 200
+// FreeRTOS
+#include "FreeRTOS.h"
+#include "timers.h"
 
+// Hardware
+static peripherals_t *peripherals;
+
+void system_clock_init(void);
+
+// FreeRTOS
+#define BATTERY_MONITOR_TASK_PERIOD 200
+#define POWER_MEASURE_TASK_PERIOD 100
+#define TASK_PRIORITY 24
+
+static TaskHandle_t battery_monitor_task;
+static StaticTask_t battery_monitor_buffer;
+static StackType_t battery_monitor_stack[configMINIMAL_STACK_SIZE];
+
+static TaskHandle_t power_measure_task;
+static StaticTask_t power_measure_buffer;
+static StackType_t power_measure_stack[configMINIMAL_STACK_SIZE];
+
+void task_init(void);
+void battery_monitor(void *argument);
+void power_measure(void *argument);
+
+// Application
 #define CAN_BASE_ID 0x100
-
 #define LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD 10
 
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-    .name = "defaultTask",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-static osThreadId_t measureTaskHandle;
-static const osThreadAttr_t measureTask_attributes = {
-    .name = "measureTask",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
 static BatteryNodeState batteryNodeState;
-
-static peripherals_t *peripherals;
 // Set to 1 by GPIO external interrupt on the OVER_CURRENT pin.
 static uint8_t OverCurrentFault = 0;
 
@@ -68,33 +69,20 @@ static ck_folder_t *cell_folder = &folders[2];
 static ck_folder_t *reg_out_current_folder = &folders[3];
 static ck_folder_t *vbat_out_current_folder = &folders[4];
 
-// Function prototypes
-void system_clock_init(void);
-void StartDefaultTask(void *argument);
-
-// Init CAN kingdom stack
 void mayor_init(void);
-
-void StartMeasureTask(void *argument);
-
-/* Private user code ---------------------------------------------------------*/
 
 /**
  * @brief  The application entry point.
  * @retval int
  */
 int main(void) {
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick.
-   */
+  // Reset of all peripherals, Initializes the Flash interface and the Systick.
   HAL_Init();
 
   if (FlashRWInit() != APP_OK) {
     Error_Handler();
   }
 
-  /* Configure the system clock */
   system_clock_init();
 
   // Initialize all configured peripherals
@@ -110,22 +98,14 @@ int main(void) {
 
   mayor_init();
 
-  /* Init scheduler */
-  osKernelInitialize();
-
-  /* Create the thread(s) */
-  defaultTaskHandle =
-      osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-
-  measureTaskHandle =
-      osThreadNew(StartMeasureTask, NULL, &measureTask_attributes);
+  task_init();
 
   Print(&peripherals->huart1, "Starting application...\r\n");
 
-  /* Start scheduler */
-  osKernelStart();
-  /* We should never get here as control is now taken by the scheduler */
+  // Start scheduler
+  vTaskStartScheduler();
 
+  // We should never get here as control is now taken by the scheduler.
   while (1) {
   }
 }
@@ -257,7 +237,7 @@ void mayor_init(void) {
   vbat_out_current_folder->envelopes[0].enable = true;
 
   peripherals_t *peripherals = get_peripherals();
-  postmaster_init(&peripherals->hcan);  // Set up the postmaster
+  postmaster_init(&(peripherals->hcan));  // Set up the postmaster
 
   ck_mayor_t mayor = {
       .ean_no = 123,       // NOLINT(*-magic-numbers)
@@ -277,9 +257,19 @@ void mayor_init(void) {
   }
 }
 
+void task_init(void) {
+  battery_monitor_task = xTaskCreateStatic(
+      battery_monitor, "battery monitor", configMINIMAL_STACK_SIZE, NULL,
+      TASK_PRIORITY, battery_monitor_stack, &battery_monitor_buffer);
+
+  power_measure_task = xTaskCreateStatic(
+      power_measure, "power measure", configMINIMAL_STACK_SIZE, NULL,
+      TASK_PRIORITY, power_measure_stack, &power_measure_buffer);
+}
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-  UNUSED(hadc);
-  NotifyTask(measureTaskHandle);
+  (void)hadc;
+  NotifyTask(power_measure_task);
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
@@ -289,28 +279,30 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   OverCurrentFault = 1;
 }
 
-void defaultTaskTimer(TimerHandle_t xTimer) {
-  UNUSED(xTimer);
-  NotifyTask(defaultTaskHandle);
+void battery_monitor_timer(TimerHandle_t xTimer) {
+  (void)xTimer;
+  NotifyTask(battery_monitor_task);
 }
 
-void measureTaskTimer(TimerHandle_t xTimer) {
-  UNUSED(xTimer);
-  NotifyTask(measureTaskHandle);
+void power_measure_timer(TimerHandle_t xTimer) {
+  (void)xTimer;
+  NotifyTask(power_measure_task);
 }
 
-void StartMeasureTask(void *argument) {
-  UNUSED(argument);
+void power_measure(void *argument) {
+  (void)argument;
 
-  TimerHandle_t xTimer =
-      xTimerCreate("measureTaskTimer", pdMS_TO_TICKS(MEASURE_TASK_PERIOD_MS),
-                   pdTRUE,  // Auto reload timer
-                   NULL,    // Timer ID, unused
-                   measureTaskTimer);
+  TimerHandle_t xTimer = xTimerCreate("power measure timer",
+                                      pdMS_TO_TICKS(POWER_MEASURE_TASK_PERIOD),
+                                      pdTRUE,  // Auto reload timer
+                                      NULL,    // Timer ID, unused
+                                      power_measure_timer);
 
   xTimerStart(xTimer, portMAX_DELAY);
 
   ADCReading adcBuf;
+
+  HAL_CAN_Start(&peripherals->hcan);
 
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
@@ -348,8 +340,8 @@ void StartMeasureTask(void *argument) {
   }
 }
 
-void StartDefaultTask(void *argument) {
-  UNUSED(argument);
+void battery_monitor(void *argument) {
+  (void)argument;
 
   SetJumperConfig(ALL_ON);
 
@@ -357,18 +349,16 @@ void StartDefaultTask(void *argument) {
   HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(POWER_OFF_GPIO_Port, POWER_OFF_Pin, GPIO_PIN_SET);
 
-  TimerHandle_t xTimer =
-      xTimerCreate("defaultTaskTimer", pdMS_TO_TICKS(DEFAULT_TASK_PERIOD_MS),
-                   pdTRUE,  // Auto reload timer
-                   NULL,    // Timer ID, unused
-                   defaultTaskTimer);
+  TimerHandle_t xTimer = xTimerCreate(
+      "battery monitor timer", pdMS_TO_TICKS(BATTERY_MONITOR_TASK_PERIOD),
+      pdTRUE,  // Auto reload timer
+      NULL,    // Timer ID, unused
+      battery_monitor_timer);
 
   xTimerStart(xTimer, portMAX_DELAY);
 
   BatteryCharge charge = CHARGE_100_PERCENT;
   uint8_t lowPowerReportCount = 0;
-
-  HAL_CAN_Start(&peripherals->hcan);
 
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation

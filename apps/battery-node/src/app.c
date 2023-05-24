@@ -88,7 +88,7 @@ void BlinkLEDsRed(void) {
 void ConfigureVoltageRegulator(I2C_HandleTypeDef *hi2c, uint8_t potValue) {
   uint8_t ivraWrite[2] = {POT_IVRA_ADDR, potValue};
   HAL_I2C_Master_Transmit(hi2c, POT_ADDR, ivraWrite, sizeof(ivraWrite),
-                          portMAX_DELAY);
+                          HAL_MAX_DELAY);
 }
 
 /* Voltage divider with R1 = 1kOhm and R2 = 2kOhm

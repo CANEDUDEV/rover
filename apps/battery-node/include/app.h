@@ -14,7 +14,6 @@ extern "C" {
 #include <stdint.h>
 
 #include "stm32f3xx_hal.h"
-#include "utils.h"
 
 #define ADC1_NUM_CHANNELS 4
 #define ADC2_NUM_CHANNELS 4
