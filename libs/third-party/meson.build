@@ -33,7 +33,6 @@ drivers_src = files(
 
 freertos_inc = include_directories(
   'FreeRTOS' / 'Source' / 'include',
-  'FreeRTOS' / 'Source' / 'CMSIS_RTOS_V2',
   'FreeRTOS' / 'Source' / 'portable' / 'GCC' / 'ARM_CM4F',
   is_system: true,
 )
@@ -46,17 +45,6 @@ freertos_src = files(
   'FreeRTOS' / 'Source' / 'stream_buffer.c',
   'FreeRTOS' / 'Source' / 'tasks.c',
   'FreeRTOS' / 'Source' / 'timers.c',
-  'FreeRTOS' / 'Source' / 'CMSIS_RTOS_V2/cmsis_os2.c',
   'FreeRTOS' / 'Source' / 'portable/MemMang/heap_4.c',
   'FreeRTOS' / 'Source' / 'portable/GCC/ARM_CM4F/port.c',
 )
-
-third_party_inc = [
-  drivers_inc,
-  freertos_inc,
-]
-
-third_party_src = [
-  drivers_src,
-  freertos_src,
-]

@@ -10,7 +10,8 @@ common_libs_src = [
   stm32_common_src,
   stm32_postmaster_src,
   stm32_utils_src,
-  third_party_src,
+  drivers_src,
+  freertos_src,
 ]
 
 # Convenience include dir list
@@ -19,7 +20,8 @@ common_libs_inc = [
   stm32_common_inc,
   stm32_postmaster_inc,
   stm32_utils_inc,
-  third_party_inc,
+  drivers_inc,
+  freertos_inc,
 ]
 
 common_libs_tidy_files = [

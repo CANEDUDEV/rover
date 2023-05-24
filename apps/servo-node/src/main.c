@@ -5,50 +5,42 @@
 #include "peripherals.h"
 #include "utils.h"
 
-// FreeRTOS includes
-#include "cmsis_os.h"
+// FreeRTOS
+#include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
 #include "timers.h"
 
-// How often the periodic tasks should run (ms)
-#define DEFAULT_TASK_PERIOD_MS 20
-#define MEASURE_TASK_PERIOD_MS 100
-
-#define CAN_MESSAGE_QUEUE_LENGTH 10
-
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-    .name = "defaultTask",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
-osThreadId_t CANTxTaskHandle;
-const osThreadAttr_t CANTxTask_attributes = {
-    .name = "CANTxTask",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityBelowNormal,
-};
-
-osThreadId_t measureTaskHandle;
-const osThreadAttr_t measureTask_attributes = {
-    .name = "measureTask",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityBelowNormal,
-};
-
-QueueHandle_t CANMessageQueue;
-
+// Hardware
 static peripherals_t *peripherals;
 
 void system_clock_config(void);
 
-// Tasks
-void StartDefaultTask(void *argument);
-void StartCANTxTask(void *argument);
-void StartMeasureTask(void *argument);
+// FreeRTOS
+#define PWM_TASK_PERIOD_MS 20
+#define POWER_MEASURE_TASK_PERIOD_MS 100
+#define TASK_PRIORITY 24
+
+#define CAN_MESSAGE_QUEUE_LENGTH 10
+
+QueueHandle_t can_message_queue;
+
+static TaskHandle_t pwm_task;
+static StaticTask_t pwm_buffer;
+static StackType_t pwm_stack[configMINIMAL_STACK_SIZE];
+
+static TaskHandle_t can_tx_task;
+static StaticTask_t can_tx_buffer;
+static StackType_t can_tx_stack[configMINIMAL_STACK_SIZE];
+
+static TaskHandle_t power_measure_task;
+static StaticTask_t power_measure_buffer;
+static StackType_t power_measure_stack[configMINIMAL_STACK_SIZE];
+
+void task_init(void);
+void pwm(void *argument);
+void can_tx(void *argument);
+void power_measure(void *argument);
 
 /**
  * @brief  The application entry point.
@@ -81,22 +73,14 @@ int main(void) {
 
   InitPotentiometers();
 
-  // Init scheduler
-  osKernelInitialize();
+  task_init();
 
-  CANMessageQueue = xQueueCreate(CAN_MESSAGE_QUEUE_LENGTH, sizeof(CANFrame));
-
-  // Create tasks
-  defaultTaskHandle =
-      osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-
-  CANTxTaskHandle = osThreadNew(StartCANTxTask, NULL, &CANTxTask_attributes);
-  measureTaskHandle =
-      osThreadNew(StartMeasureTask, NULL, &measureTask_attributes);
+  can_message_queue = xQueueCreate(CAN_MESSAGE_QUEUE_LENGTH, sizeof(CANFrame));
 
   Print(&peripherals->huart1, "Starting application...\r\n");
+
   // Start scheduler
-  osKernelStart();
+  vTaskStartScheduler();
 
   // We should never get here as control is now taken by the scheduler
   while (1) {
@@ -151,25 +135,38 @@ void system_clock_config(void) {
   }
 }
 
+void task_init(void) {
+  pwm_task = xTaskCreateStatic(pwm, "pwm", configMINIMAL_STACK_SIZE, NULL,
+                               TASK_PRIORITY, pwm_stack, &pwm_buffer);
+
+  can_tx_task =
+      xTaskCreateStatic(can_tx, "can tx", configMINIMAL_STACK_SIZE, NULL,
+                        TASK_PRIORITY, can_tx_stack, &can_tx_buffer);
+
+  power_measure_task = xTaskCreateStatic(
+      power_measure, "power measure", configMINIMAL_STACK_SIZE, NULL,
+      TASK_PRIORITY, power_measure_stack, &power_measure_buffer);
+}
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
   UNUSED(hadc);
-  NotifyTask(measureTaskHandle);
+  NotifyTask(power_measure_task);
 }
 
 void defaultTaskTimer(TimerHandle_t xTimer) {
   UNUSED(xTimer);
-  NotifyTask(defaultTaskHandle);
+  NotifyTask(pwm_task);
 }
 
 void measureTaskTimer(TimerHandle_t xTimer) {
   UNUSED(xTimer);
-  NotifyTask(measureTaskHandle);
+  NotifyTask(power_measure_task);
 }
 
 void mailboxFreeCallback(CAN_HandleTypeDef *_hcan) {
   // Only notify when going from 0 free mailboxes to 1 free
   if (HAL_CAN_GetTxMailboxesFreeLevel(_hcan) <= 1) {
-    NotifyTask(CANTxTaskHandle);
+    NotifyTask(can_tx_task);
   }
 }
 
@@ -185,7 +182,7 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *_hcan) {
   mailboxFreeCallback(_hcan);
 }
 
-void StartCANTxTask(void *argument) {
+void can_tx(void *argument) {
   UNUSED(argument);
 
   HAL_CAN_ActivateNotification(&peripherals->hcan, CAN_IT_TX_MAILBOX_EMPTY);
@@ -201,7 +198,7 @@ void StartCANTxTask(void *argument) {
 
     CANFrame frame;
     // Wait for queue to receive message
-    xQueueReceive(CANMessageQueue, &frame, portMAX_DELAY);
+    xQueueReceive(can_message_queue, &frame, portMAX_DELAY);
 
     CAN_TxHeaderTypeDef header = {
         .StdId = frame.id,
@@ -212,14 +209,14 @@ void StartCANTxTask(void *argument) {
   }
 }
 
-void StartMeasureTask(void *argument) {
+void power_measure(void *argument) {
   UNUSED(argument);
 
-  TimerHandle_t xTimer =
-      xTimerCreate("measureTaskTimer", pdMS_TO_TICKS(MEASURE_TASK_PERIOD_MS),
-                   pdTRUE,  // Auto reload timer
-                   NULL,    // Timer ID, unused
-                   measureTaskTimer);
+  TimerHandle_t xTimer = xTimerCreate(
+      "measureTaskTimer", pdMS_TO_TICKS(POWER_MEASURE_TASK_PERIOD_MS),
+      pdTRUE,  // Auto reload timer
+      NULL,    // Timer ID, unused
+      measureTaskTimer);
 
   xTimerStart(xTimer, portMAX_DELAY);
 
@@ -251,25 +248,19 @@ void StartMeasureTask(void *argument) {
     ADCToHBridgeWindingCurrentMessage(adc2Buf[1],
                                       &hBridgeWindingCurrentMessage);
 
-    xQueueSendToBack(CANMessageQueue, &sensorPowerMessage, 0);
-    xQueueSendToBack(CANMessageQueue, &servoCurrentMessage, 0);
-    xQueueSendToBack(CANMessageQueue, &batteryVoltageMessage, 0);
-    xQueueSendToBack(CANMessageQueue, &vccServoVoltageMessage, 0);
-    xQueueSendToBack(CANMessageQueue, &hBridgeWindingCurrentMessage, 0);
+    xQueueSendToBack(can_message_queue, &sensorPowerMessage, 0);
+    xQueueSendToBack(can_message_queue, &servoCurrentMessage, 0);
+    xQueueSendToBack(can_message_queue, &batteryVoltageMessage, 0);
+    xQueueSendToBack(can_message_queue, &vccServoVoltageMessage, 0);
+    xQueueSendToBack(can_message_queue, &hBridgeWindingCurrentMessage, 0);
   }
 }
 
-/**
- * @brief  Function implementing the defaultTask thread.
- * @param  argument: Not used
- * @retval None
- */
-
-void StartDefaultTask(void *argument) {
+void pwm(void *argument) {
   UNUSED(argument);
 
   TimerHandle_t xTimer =
-      xTimerCreate("defaultTaskTimer", pdMS_TO_TICKS(DEFAULT_TASK_PERIOD_MS),
+      xTimerCreate("defaultTaskTimer", pdMS_TO_TICKS(PWM_TASK_PERIOD_MS),
                    pdTRUE,  // Auto reload timer
                    NULL,    // Timer ID, unused
                    defaultTaskTimer);

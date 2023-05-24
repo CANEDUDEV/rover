@@ -1,33 +1,29 @@
 #include <stdint.h>
-#include <stm32f3xx_hal.h>
 #include <string.h>
 
 #include "app.h"
 #include "peripherals.h"
 #include "utils.h"
 
-// FreeRTOS includes
-#include "cmsis_os.h"
-#include "semphr.h"
-#include "task.h"
+// FreeRTOS
+#include "FreeRTOS.h"
 #include "timers.h"
 
-// This controls how often the default task should run.
-// Default to once every 20ms.
-#define DEFAULT_TASK_PERIOD_MS 20
-
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-    .name = "defaultTask",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
-};
-
+// Hardware
 static peripherals_t *peripherals;
 
 void system_clock_config(void);
-void StartDefaultTask(void *argument);
+
+// FreeRTOS
+#define IO_READ_TASK_PERIOD_MS 20
+#define TASK_PRIORITY 24
+
+static TaskHandle_t io_read_task;
+static StaticTask_t io_read_buffer;
+static StackType_t io_read_stack[configMINIMAL_STACK_SIZE];
+
+void task_init(void);
+void io_read(void *argument);
 
 /**
  * @brief  The application entry point.
@@ -55,19 +51,14 @@ int main(void) {
   spi1_init();
   spi3_init();
 
-  // Init scheduler
-  osKernelInitialize();
-
-  // Create tasks
-  defaultTaskHandle =
-      osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  task_init();
 
   Print(&peripherals->huart1, "Starting application...\n");
 
-  /* Start scheduler */
-  osKernelStart();
+  // Start scheduler
+  vTaskStartScheduler();
 
-  /* We should never get here as control is now taken by the scheduler */
+  // We should never get here as control is now taken by the scheduler
   while (1) {
   }
 }
@@ -117,27 +108,33 @@ void system_clock_config(void) {
   }
 }
 
+void task_init(void) {
+  io_read_task =
+      xTaskCreateStatic(io_read, "io read", configMINIMAL_STACK_SIZE, NULL,
+                        TASK_PRIORITY, io_read_stack, &io_read_buffer);
+}
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
   UNUSED(hadc);
-  NotifyTask(defaultTaskHandle);
+  NotifyTask(io_read_task);
 }
 
-void defaultTaskTimer(TimerHandle_t xTimer) {
+void io_read_timer(TimerHandle_t xTimer) {
   UNUSED(xTimer);
-  NotifyTask(defaultTaskHandle);
+  NotifyTask(io_read_task);
 }
 
-void StartDefaultTask(void *argument) {
+void io_read(void *argument) {
   UNUSED(argument);
 
   uint16_t adcBuf[4];
   uint8_t swData[4];
 
   TimerHandle_t xTimer =
-      xTimerCreate("defaultTaskTimer", pdMS_TO_TICKS(DEFAULT_TASK_PERIOD_MS),
+      xTimerCreate("io read timer", pdMS_TO_TICKS(IO_READ_TASK_PERIOD_MS),
                    pdTRUE,  // Auto reload timer
                    NULL,    // Timer ID, unused
-                   defaultTaskTimer);
+                   io_read_timer);
 
   HAL_CAN_Start(&peripherals->hcan);
 
