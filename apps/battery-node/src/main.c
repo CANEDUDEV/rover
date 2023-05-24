@@ -9,6 +9,7 @@
 #include "peripherals.h"
 #include "ports.h"
 #include "postmaster-hal.h"
+#include "postmaster.h"
 #include "print.h"
 
 // FreeRTOS
@@ -21,7 +22,7 @@ static peripherals_t *peripherals;
 // FreeRTOS
 #define BATTERY_MONITOR_TASK_PERIOD 200
 #define POWER_MEASURE_TASK_PERIOD 100
-#define TASK_PRIORITY 24
+#define LOWEST_TASK_PRIORITY 24
 
 static TaskHandle_t battery_monitor_task;
 static StaticTask_t battery_monitor_buf;
@@ -33,15 +34,13 @@ static StaticTask_t power_measure_buf;
 static StackType_t power_measure_stack[configMINIMAL_STACK_SIZE];
 void power_measure(void *unused);
 
+// CAN Kingdom process received letters task
+static TaskHandle_t proc_letter_task;
+static StaticTask_t proc_letter_buf;
+static StackType_t proc_letter_stack[configMINIMAL_STACK_SIZE];
+void proc_letter(void *unused);
+
 void task_init(void);
-
-// Application
-#define CAN_BASE_ID 0x100
-#define LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD 10
-
-static BatteryNodeState batteryNodeState;
-// Set to 1 by GPIO external interrupt on the OVER_CURRENT pin.
-static uint8_t OverCurrentFault = 0;
 
 // CAN Kingdom data
 #define PAGE_COUNT 4
@@ -71,6 +70,14 @@ static ck_folder_t *reg_out_current_folder = &folders[3];
 static ck_folder_t *vbat_out_current_folder = &folders[4];
 
 void mayor_init(void);
+
+// Application
+#define CAN_BASE_ID 0x100
+#define LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD 10
+
+static BatteryNodeState batteryNodeState;
+// Set to 1 by GPIO external interrupt on the OVER_CURRENT pin.
+static uint8_t OverCurrentFault = 0;
 
 /**
  * @brief  The application entry point.
@@ -220,11 +227,15 @@ void mayor_init(void) {
 void task_init(void) {
   battery_monitor_task = xTaskCreateStatic(
       battery_monitor, "battery monitor", configMINIMAL_STACK_SIZE, NULL,
-      TASK_PRIORITY, battery_monitor_stack, &battery_monitor_buf);
+      LOWEST_TASK_PRIORITY + 2, battery_monitor_stack, &battery_monitor_buf);
 
   power_measure_task = xTaskCreateStatic(
       power_measure, "power measure", configMINIMAL_STACK_SIZE, NULL,
-      TASK_PRIORITY, power_measure_stack, &power_measure_buf);
+      LOWEST_TASK_PRIORITY + 1, power_measure_stack, &power_measure_buf);
+
+  proc_letter_task = xTaskCreateStatic(
+      proc_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
+      LOWEST_TASK_PRIORITY, proc_letter_stack, &proc_letter_buf);
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
@@ -243,16 +254,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 void battery_monitor_timer(TimerHandle_t xTimer) {
   (void)xTimer;
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(battery_monitor_task, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  xTaskNotifyGive(battery_monitor_task);
 }
 
 void power_measure_timer(TimerHandle_t xTimer) {
   (void)xTimer;
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(power_measure_task, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  xTaskNotifyGive(power_measure_task);
 }
 
 void power_measure(void *unused) {
@@ -266,8 +273,6 @@ void power_measure(void *unused) {
       power_measure_timer, &timer_buf);
 
   ADCReading adcBuf;
-
-  HAL_CAN_Start(&peripherals->hcan);
 
   xTimerStart(xTimer, portMAX_DELAY);
 
@@ -296,13 +301,13 @@ void power_measure(void *unused) {
 
     // Send the documents
     if (ck_send_document(cell_folder->folder_no) != CK_OK) {
-      error();
+      print(&peripherals->huart1, "failed to send doc.\r\n");
     }
     if (ck_send_document(reg_out_current_folder->folder_no) != CK_OK) {
-      error();
+      print(&peripherals->huart1, "failed to send doc.\r\n");
     }
     if (ck_send_document(vbat_out_current_folder->folder_no) != CK_OK) {
-      error();
+      print(&peripherals->huart1, "failed to send doc.\r\n");
     }
   }
 }
@@ -322,7 +327,6 @@ void battery_monitor(void *unused) {
       pdTRUE,  // Auto reload timer
       NULL,    // Timer ID, unused
       battery_monitor_timer, &timer_buf);
-
 
   BatteryCharge charge = CHARGE_100_PERCENT;
   uint8_t lowPowerReportCount = 0;
@@ -346,5 +350,63 @@ void battery_monitor(void *unused) {
 
     charge = ReadBatteryCharge(&batteryNodeState);
     lowPowerReportCount += SetChargeStateLED(&charge);
+  }
+}
+
+// Convert HAL CAN frame to ck_letter_t.
+ck_letter_t frame_to_letter(CAN_RxHeaderTypeDef *header, uint8_t *data) {
+  ck_letter_t letter;
+  letter.envelope.is_remote = header->RTR;
+  letter.envelope.has_extended_id = header->IDE;
+  if (letter.envelope.has_extended_id) {
+    letter.envelope.envelope_no = header->ExtId;
+  } else {
+    letter.envelope.envelope_no = header->StdId;
+  }
+  letter.page.line_count = header->DLC;
+  memcpy(letter.page.lines, data, header->DLC);
+  return letter;
+}
+
+// Deactivate interrupt, then signal task. Let the task reactivate the
+// interrupt.
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
+  HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(proc_letter_task, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void dispatch_letter(ck_letter_t *letter) { (void)letter; }
+
+void proc_letter(void *unused) {
+  (void)unused;
+
+  // This will go on bus using silent mode.
+  ck_err_t ret = ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE);
+  if (ret != CK_OK) {
+    print(&peripherals->huart1, "Error setting comm mode.\r\n");
+    error();
+  }
+
+  CAN_RxHeaderTypeDef header;
+  uint8_t data[CK_CAN_MAX_DLC];
+  ck_letter_t letter;
+
+  for (;;) {
+    if (HAL_CAN_ActivateNotification(&peripherals->hcan,
+                                     CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) {
+      print(&peripherals->huart1, "Error activating interrupt.\r\n");
+      error();
+    }
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    // Process all messages
+    while (HAL_CAN_GetRxMessage(&peripherals->hcan, CAN_RX_FIFO0, &header,
+                                data) == HAL_OK) {
+      letter = frame_to_letter(&header, data);
+      dispatch_letter(&letter);
+    }
   }
 }
