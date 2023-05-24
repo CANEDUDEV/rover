@@ -30,8 +30,6 @@ Hardware initialization code for the various boards is generated using the [STM3
 
 After loading a project, generate code by clicking on "GENERATE CODE" in the top right. If asked to download firmware, always download.
 
-After modifying code generated with STM32CubeMX, put your code inside `USER_CODE BEGIN` and `USER_CODE END`. This will prevent STM32CubeMX from deleting your code on next auto-generation.
-
 ## Flashing binaries onto the board
 
 Binaries are flashed onto the board using the [ST-LINK/V2 programmer](https://www.st.com/en/development-tools/st-link-v2.html) and the [STM32CubeProgrammer software](https://www.st.com/en/development-tools/stm32cubeprog.html).
