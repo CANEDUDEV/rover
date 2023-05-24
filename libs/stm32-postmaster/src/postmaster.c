@@ -4,8 +4,15 @@
 
 ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc) {
   CAN_HandleTypeDef *hcan = get_can_handle();
+
+  // If bus off, return error
+  if (hcan->State != HAL_CAN_STATE_READY &&
+      hcan->State != HAL_CAN_STATE_LISTENING) {
+    return CK_ERR_SEND_FAILED;
+  }
+
   while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) < 1) {
-    // Busy loop
+    // Busy loop, wait for mailbox to be free
   }
 
   CAN_TxHeaderTypeDef header = {
@@ -42,29 +49,44 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
     case CK_COMM_MODE_COMMUNICATE:
     case CK_COMM_MODE_LISTEN_ONLY:
       set_comm_mode(mode);
-      if (hcan->Init.Mode != CAN_MODE_NORMAL) {
+
+      if (HAL_CAN_GetState(hcan) == HAL_CAN_STATE_LISTENING) {
         if (HAL_CAN_Stop(hcan) != HAL_OK) {
           return CK_ERR_SET_MODE_FAILED;
         }
-        hcan->Init.Mode = CAN_MODE_NORMAL;
-        if (HAL_CAN_Start(hcan) != HAL_OK) {
-          return CK_ERR_SET_MODE_FAILED;
-        }
       }
+
+      hcan->Init.Mode = CAN_MODE_NORMAL;
+      if (HAL_CAN_Init(hcan) != HAL_OK) {
+        return CK_ERR_SET_MODE_FAILED;
+      }
+
+      if (HAL_CAN_Start(hcan) != HAL_OK) {
+        return CK_ERR_SET_MODE_FAILED;
+      }
+
       break;
 
     case CK_COMM_MODE_SILENT:
       set_comm_mode(mode);
-      if (hcan->Init.Mode != CAN_MODE_SILENT) {
+
+      if (HAL_CAN_GetState(hcan) == HAL_CAN_STATE_LISTENING) {
         if (HAL_CAN_Stop(hcan) != HAL_OK) {
           return CK_ERR_SET_MODE_FAILED;
         }
-        hcan->Init.Mode = CAN_MODE_SILENT;
-        if (HAL_CAN_Start(hcan) != HAL_OK) {
-          return CK_ERR_SET_MODE_FAILED;
-        }
       }
+
+      hcan->Init.Mode = CAN_MODE_SILENT;
+      if (HAL_CAN_Init(hcan) != HAL_OK) {
+        return CK_ERR_SET_MODE_FAILED;
+      }
+
+      if (HAL_CAN_Start(hcan) != HAL_OK) {
+        return CK_ERR_SET_MODE_FAILED;
+      }
+
       break;
+
     default:
       break;
   }
