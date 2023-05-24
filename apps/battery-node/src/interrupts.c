@@ -13,8 +13,8 @@ void DMA2_Channel1_IRQHandler(void) {
   HAL_DMA_IRQHandler(&peripherals->hdma_adc2);
 }
 
-// USB high priority or CAN_TX interrupt handler.
-void USB_HP_CAN_TX_IRQHandler(void) {
+// CAN RX interrupt handler
+void USB_LP_CAN_RX0_IRQHandler(void) {
   peripherals_t *peripherals = get_peripherals();
   HAL_CAN_IRQHandler(&peripherals->hcan);
 }
