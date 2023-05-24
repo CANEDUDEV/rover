@@ -1,8 +1,8 @@
 #include "peripherals.h"
 
+#include "error.h"
 #include "ports.h"
 #include "stm32f3xx_hal.h"
-#include "utils.h"
 
 #define USART1_IRQ_PRIORITY 5
 #define USB_HP_CAN_TX_IRQ_PRIORITY 5
@@ -27,7 +27,7 @@ void can_init(void) {
   hcan->Init.ReceiveFifoLocked = DISABLE;
   hcan->Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(hcan) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -49,7 +49,7 @@ void spi1_init(void) {
   hspi1->Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
   hspi1->Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
   if (HAL_SPI_Init(hspi1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -67,7 +67,7 @@ void uart1_init(void) {
   huart1->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_RXINVERT_INIT;
   huart1->AdvancedInit.RxPinLevelInvert = UART_ADVFEATURE_RXINV_ENABLE;
   if (HAL_UART_Init(huart1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
