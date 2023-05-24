@@ -1,7 +1,7 @@
 #include "peripherals.h"
 
+#include "error.h"
 #include "ports.h"
-#include "utils.h"
 
 #define DMA1_Channel1_IRQ_PRIORITY 5
 #define DMA2_Channel1_IRQ_PRIORITY 5
@@ -38,14 +38,14 @@ void adc1_init(void) {
   hadc1->Init.LowPowerAutoWait = DISABLE;
   hadc1->Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
   if (HAL_ADC_Init(hadc1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure the ADC multi-mode
    */
   multimode.Mode = ADC_MODE_INDEPENDENT;
   if (HAL_ADCEx_MultiModeConfigChannel(hadc1, &multimode) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Regular Channel
@@ -57,7 +57,7 @@ void adc1_init(void) {
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Regular Channel
@@ -65,7 +65,7 @@ void adc1_init(void) {
   sConfig.Channel = ADC_CHANNEL_3;
   sConfig.Rank = ADC_REGULAR_RANK_2;
   if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Regular Channel
@@ -73,11 +73,11 @@ void adc1_init(void) {
   sConfig.Channel = ADC_CHANNEL_4;
   sConfig.Rank = ADC_REGULAR_RANK_3;
   if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   if (HAL_ADCEx_Calibration_Start(hadc1, ADC_SINGLE_ENDED) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -102,7 +102,7 @@ void adc2_init(void) {
   hadc2->Init.LowPowerAutoWait = DISABLE;
   hadc2->Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
   if (HAL_ADC_Init(hadc2) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Regular Channel
@@ -114,7 +114,7 @@ void adc2_init(void) {
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   if (HAL_ADC_ConfigChannel(hadc2, &sConfig) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Regular Channel
@@ -122,11 +122,11 @@ void adc2_init(void) {
   sConfig.Channel = ADC_CHANNEL_2;
   sConfig.Rank = ADC_REGULAR_RANK_2;
   if (HAL_ADC_ConfigChannel(hadc2, &sConfig) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   if (HAL_ADCEx_Calibration_Start(hadc2, ADC_SINGLE_ENDED) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -145,7 +145,7 @@ void can_init(void) {
   hcan->Init.ReceiveFifoLocked = DISABLE;
   hcan->Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(hcan) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -161,19 +161,19 @@ void i2c1_init(void) {
   hi2c1->Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
   hi2c1->Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
   if (HAL_I2C_Init(hi2c1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Analogue filter
    */
   if (HAL_I2CEx_ConfigAnalogFilter(hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Digital filter
    */
   if (HAL_I2CEx_ConfigDigitalFilter(hi2c1, 0) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -189,19 +189,19 @@ void i2c3_init(void) {
   hi2c3->Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
   hi2c3->Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
   if (HAL_I2C_Init(hi2c3) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Analogue filter
    */
   if (HAL_I2CEx_ConfigAnalogFilter(hi2c3, I2C_ANALOGFILTER_ENABLE) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Digital filter
    */
   if (HAL_I2CEx_ConfigDigitalFilter(hi2c3, 0) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -222,7 +222,7 @@ void spi1_init(void) {
   hspi1->Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
   hspi1->Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
   if (HAL_SPI_Init(hspi1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -243,7 +243,7 @@ void spi3_init(void) {
   hspi3->Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
   hspi3->Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
   if (HAL_SPI_Init(hspi3) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -262,20 +262,20 @@ void tim1_init(void) {
   htim1->Init.RepetitionCounter = 0;
   htim1->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(htim1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(htim1, &sClockSourceConfig) != HAL_OK) {
-    Error_Handler();
+    error();
   }
   if (HAL_TIM_PWM_Init(htim1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(htim1, &sMasterConfig) != HAL_OK) {
-    Error_Handler();
+    error();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = PWM_MID_POS_PULSE;
@@ -284,7 +284,7 @@ void tim1_init(void) {
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
   if (HAL_TIM_PWM_ConfigChannel(htim1, &sConfigOC, TIM_CHANNEL_4) != HAL_OK) {
-    Error_Handler();
+    error();
   }
   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
@@ -298,7 +298,7 @@ void tim1_init(void) {
   sBreakDeadTimeConfig.Break2Filter = 0;
   sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
   if (HAL_TIMEx_ConfigBreakDeadTime(htim1, &sBreakDeadTimeConfig) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   HAL_TIM_MspPostInit(htim1);
@@ -317,7 +317,7 @@ void uart1_init(void) {
   huart1->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart1->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
   if (HAL_UART_Init(huart1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -434,7 +434,7 @@ void adc1_dma_init(ADC_HandleTypeDef* hadc) {
   hdma_adc1->Init.Mode = DMA_NORMAL;
   hdma_adc1->Init.Priority = DMA_PRIORITY_LOW;
   if (HAL_DMA_Init(hdma_adc1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
   __HAL_LINKDMA(hadc, DMA_Handle, *hdma_adc1);
 }
@@ -451,7 +451,7 @@ void adc2_dma_init(ADC_HandleTypeDef* hadc) {
   hdma_adc2->Init.Mode = DMA_NORMAL;
   hdma_adc2->Init.Priority = DMA_PRIORITY_LOW;
   if (HAL_DMA_Init(hdma_adc2) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   __HAL_LINKDMA(hadc, DMA_Handle, *hdma_adc2);

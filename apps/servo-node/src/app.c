@@ -135,9 +135,9 @@ void InitPotentiometers(void) {
   uint8_t ivraWrite[2] = {POT_IVRA_ADDR, POT_IVRA_DEFAULT};
   uint8_t ivrbWrite[2] = {POT_IVRB_ADDR, POT_IVRB_DEFAULT};
   HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivraWrite,
-                          sizeof(ivraWrite), portMAX_DELAY);
+                          sizeof(ivraWrite), HAL_MAX_DELAY);
   HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivrbWrite,
-                          sizeof(ivrbWrite), portMAX_DELAY);
+                          sizeof(ivrbWrite), HAL_MAX_DELAY);
 }
 
 /* Going towards the minimum pulse gives steering to the right. Going towards

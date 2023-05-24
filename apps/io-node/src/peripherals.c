@@ -1,8 +1,8 @@
 #include "peripherals.h"
 
+#include "error.h"
 #include "ports.h"
 #include "stm32f3xx_hal.h"
-#include "utils.h"
 
 #define DMA1_Channel1_IRQ_PRIORITY 5
 #define PENDSV_IRQ_PRIORITY 15
@@ -33,14 +33,14 @@ void adc1_init(void) {
   hadc1->Init.LowPowerAutoWait = DISABLE;
   hadc1->Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
   if (HAL_ADC_Init(hadc1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure the ADC multi-mode
    */
   multimode.Mode = ADC_MODE_INDEPENDENT;
   if (HAL_ADCEx_MultiModeConfigChannel(hadc1, &multimode) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Regular Channel
@@ -52,7 +52,7 @@ void adc1_init(void) {
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Regular Channel
@@ -60,7 +60,7 @@ void adc1_init(void) {
   sConfig.Channel = ADC_CHANNEL_2;
   sConfig.Rank = ADC_REGULAR_RANK_2;
   if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Regular Channel
@@ -68,7 +68,7 @@ void adc1_init(void) {
   sConfig.Channel = ADC_CHANNEL_3;
   sConfig.Rank = ADC_REGULAR_RANK_3;
   if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Regular Channel
@@ -76,11 +76,11 @@ void adc1_init(void) {
   sConfig.Channel = ADC_CHANNEL_4;
   sConfig.Rank = ADC_REGULAR_RANK_4;
   if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   if (HAL_ADCEx_Calibration_Start(hadc1, ADC_SINGLE_ENDED) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -99,7 +99,7 @@ void can_init(void) {
   hcan->Init.ReceiveFifoLocked = DISABLE;
   hcan->Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(hcan) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -115,19 +115,19 @@ void i2c1_init(void) {
   hi2c1->Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
   hi2c1->Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
   if (HAL_I2C_Init(hi2c1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Analogue filter
    */
   if (HAL_I2CEx_ConfigAnalogFilter(hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Configure Digital filter
    */
   if (HAL_I2CEx_ConfigDigitalFilter(hi2c1, 0) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -149,7 +149,7 @@ void spi1_init(void) {
   hspi1->Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
   hspi1->Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
   if (HAL_SPI_Init(hspi1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -171,7 +171,7 @@ void spi3_init(void) {
   hspi3->Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
   hspi3->Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
   if (HAL_SPI_Init(hspi3) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -188,7 +188,7 @@ void uart1_init(void) {
   huart1->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart1->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
   if (HAL_UART_Init(huart1) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
@@ -319,7 +319,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     hdma_adc1->Init.Mode = DMA_NORMAL;
     hdma_adc1->Init.Priority = DMA_PRIORITY_LOW;
     if (HAL_DMA_Init(hdma_adc1) != HAL_OK) {
-      Error_Handler();
+      error();
     }
 
     __HAL_LINKDMA(hadc, DMA_Handle, *hdma_adc1);

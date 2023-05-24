@@ -13,7 +13,11 @@ extern "C" {
 
 #include <stdint.h>
 
-#include "utils.h"
+typedef struct {
+  uint32_t id;
+  uint8_t dlc;
+  uint8_t data[8];  // NOLINT
+} CANFrame;
 
 typedef enum {
   LEFT = 0,

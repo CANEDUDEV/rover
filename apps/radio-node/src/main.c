@@ -1,8 +1,10 @@
 #include <stm32f3xx_hal.h>
 #include <string.h>
 
+#include "clock.h"
+#include "error.h"
+#include "flash.h"
 #include "peripherals.h"
-#include "utils.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"
@@ -16,8 +18,16 @@ void system_clock_config(void);
 
 // Application
 #define CAN_BASE_ID 100U
+#define CAN_MAX_DLC 8
+
 #define SBUS_PACKET_LENGTH 25
 #define SBUS_HEADER 0x0F
+
+typedef struct {
+  uint32_t id;
+  uint8_t dlc;
+  uint8_t data[CAN_MAX_DLC];
+} CANFrame;
 
 // FreeRTOS
 #define CAN_MESSAGE_QUEUE_LENGTH 10
@@ -46,12 +56,12 @@ int main(void) {
   // Reset of all peripherals, Initializes the Flash interface and the Systick.
   HAL_Init();
 
-  if (FlashRWInit() != APP_OK) {
-    Error_Handler();
+  if (flash_init() != APP_OK) {
+    error();
   }
 
   // Configure the system clock
-  system_clock_config();
+  system_clock_init();
 
   // Initialize all configured peripherals
   peripherals = get_peripherals();
@@ -102,7 +112,7 @@ void system_clock_config(void) {
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
   RCC_OscInitStruct.PLL.PREDIV = RCC_PREDIV_DIV1;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
@@ -115,37 +125,41 @@ void system_clock_config(void) {
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
-    Error_Handler();
+    error();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
-    Error_Handler();
+    error();
   }
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
   UNUSED(huart);
-  NotifyTask(sbus_read_task);
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(sbus_read_task, &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void mailboxFreeCallback(CAN_HandleTypeDef *_hcan) {
+void mailbox_free_callback(CAN_HandleTypeDef *_hcan) {
   // Only notify when going from 0 free mailboxes to 1 free
   if (HAL_CAN_GetTxMailboxesFreeLevel(_hcan) <= 1) {
-    NotifyTask(can_tx_task);
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(can_tx_task, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   }
 }
 
 void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *_hcan) {
-  mailboxFreeCallback(_hcan);
+  mailbox_free_callback(_hcan);
 }
 
 void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *_hcan) {
-  mailboxFreeCallback(_hcan);
+  mailbox_free_callback(_hcan);
 }
 
 void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *_hcan) {
-  mailboxFreeCallback(_hcan);
+  mailbox_free_callback(_hcan);
 }
 
 void can_tx(void *argument) {

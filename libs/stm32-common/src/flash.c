@@ -1,54 +1,38 @@
-#include "utils.h"
+#include "flash.h"
 
 #include <string.h>
 
+#include "error.h"
 #include "stm32f3xx_hal.h"
-#include "task.h"
 
 #define FLASH_ERASE_OK 0xFFFFFFFF  // Specified by STM32 HAL
 #define FLASH_ERASED_SYMBOL 0xDEADBEEF
-
-void Error_Handler(void) {
-  __disable_irq();
-  while (1) {
-  }
-}
-
-void Print(UART_HandleTypeDef *huart, char *str) {
-  HAL_UART_Transmit(huart, (uint8_t *)str, strlen(str), HAL_MAX_DELAY);
-}
-
-void NotifyTask(TaskHandle_t taskHandle) {
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(taskHandle, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
 
 /* Check if we have erased the flash by checking for existence of
  * FLASH_ERASED_SYMBOL. If we haven't, we erase it then write the
  * FLASH_ERASED_SYMBOL to end of writable area. Erasing flash is only needed
  * before first time use, which is why we write the FLASH_ERASED_SYMBOL.
  */
-int FlashRWInit(void) {
+int flash_init(void) {
   uint32_t flashErased = 0;
-  if (ReadFlash(FLASH_RW_END - sizeof(flashErased), &flashErased,
-                sizeof(flashErased)) != APP_OK) {
+  if (flash_read(FLASH_RW_END - sizeof(flashErased), &flashErased,
+                 sizeof(flashErased)) != APP_OK) {
     return APP_NOT_OK;
   }
   // Check if flash is already erased
   if (flashErased == FLASH_ERASED_SYMBOL) {
     return APP_OK;
   }
-  EraseFlash();
+  flash_erase();
   flashErased = FLASH_ERASED_SYMBOL;
-  if (WriteFlash(FLASH_RW_END - sizeof(uint32_t), &flashErased,
-                 sizeof(flashErased)) != APP_OK) {
+  if (flash_write(FLASH_RW_END - sizeof(uint32_t), &flashErased,
+                  sizeof(flashErased)) != APP_OK) {
     return APP_NOT_OK;
   }
   return APP_OK;
 }
 
-int EraseFlash(void) {
+int flash_erase(void) {
   // 1 page = 2KB
   FLASH_EraseInitTypeDef eraseConf = {
       .TypeErase = FLASH_TYPEERASE_PAGES,
@@ -65,7 +49,7 @@ int EraseFlash(void) {
   return APP_OK;
 }
 
-int ReadFlash(uint32_t addr, void *data, size_t len) {
+int flash_read(uint32_t addr, void *data, size_t len) {
   // Check if within writeable memory bounds
   if (addr < FLASH_RW_START) {
     return APP_NOT_OK;
@@ -77,7 +61,7 @@ int ReadFlash(uint32_t addr, void *data, size_t len) {
   return APP_OK;
 }
 
-int WriteFlash(uint32_t addr, const void *data, size_t len) {
+int flash_write(uint32_t addr, const void *data, size_t len) {
   // Check if within writeable memory bounds
   if (addr < FLASH_RW_START) {
     return APP_NOT_OK;
