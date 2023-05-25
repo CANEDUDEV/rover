@@ -63,6 +63,7 @@ static ck_folder_t *cell_folder = &folders[2];
 static ck_folder_t *reg_out_current_folder = &folders[3];
 static ck_folder_t *vbat_out_current_folder = &folders[4];
 
+void ck_data_init(void);
 void mayor_init(void);
 void update_pages(BatteryNodeState *batteryNodeState);
 void send_docs(void);
@@ -100,7 +101,6 @@ int main(void) {
   i2c1_init();
 
   mayor_init();
-
   task_init();
 
   print(&peripherals->huart1, "Starting application...\r\n");
@@ -123,7 +123,7 @@ ck_err_t set_city_mode(ck_city_mode_t mode) {
   return CK_OK;
 }
 
-void mayor_init(void) {
+void ck_page_init(void) {
   // Set up the pages
   // NOLINTBEGIN(*-magic-numbers)
   cell_page0->line_count = 7;
@@ -134,7 +134,9 @@ void mayor_init(void) {
   reg_out_current_page->line_count = 2;
   vbat_out_current_page->line_count = 4;
   // NOLINTEND(*-magic-numbers)
+}
 
+void ck_doc_init(void) {
   // Set up the documents
   cell_doc->direction = CK_DIRECTION_TRANSMIT;
   cell_doc->page_count = 2;
@@ -148,8 +150,10 @@ void mayor_init(void) {
   vbat_out_current_doc->direction = CK_DIRECTION_TRANSMIT;
   vbat_out_current_doc->page_count = 1;
   vbat_out_current_doc->pages[0] = vbat_out_current_page;
+}
 
-  // Set up the lists
+void ck_list_init(void) {
+  // Set up the doc lists
   rx_list->type = CK_LIST_DOCUMENT;
   rx_list->direction = CK_DIRECTION_RECEIVE;
   rx_list->list_no = 0;
@@ -163,7 +167,9 @@ void mayor_init(void) {
   tx_list->records[1] = cell_doc;
   tx_list->records[2] = reg_out_current_doc;
   tx_list->records[3] = vbat_out_current_doc;
+}
 
+void ck_folder_init(void) {
   // Set up the folders
   cell_folder->direction = CK_DIRECTION_TRANSMIT;
   cell_folder->doc_list_no = 0;
@@ -186,6 +192,13 @@ void mayor_init(void) {
   vbat_out_current_folder->enable = true;
   vbat_out_current_folder->folder_no = 4;
   vbat_out_current_folder->dlc = sizeof(uint32_t);
+}
+
+void ck_data_init(void) {
+  ck_page_init();
+  ck_doc_init();
+  ck_list_init();
+  ck_folder_init();
 
   // TODO: Set envelopes using king's pages.
   cell_folder->envelope_count = 1;
@@ -197,7 +210,10 @@ void mayor_init(void) {
   vbat_out_current_folder->envelope_count = 1;
   vbat_out_current_folder->envelopes[0].envelope_no = CAN_BASE_ID + 2;
   vbat_out_current_folder->envelopes[0].enable = true;
+}
 
+void mayor_init(void) {
+  ck_data_init();
   peripherals_t *peripherals = get_peripherals();
   postmaster_init(&(peripherals->hcan));  // Set up the postmaster
 
