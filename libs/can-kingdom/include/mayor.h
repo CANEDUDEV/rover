@@ -194,6 +194,16 @@ ck_err_t ck_send_document(uint8_t folder_no);
  ******************************************************************************/
 ck_err_t ck_send_mayors_page(uint8_t page_no);
 
+/*******************************************************************************
+ * Checks if the envelope is from the king.
+ *
+ * @param envelope envelope to check.
+ *
+ * @return #CK_ERR_INVALID_KINGS_LETTER if it's not a king's envelope.
+ * @return #CK_OK if it's a king's envelope.
+ ******************************************************************************/
+ck_err_t ck_is_kings_envelope(ck_envelope_t *envelope);
+
 #ifdef __cplusplus
 }
 #endif
