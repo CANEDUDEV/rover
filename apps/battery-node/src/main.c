@@ -20,19 +20,13 @@
 static peripherals_t *peripherals;
 
 // FreeRTOS
-#define BATTERY_MONITOR_TASK_PERIOD 200
-#define POWER_MEASURE_TASK_PERIOD 100
+#define BATTERY_MONITOR_TASK_PERIOD 100
 #define LOWEST_TASK_PRIORITY 24
 
 static TaskHandle_t battery_monitor_task;
 static StaticTask_t battery_monitor_buf;
 static StackType_t battery_monitor_stack[configMINIMAL_STACK_SIZE];
 void battery_monitor(void *unused);
-
-static TaskHandle_t power_measure_task;
-static StaticTask_t power_measure_buf;
-static StackType_t power_measure_stack[configMINIMAL_STACK_SIZE];
-void power_measure(void *unused);
 
 // CAN Kingdom process received letters task
 static TaskHandle_t proc_letter_task;
@@ -70,12 +64,13 @@ static ck_folder_t *reg_out_current_folder = &folders[3];
 static ck_folder_t *vbat_out_current_folder = &folders[4];
 
 void mayor_init(void);
+void update_pages(BatteryNodeState *batteryNodeState);
+void send_docs(void);
 
 // Application
 #define CAN_BASE_ID 0x100
 #define LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD 10
 
-static BatteryNodeState batteryNodeState;
 // Set to 1 by GPIO external interrupt on the OVER_CURRENT pin.
 static uint8_t OverCurrentFault = 0;
 
@@ -176,21 +171,21 @@ void mayor_init(void) {
   cell_folder->enable = true;
   cell_folder->folder_no = 2;
   // 3 cells per page + 1 byte for pagination.
-  cell_folder->dlc = 3 * sizeof(batteryNodeState.cells[0]) + 1;
+  cell_folder->dlc = 3 * sizeof(uint16_t) + 1;
 
   reg_out_current_folder->direction = CK_DIRECTION_TRANSMIT;
   reg_out_current_folder->doc_list_no = 0;
   reg_out_current_folder->doc_no = 2;
   reg_out_current_folder->enable = true;
   reg_out_current_folder->folder_no = 3;
-  reg_out_current_folder->dlc = sizeof(batteryNodeState.regOutCurrent);
+  reg_out_current_folder->dlc = sizeof(uint16_t);
 
   vbat_out_current_folder->direction = CK_DIRECTION_TRANSMIT;
   vbat_out_current_folder->doc_list_no = 0;
   vbat_out_current_folder->doc_no = 3;
   vbat_out_current_folder->enable = true;
   vbat_out_current_folder->folder_no = 4;
-  vbat_out_current_folder->dlc = sizeof(batteryNodeState.vbatOutCurrent);
+  vbat_out_current_folder->dlc = sizeof(uint32_t);
 
   // TODO: Set envelopes using king's pages.
   cell_folder->envelope_count = 1;
@@ -225,7 +220,7 @@ void mayor_init(void) {
   }
 
   // Go on bus in silent mode
-  if (ck_set_comm_mode(CK_COMM_MODE_SILENT) != CK_OK) {
+  if (ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE) != CK_OK) {
     print(&peripherals->huart1, "Error setting comm mode.\r\n");
     error();
   }
@@ -234,21 +229,17 @@ void mayor_init(void) {
 void task_init(void) {
   battery_monitor_task = xTaskCreateStatic(
       battery_monitor, "battery monitor", configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY + 2, battery_monitor_stack, &battery_monitor_buf);
-
-  power_measure_task = xTaskCreateStatic(
-      power_measure, "power measure", configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY + 1, power_measure_stack, &power_measure_buf);
+      LOWEST_TASK_PRIORITY, battery_monitor_stack, &battery_monitor_buf);
 
   proc_letter_task = xTaskCreateStatic(
       proc_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY, proc_letter_stack, &proc_letter_buf);
+      LOWEST_TASK_PRIORITY + 1, proc_letter_stack, &proc_letter_buf);
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
   (void)hadc;
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(power_measure_task, &xHigherPriorityTaskWoken);
+  vTaskNotifyGiveFromISR(battery_monitor_task, &xHigherPriorityTaskWoken);
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
@@ -264,24 +255,27 @@ void battery_monitor_timer(TimerHandle_t xTimer) {
   xTaskNotifyGive(battery_monitor_task);
 }
 
-void power_measure_timer(TimerHandle_t xTimer) {
-  (void)xTimer;
-  xTaskNotifyGive(power_measure_task);
-}
-
-void power_measure(void *unused) {
+void battery_monitor(void *unused) {
   (void)unused;
+
+  SetJumperConfig(ALL_ON);
+  ConfigureVoltageRegulator(&peripherals->hi2c1, POT_IVRA_DEFAULT);
+  HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(POWER_OFF_GPIO_Port, POWER_OFF_Pin, GPIO_PIN_SET);
 
   StaticTimer_t timer_buf;
   TimerHandle_t xTimer = xTimerCreateStatic(
-      "power measure timer", pdMS_TO_TICKS(POWER_MEASURE_TASK_PERIOD),
+      "battery monitor timer", pdMS_TO_TICKS(BATTERY_MONITOR_TASK_PERIOD),
       pdTRUE,  // Auto reload timer
       NULL,    // Timer ID, unused
-      power_measure_timer, &timer_buf);
-
-  ADCReading adcBuf;
+      battery_monitor_timer, &timer_buf);
 
   xTimerStart(xTimer, portMAX_DELAY);
+
+  BatteryNodeState batteryNodeState;
+  ADCReading adcBuf;
+  BatteryCharge charge = CHARGE_100_PERCENT;
+  uint8_t lowPowerReportCount = 0;
 
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
@@ -296,55 +290,7 @@ void power_measure(void *unused) {
 
     ParseADCValues(&adcBuf, &batteryNodeState);
 
-    // Copy cells 0,1,2 to page 0 of cell doc, cells 3,4,5 to page 1.
-    memcpy(&cell_page0->lines[1], &batteryNodeState.cells[0], cell_folder->dlc);
-    memcpy(&cell_page1->lines[1], &batteryNodeState.cells[3], cell_folder->dlc);
-
-    memcpy(reg_out_current_page->lines, &batteryNodeState.regOutCurrent,
-           reg_out_current_folder->dlc);
-
-    memcpy(vbat_out_current_page->lines, &batteryNodeState.vbatOutCurrent,
-           vbat_out_current_folder->dlc);
-
-    // Send the documents
-    if (ck_send_document(cell_folder->folder_no) != CK_OK) {
-      print(&peripherals->huart1, "failed to send doc.\r\n");
-    }
-    if (ck_send_document(reg_out_current_folder->folder_no) != CK_OK) {
-      print(&peripherals->huart1, "failed to send doc.\r\n");
-    }
-    if (ck_send_document(vbat_out_current_folder->folder_no) != CK_OK) {
-      print(&peripherals->huart1, "failed to send doc.\r\n");
-    }
-  }
-}
-
-void battery_monitor(void *unused) {
-  (void)unused;
-
-  SetJumperConfig(ALL_ON);
-
-  ConfigureVoltageRegulator(&peripherals->hi2c1, POT_IVRA_DEFAULT);
-  HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(POWER_OFF_GPIO_Port, POWER_OFF_Pin, GPIO_PIN_SET);
-
-  StaticTimer_t timer_buf;
-  TimerHandle_t xTimer = xTimerCreateStatic(
-      "battery monitor timer", pdMS_TO_TICKS(BATTERY_MONITOR_TASK_PERIOD),
-      pdTRUE,  // Auto reload timer
-      NULL,    // Timer ID, unused
-      battery_monitor_timer, &timer_buf);
-
-  BatteryCharge charge = CHARGE_100_PERCENT;
-  uint8_t lowPowerReportCount = 0;
-
-  xTimerStart(xTimer, portMAX_DELAY);
-
-  for (;;) {
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
-
-    // Don't try to update charge state after low voltage cutoff
-    // or over current fault.
+    // Check if over current or low voltage protection has triggered.
     if (lowPowerReportCount > LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD ||
         OverCurrentFault != 0) {
       // Turn off the power outputs to reduce the battery power drain.
@@ -352,11 +298,37 @@ void battery_monitor(void *unused) {
       HAL_GPIO_WritePin(POWER_OFF_GPIO_Port, POWER_OFF_Pin, GPIO_PIN_RESET);
       // Blink LEDs red to show user something is wrong.
       BlinkLEDsRed();
-      continue;
+    } else {  // Only update the charge state if no fault has occured.
+      charge = ReadBatteryCharge(&batteryNodeState);
+      lowPowerReportCount += SetChargeStateLED(&charge);
     }
 
-    charge = ReadBatteryCharge(&batteryNodeState);
-    lowPowerReportCount += SetChargeStateLED(&charge);
+    update_pages(&batteryNodeState);
+    send_docs();
+  }
+}
+
+void update_pages(BatteryNodeState *batteryNodeState) {
+  // Copy cells 0,1,2 to page 0 of cell doc, cells 3,4,5 to page 1.
+  memcpy(&cell_page0->lines[1], &batteryNodeState->cells[0], cell_folder->dlc);
+  memcpy(&cell_page1->lines[1], &batteryNodeState->cells[3], cell_folder->dlc);
+
+  memcpy(reg_out_current_page->lines, &batteryNodeState->regOutCurrent,
+         reg_out_current_folder->dlc);
+
+  memcpy(vbat_out_current_page->lines, &batteryNodeState->vbatOutCurrent,
+         vbat_out_current_folder->dlc);
+}
+
+void send_docs(void) {
+  if (ck_send_document(cell_folder->folder_no) != CK_OK) {
+    print(&peripherals->huart1, "failed to send doc.\r\n");
+  }
+  if (ck_send_document(reg_out_current_folder->folder_no) != CK_OK) {
+    print(&peripherals->huart1, "failed to send doc.\r\n");
+  }
+  if (ck_send_document(vbat_out_current_folder->folder_no) != CK_OK) {
+    print(&peripherals->huart1, "failed to send doc.\r\n");
   }
 }
 
