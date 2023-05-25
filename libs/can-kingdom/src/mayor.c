@@ -206,6 +206,15 @@ ck_err_t ck_send_mayors_page(uint8_t page_no) {
   return CK_OK;
 }
 
+ck_err_t ck_is_kings_envelope(ck_envelope_t *envelope) {
+  ck_folder_t *folder = &mayor.user_data.folders[CK_KINGS_FOLDER_NO];
+  if (find_envelope(folder, envelope) < 0) {
+    return CK_ERR_INVALID_KINGS_LETTER;
+  }
+
+  return CK_OK;
+}
+
 static void init_mayors_pages(void) {
   // Init mayor's pages
   mayor.pages[0].line_count = CK_MAX_LINES_PER_PAGE;

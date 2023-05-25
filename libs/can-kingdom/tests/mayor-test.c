@@ -47,6 +47,7 @@ static test_err_t test_process_kings_letter(void);
 static test_err_t test_add_mayors_page(void);
 static test_err_t test_ck_send_document(void);
 static test_err_t test_ck_send_mayors_page(void);
+static test_err_t test_ck_is_kings_envelope(void);
 static test_err_t test_process_kp0(void);
 static test_err_t test_process_kp1(void);
 static test_err_t test_process_kp2(void);
@@ -88,7 +89,10 @@ int main(void) {
   if (test_ck_send_document() != TEST_PASS) {
     return TEST_FAIL;
   }
-  return test_ck_send_mayors_page();
+  if (test_ck_send_mayors_page() != TEST_PASS) {
+    return TEST_FAIL;
+  }
+  return test_ck_is_kings_envelope();
 }
 
 static test_err_t test_mayor_init(void) {
@@ -283,6 +287,23 @@ static test_err_t test_ck_send_mayors_page(void) {
   // Test invalid page number
   if (ck_send_mayors_page(2) == CK_OK) {
     printf("send_mayors_page: invalid page number returned OK.\n");
+    return TEST_FAIL;
+  }
+
+  return TEST_PASS;
+}
+
+static test_err_t test_ck_is_kings_envelope(void) {
+  ck_envelope_t good_envelope = {.envelope_no = 0};
+  ck_envelope_t bad_envelope = {.envelope_no = 1};
+
+  if (ck_is_kings_envelope(&good_envelope) != CK_OK) {
+    printf("is_kings_envelope: king's envelope returned error.\n");
+    return TEST_FAIL;
+  }
+
+  if (ck_is_kings_envelope(&bad_envelope) == CK_OK) {
+    printf("is_kings_envelope: bad envelope returned OK.\n");
     return TEST_FAIL;
   }
 
