@@ -220,6 +220,13 @@ void mayor_init(void) {
   };
 
   if (ck_mayor_init(&mayor) != CK_OK) {
+    print(&peripherals->huart1, "Error setting up mayor.\r\n");
+    error();
+  }
+
+  // Go on bus in silent mode
+  if (ck_set_comm_mode(CK_COMM_MODE_SILENT) != CK_OK) {
+    print(&peripherals->huart1, "Error setting comm mode.\r\n");
     error();
   }
 }
@@ -378,17 +385,19 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void dispatch_letter(ck_letter_t *letter) { (void)letter; }
+void dispatch_letter(ck_letter_t *letter) {
+  // Check for king's letter
+  if (ck_is_kings_envelope(&letter->envelope) == CK_OK) {
+    if (ck_process_kings_letter(letter) != CK_OK) {
+      print(&peripherals->huart1, "failed to process king's letter.\r\n");
+    }
+    return;
+  }
+  // TODO: implement other letters
+}
 
 void proc_letter(void *unused) {
   (void)unused;
-
-  // This will go on bus using silent mode.
-  ck_err_t ret = ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE);
-  if (ret != CK_OK) {
-    print(&peripherals->huart1, "Error setting comm mode.\r\n");
-    error();
-  }
 
   CAN_RxHeaderTypeDef header;
   uint8_t data[CK_CAN_MAX_DLC];
