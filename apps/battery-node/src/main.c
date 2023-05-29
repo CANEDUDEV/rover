@@ -63,6 +63,9 @@ static ck_folder_t *cell_folder = &folders[2];
 static ck_folder_t *reg_out_current_folder = &folders[3];
 static ck_folder_t *vbat_out_current_folder = &folders[4];
 
+// Set to true when default letter has been received.
+static bool default_letter_received = false;
+
 void ck_data_init(void);
 void mayor_init(void);
 void update_pages(BatteryNodeState *batteryNodeState);
@@ -373,7 +376,23 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
+bool is_default_letter(ck_letter_t *letter) {
+  ck_letter_t dletter = default_letter();
+  if (letter->envelope.envelope_no == dletter.envelope.envelope_no &&
+      letter->page.line_count == dletter.page.line_count &&
+      memcmp(letter->page.lines, dletter.page.lines, dletter.page.line_count) ==
+          0) {
+    return true;
+  }
+  return false;
+}
+
 void dispatch_letter(ck_letter_t *letter) {
+  if (is_default_letter(letter)) {
+    default_letter_received = true;
+    print(&peripherals->huart1, "default letter received.\r\n");
+    return;
+  }
   // Check for king's letter
   if (ck_is_kings_envelope(&letter->envelope) == CK_OK) {
     if (ck_process_kings_letter(letter) != CK_OK) {
@@ -384,12 +403,24 @@ void dispatch_letter(ck_letter_t *letter) {
   // TODO: implement other letters
 }
 
+void default_letter_timer(TimerHandle_t timer) { (void)timer; }
+
 void proc_letter(void *unused) {
   (void)unused;
 
   CAN_RxHeaderTypeDef header;
   uint8_t data[CK_CAN_MAX_DLC];
   ck_letter_t letter;
+
+  // Timer to check for default letter. 200ms according to CAN Kingdom spec.
+  StaticTimer_t timer_buf;
+  TimerHandle_t timer =
+      xTimerCreateStatic("default letter timer", pdMS_TO_TICKS(200),
+                         pdFALSE,  // Auto reload timer
+                         NULL,     // Timer ID, unused
+                         default_letter_timer, &timer_buf);
+
+  xTimerStart(timer, portMAX_DELAY);
 
   for (;;) {
     if (HAL_CAN_ActivateNotification(&peripherals->hcan,
