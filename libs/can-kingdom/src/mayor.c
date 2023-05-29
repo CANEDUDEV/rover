@@ -137,6 +137,9 @@ ck_err_t ck_add_mayors_page(ck_page_t *page) {
 }
 
 ck_err_t ck_send_document(uint8_t folder_no) {
+  if (ck_get_comm_mode() != CK_COMM_MODE_COMMUNICATE) {
+    return CK_OK;
+  }
   int folder_index = find_folder(folder_no);
   if (folder_index < 0) {
     return CK_ERR_ITEM_NOT_FOUND;
@@ -179,6 +182,10 @@ ck_err_t ck_send_document(uint8_t folder_no) {
 }
 
 ck_err_t ck_send_mayors_page(uint8_t page_no) {
+  // Mayor's page should be sent in listen only mode and communicate mode.
+  if (ck_get_comm_mode() == CK_COMM_MODE_SILENT) {
+    return CK_OK;
+  }
   ck_folder_t *folder = &mayor.user_data.folders[CK_MAYORS_FOLDER_NO];
   // If folder is disabled or is a receive folder, return OK.
   if (!folder->enable || folder->direction != CK_DIRECTION_TRANSMIT) {
@@ -209,7 +216,7 @@ ck_err_t ck_send_mayors_page(uint8_t page_no) {
 ck_err_t ck_is_kings_envelope(ck_envelope_t *envelope) {
   ck_folder_t *folder = &mayor.user_data.folders[CK_KINGS_FOLDER_NO];
   if (find_envelope(folder, envelope) < 0) {
-    return CK_ERR_INVALID_KINGS_LETTER;
+    return CK_ERR_FALSE;
   }
 
   return CK_OK;

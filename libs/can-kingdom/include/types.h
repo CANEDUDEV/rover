@@ -160,6 +160,8 @@ typedef enum {
   CK_ERR_SEND_FAILED,
   /// Returned when setting a mode fails.
   CK_ERR_SET_MODE_FAILED,
+  /// Error code from boolean return type functions
+  CK_ERR_FALSE,
 } ck_err_t;
 
 /// Supported king's pages.

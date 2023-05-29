@@ -2,6 +2,8 @@
 
 #include "postmaster-hal.h"
 
+static ck_comm_mode_t comm_mode;
+
 ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc) {
   CAN_HandleTypeDef *hcan = get_can_handle();
 
@@ -48,7 +50,7 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
   switch (mode) {
     case CK_COMM_MODE_COMMUNICATE:
     case CK_COMM_MODE_LISTEN_ONLY:
-      set_comm_mode(mode);
+      comm_mode = mode;
 
       if (HAL_CAN_GetState(hcan) == HAL_CAN_STATE_LISTENING) {
         if (HAL_CAN_Stop(hcan) != HAL_OK) {
@@ -68,7 +70,7 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
       break;
 
     case CK_COMM_MODE_SILENT:
-      set_comm_mode(mode);
+      comm_mode = mode;
 
       if (HAL_CAN_GetState(hcan) == HAL_CAN_STATE_LISTENING) {
         if (HAL_CAN_Stop(hcan) != HAL_OK) {
@@ -92,3 +94,5 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
   }
   return CK_OK;
 }
+
+ck_comm_mode_t ck_get_comm_mode(void) { return comm_mode; }

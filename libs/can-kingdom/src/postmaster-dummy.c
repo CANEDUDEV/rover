@@ -14,3 +14,5 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
   }
   return CK_OK;
 }
+
+ck_comm_mode_t ck_get_comm_mode(void) { return CK_COMM_MODE_COMMUNICATE; }
