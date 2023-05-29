@@ -236,7 +236,7 @@ void mayor_init(void) {
   }
 
   // Go on bus in silent mode
-  if (ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE) != CK_OK) {
+  if (ck_set_comm_mode(CK_COMM_MODE_SILENT) != CK_OK) {
     print(&peripherals->huart1, "Error setting comm mode.\r\n");
     error();
   }
