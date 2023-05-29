@@ -43,6 +43,13 @@ ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc);
  ******************************************************************************/
 ck_err_t ck_set_comm_mode(ck_comm_mode_t mode);
 
+/*******************************************************************************
+ * Get the currently set communication mode.
+ *
+ * @return ck_comm_mode_t containing the current mode.
+ ******************************************************************************/
+ck_comm_mode_t ck_get_comm_mode(void);
+
 #ifdef __cplusplus
 }
 #endif

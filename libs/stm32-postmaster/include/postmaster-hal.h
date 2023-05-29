@@ -11,9 +11,6 @@ extern "C" {
 void postmaster_init(CAN_HandleTypeDef *hcan);
 CAN_HandleTypeDef *get_can_handle(void);
 
-ck_comm_mode_t get_comm_mode(void);
-void set_comm_mode(ck_comm_mode_t mode);
-
 #ifdef __cplusplus
 }
 #endif
