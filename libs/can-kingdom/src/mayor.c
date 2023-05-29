@@ -70,6 +70,14 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
     return CK_ERR_INVALID_PARAMETER;
   }
 
+  // Base number bounds check
+  if ((!mayor_->has_extended_id &&
+       mayor_->base_no + mayor_->city_address > CK_CAN_MAX_STD_ID) ||
+      (mayor_->has_extended_id &&
+       mayor_->base_no + mayor_->city_address > CK_CAN_MAX_EXT_ID)) {
+    return CK_ERR_INVALID_PARAMETER;
+  }
+
   // Copy user data to internal state.
   // Needs to be done before setting up the internal state.
   memcpy(&mayor.user_data, mayor_, sizeof(ck_mayor_t));

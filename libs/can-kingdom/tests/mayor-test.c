@@ -102,8 +102,8 @@ static test_err_t test_mayor_init(void) {
   ck_mayor_t mayor = {
       .ean_no = illegal_ean_no,  // Illegal EAN
       .serial_no = test_serial_no,
-      .city_address = 0,  // illegal city address
-      .base_no = test_base_no,
+      .city_address = 0,             // Illegal city address
+      .base_no = CK_CAN_MAX_STD_ID,  // Illegal base no
       .has_extended_id = false,
       // Illegal function pointers
       .set_action_mode = NULL,
@@ -127,6 +127,12 @@ static test_err_t test_mayor_init(void) {
   }
 
   mayor.city_address = test_city_address;
+  if (ck_mayor_init(&mayor) == CK_OK) {
+    printf("mayor_init: illegal parameter returned OK.\n");
+    return TEST_FAIL;
+  }
+
+  mayor.base_no = test_base_no;
   if (ck_mayor_init(&mayor) == CK_OK) {
     printf("mayor_init: illegal parameter returned OK.\n");
     return TEST_FAIL;
