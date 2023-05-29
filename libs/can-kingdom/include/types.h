@@ -179,25 +179,25 @@ typedef enum {
 /// Action mode as defined by the CAN Kingdom specification.
 typedef enum {
   /// Keep the current mode.
-  CK_ACTION_MODE_KEEP_CURRENT = 0x00,
+  CK_ACTION_MODE_KEEP_CURRENT = 0x0,
   /// Start the city.
-  CK_ACTION_MODE_RUN = 0x01,
+  CK_ACTION_MODE_RUN = 0x1,
   /// Stop the city.
-  CK_ACTION_MODE_FREEZE = 0x10,
+  CK_ACTION_MODE_FREEZE = 0x2,
   /// Reset the city.
-  CK_ACTION_MODE_RESET = 0x11,
+  CK_ACTION_MODE_RESET = 0x3,
 } ck_action_mode_t;
 
 /// Communication mode as defined by the CAN Kingdom specification.
 typedef enum {
   /// Keep the current mode.
-  CK_COMM_MODE_KEEP_CURRENT = 0x00,
+  CK_COMM_MODE_KEEP_CURRENT = 0x0,
   /// Set the CAN controller in silent mode.
-  CK_COMM_MODE_SILENT = 0x01,
+  CK_COMM_MODE_SILENT = 0x1,
   /// Set the CAN controller in listen-only mode.
-  CK_COMM_MODE_LISTEN_ONLY = 0x10,
+  CK_COMM_MODE_LISTEN_ONLY = 0x2,
   /// Enable CAN communication.
-  CK_COMM_MODE_COMMUNICATE = 0x11,
+  CK_COMM_MODE_COMMUNICATE = 0x3,
 } ck_comm_mode_t;
 
 /// Only #CK_CITY_MODE_KEEP_CURRENT is defined, the rest is defined by the user.
