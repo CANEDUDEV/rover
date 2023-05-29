@@ -230,6 +230,8 @@ ck_err_t ck_is_kings_envelope(ck_envelope_t *envelope) {
   return CK_OK;
 }
 
+uint32_t ck_get_base_number(void) { return mayor.user_data.base_no; }
+
 static void init_mayors_pages(void) {
   // Init mayor's pages
   mayor.pages[0].line_count = CK_MAX_LINES_PER_PAGE;

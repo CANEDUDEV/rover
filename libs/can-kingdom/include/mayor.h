@@ -204,6 +204,11 @@ ck_err_t ck_send_mayors_page(uint8_t page_no);
  ******************************************************************************/
 ck_err_t ck_is_kings_envelope(ck_envelope_t *envelope);
 
+/*******************************************************************************
+ * Returns the current base number.
+ ******************************************************************************/
+uint32_t ck_get_base_number(void);
+
 #ifdef __cplusplus
 }
 #endif
