@@ -63,8 +63,10 @@ static ck_folder_t *cell_folder = &folders[2];
 static ck_folder_t *reg_out_current_folder = &folders[3];
 static ck_folder_t *vbat_out_current_folder = &folders[4];
 
-// Set to true when default letter has been received.
+// Set to true when 200ms has passed without receiving a default letter.
+static bool default_letter_timeout = false;
 static bool default_letter_received = false;
+static bool base_number_known = false;
 
 void ck_data_init(void);
 void mayor_init(void);
@@ -388,11 +390,6 @@ bool is_default_letter(ck_letter_t *letter) {
 }
 
 void dispatch_letter(ck_letter_t *letter) {
-  if (is_default_letter(letter)) {
-    default_letter_received = true;
-    print(&peripherals->huart1, "default letter received.\r\n");
-    return;
-  }
   // Check for king's letter
   if (ck_is_kings_envelope(&letter->envelope) == CK_OK) {
     if (ck_process_kings_letter(letter) != CK_OK) {
@@ -403,14 +400,54 @@ void dispatch_letter(ck_letter_t *letter) {
   // TODO: implement other letters
 }
 
-void default_letter_timer(TimerHandle_t timer) { (void)timer; }
+void default_letter_timer(TimerHandle_t timer) {
+  (void)timer;
+  default_letter_timeout = true;
+
+  // 2b
+  if (!default_letter_received) {
+    // TODO: Set bit timing registers from flash
+    if (ck_set_comm_mode(CK_COMM_MODE_SILENT) != CK_OK) {
+      print(&peripherals->huart1, "Error setting comm mode.\r\n");
+      error();
+    }
+    print(&peripherals->huart1, "2b.\r\n");
+  }
+}
+
+bool is_startup_finished(bool startup_finished, bool letter_received) {
+  // Check for correctly received letter
+  if (startup_finished) {
+    return true;
+  }
+  if (letter_received) {
+    // 3a
+    if (base_number_known) {
+      if (ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE) != CK_OK) {
+        print(&peripherals->huart1, "Error setting comm mode.\r\n");
+        error();
+      }
+      if (ck_send_mayors_page(0) != CK_OK) {
+        print(&peripherals->huart1, "Error sending mayor's page.\r\n");
+        return false;
+      }
+      print(&peripherals->huart1, "3a.\r\n");
+    }
+    // 3b
+    else {
+      if (ck_set_comm_mode(CK_COMM_MODE_LISTEN_ONLY) != CK_OK) {
+        print(&peripherals->huart1, "Error setting comm mode.\r\n");
+        error();
+      }
+      print(&peripherals->huart1, "3b.\r\n");
+    }
+    return true;
+  }
+  return false;
+}
 
 void proc_letter(void *unused) {
   (void)unused;
-
-  CAN_RxHeaderTypeDef header;
-  uint8_t data[CK_CAN_MAX_DLC];
-  ck_letter_t letter;
 
   // Timer to check for default letter. 200ms according to CAN Kingdom spec.
   StaticTimer_t timer_buf;
@@ -421,6 +458,16 @@ void proc_letter(void *unused) {
                          default_letter_timer, &timer_buf);
 
   xTimerStart(timer, portMAX_DELAY);
+
+  CAN_RxHeaderTypeDef header;
+  uint8_t data[CK_CAN_MAX_DLC];
+  ck_letter_t letter;
+
+  // Set to true when a CAN frame has been received correctly,
+  // indicating compatible bus parameters.
+  bool letter_received = false;
+
+  bool startup_finished = false;
 
   for (;;) {
     if (HAL_CAN_ActivateNotification(&peripherals->hcan,
@@ -433,8 +480,26 @@ void proc_letter(void *unused) {
     // Process all messages
     while (HAL_CAN_GetRxMessage(&peripherals->hcan, CAN_RX_FIFO0, &header,
                                 data) == HAL_OK) {
+      letter_received = true;
       letter = frame_to_letter(&header, data);
+
+      // Check for default letter
+      // 2a
+      if (!default_letter_received && !default_letter_timeout &&
+          is_default_letter(&letter)) {
+        default_letter_received = true;
+        if (ck_set_comm_mode(CK_COMM_MODE_LISTEN_ONLY) != CK_OK) {
+          print(&peripherals->huart1, "Error setting comm mode.\r\n");
+          error();
+        }
+        startup_finished = true;
+        print(&peripherals->huart1, "default letter received.\r\n");
+        break;
+      }
+
       dispatch_letter(&letter);
     }
+
+    startup_finished = is_startup_finished(startup_finished, letter_received);
   }
 }
