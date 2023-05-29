@@ -169,14 +169,118 @@ void adc2_init(void) {
  * @param None
  * @retval None
  */
-void can_init(void) {
+int can_init(can_bit_timing_t* bit_timing) {
   CAN_HandleTypeDef* hcan = &peripherals.hcan;
   hcan->Instance = CAN;
-  hcan->Init.Prescaler = 18;  // NOLINT
+
+  if (bit_timing->prescaler < 1) {
+    return APP_NOT_OK;
+  }
+
+  hcan->Init.Prescaler = bit_timing->prescaler;
   hcan->Init.Mode = CAN_MODE_NORMAL;
-  hcan->Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan->Init.TimeSeg1 = CAN_BS1_13TQ;
-  hcan->Init.TimeSeg2 = CAN_BS2_2TQ;
+
+  switch (bit_timing->sjw) {
+    case 1:
+      hcan->Init.SyncJumpWidth = CAN_SJW_1TQ;
+      break;
+    case 2:
+      hcan->Init.SyncJumpWidth = CAN_SJW_2TQ;
+      break;
+    case 3:
+      hcan->Init.SyncJumpWidth = CAN_SJW_3TQ;
+      break;
+    case 4:
+      hcan->Init.SyncJumpWidth = CAN_SJW_4TQ;
+      break;
+    default:
+      return APP_NOT_OK;
+  }
+
+  // NOLINTBEGIN(*-magic-numbers)
+  switch (bit_timing->tseg1) {
+    case 1:
+      hcan->Init.TimeSeg1 = CAN_BS1_1TQ;
+      break;
+    case 2:
+      hcan->Init.TimeSeg1 = CAN_BS1_2TQ;
+      break;
+    case 3:
+      hcan->Init.TimeSeg1 = CAN_BS1_3TQ;
+      break;
+    case 4:
+      hcan->Init.TimeSeg1 = CAN_BS1_4TQ;
+      break;
+    case 5:
+      hcan->Init.TimeSeg1 = CAN_BS1_5TQ;
+      break;
+    case 6:
+      hcan->Init.TimeSeg1 = CAN_BS1_6TQ;
+      break;
+    case 7:
+      hcan->Init.TimeSeg1 = CAN_BS1_7TQ;
+      break;
+    case 8:
+      hcan->Init.TimeSeg1 = CAN_BS1_8TQ;
+      break;
+    case 9:
+      hcan->Init.TimeSeg1 = CAN_BS1_9TQ;
+      break;
+    case 10:
+      hcan->Init.TimeSeg1 = CAN_BS1_10TQ;
+      break;
+    case 11:
+      hcan->Init.TimeSeg1 = CAN_BS1_11TQ;
+      break;
+    case 12:
+      hcan->Init.TimeSeg1 = CAN_BS1_12TQ;
+      break;
+    case 13:
+      hcan->Init.TimeSeg1 = CAN_BS1_13TQ;
+      break;
+    case 14:
+      hcan->Init.TimeSeg1 = CAN_BS1_14TQ;
+      break;
+    case 15:
+      hcan->Init.TimeSeg1 = CAN_BS1_15TQ;
+      break;
+    case 16:
+      hcan->Init.TimeSeg1 = CAN_BS1_16TQ;
+      break;
+    default:
+      return APP_NOT_OK;
+  }
+
+  switch (bit_timing->tseg2) {
+    case 1:
+      hcan->Init.TimeSeg2 = CAN_BS2_1TQ;
+      break;
+    case 2:
+      hcan->Init.TimeSeg2 = CAN_BS2_2TQ;
+      break;
+    case 3:
+      hcan->Init.TimeSeg2 = CAN_BS2_3TQ;
+      break;
+    case 4:
+      hcan->Init.TimeSeg2 = CAN_BS2_4TQ;
+      break;
+    case 5:
+      hcan->Init.TimeSeg2 = CAN_BS2_5TQ;
+      break;
+    case 6:
+      hcan->Init.TimeSeg2 = CAN_BS2_6TQ;
+      break;
+    case 7:
+      hcan->Init.TimeSeg2 = CAN_BS2_7TQ;
+      break;
+    case 8:
+      hcan->Init.TimeSeg2 = CAN_BS2_8TQ;
+      break;
+    default:
+      return APP_NOT_OK;
+  }
+  // NOLINTEND(*-magic-numbers)
+
   hcan->Init.TimeTriggeredMode = DISABLE;
   hcan->Init.AutoBusOff = DISABLE;
   hcan->Init.AutoWakeUp = DISABLE;
@@ -184,7 +288,7 @@ void can_init(void) {
   hcan->Init.ReceiveFifoLocked = DISABLE;
   hcan->Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(hcan) != HAL_OK) {
-    error();
+    return APP_NOT_OK;
   }
 
   CAN_FilterTypeDef allow_all = {
@@ -200,8 +304,10 @@ void can_init(void) {
   };
 
   if (HAL_CAN_ConfigFilter(hcan, &allow_all) != HAL_OK) {
-    error();
+    return APP_NOT_OK;
   }
+
+  return APP_OK;
 }
 
 /**

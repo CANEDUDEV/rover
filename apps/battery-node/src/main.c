@@ -68,6 +68,18 @@ static bool default_letter_timeout = false;
 static bool default_letter_received = false;
 static bool base_number_known = false;
 
+// Data to store in flash. Should be contiguous and 4-byte aligned.
+struct persistent_data {
+  uint32_t data_valid;  // Symbol to see if data has been written or not.
+  uint32_t base_number;
+  can_bit_timing_t bit_timing;
+};
+
+#define DATA_VALID_SYMBOL 0xDEADBEEF
+#define BASE_NUMBER_UNKNOWN_SYMBOL 0xDEADBEEF
+
+struct persistent_data persistent_data;
+
 void ck_data_init(void);
 void mayor_init(void);
 void update_pages(BatteryNodeState *batteryNodeState);
@@ -88,22 +100,55 @@ int main(void) {
   // Reset of all peripherals, Initializes the Flash interface and the Systick.
   HAL_Init();
 
-  if (flash_init() != APP_OK) {
-    error();
-  }
-
   system_clock_init();
 
   // Initialize all configured peripherals
   peripherals = get_peripherals();
   gpio_init();
   dma_init();
-  can_init();
   uart1_init();
   spi1_init();
   adc1_init();
   adc2_init();
   i2c1_init();
+
+  // 125 Kbit/s by default. Sample point at 87.5%.
+  can_bit_timing_t default_bit_timing = {
+      .prescaler = 18,  // 36MHz clock / 18 = 125000  // NOLINT
+      .tseg1 = 13,      // NOLINT
+      .tseg2 = 2,
+      .sjw = 1,
+  };
+
+  // Always start with 125 Kbit/s
+  if (can_init(&default_bit_timing) != APP_OK) {
+    print(&peripherals->huart1, "Error setting CAN bit timing.\r\n");
+    error();
+  };
+
+  if (flash_init() != APP_OK) {
+    print(&peripherals->huart1, "Error initiliazing flash.\r\n");
+    error();
+  }
+
+  if (flash_read(FLASH_RW_START, &persistent_data, sizeof(persistent_data)) !=
+      APP_OK) {
+    print(&peripherals->huart1, "Error reading flash.\r\n");
+    error();
+  }
+  if (persistent_data.data_valid != DATA_VALID_SYMBOL) {
+    persistent_data.data_valid = DATA_VALID_SYMBOL;
+    persistent_data.base_number = BASE_NUMBER_UNKNOWN_SYMBOL;
+    persistent_data.bit_timing = default_bit_timing;
+    if (flash_write(FLASH_RW_START, &persistent_data,
+                    sizeof(persistent_data)) != APP_OK) {
+      print(&peripherals->huart1, "Error writing flash.\r\n");
+      error();
+    }
+  }
+  if (persistent_data.base_number != BASE_NUMBER_UNKNOWN_SYMBOL) {
+    base_number_known = true;
+  }
 
   mayor_init();
   task_init();
@@ -204,17 +249,6 @@ void ck_data_init(void) {
   ck_doc_init();
   ck_list_init();
   ck_folder_init();
-
-  // TODO: Set envelopes using king's pages.
-  cell_folder->envelope_count = 1;
-  cell_folder->envelopes[0].envelope_no = CAN_BASE_ID;
-  cell_folder->envelopes[0].enable = true;
-  reg_out_current_folder->envelope_count = 1;
-  reg_out_current_folder->envelopes[0].envelope_no = CAN_BASE_ID + 1;
-  reg_out_current_folder->envelopes[0].enable = true;
-  vbat_out_current_folder->envelope_count = 1;
-  vbat_out_current_folder->envelopes[0].envelope_no = CAN_BASE_ID + 2;
-  vbat_out_current_folder->envelopes[0].enable = true;
 }
 
 void mayor_init(void) {
@@ -226,14 +260,17 @@ void mayor_init(void) {
       .ean_no = 123,       // NOLINT(*-magic-numbers)
       .serial_no = 456,    // NOLINT(*-magic-numbers)
       .city_address = 13,  // NOLINT(*-magic-numbers)
-      .base_no = 25,       // NOLINT(*-magic-numbers)
       .set_action_mode = set_action_mode,
       .set_city_mode = set_city_mode,
-      .folder_count = 5,  // NOLINT(*-magic-numbers)
+      .folder_count = FOLDER_COUNT,
       .folders = folders,
-      .list_count = 2,
+      .list_count = LIST_COUNT,
       .lists = lists,
   };
+
+  if (persistent_data.base_number != BASE_NUMBER_UNKNOWN_SYMBOL) {
+    mayor.base_no = persistent_data.base_number;
+  }
 
   if (ck_mayor_init(&mayor) != CK_OK) {
     print(&peripherals->huart1, "Error setting up mayor.\r\n");
@@ -395,7 +432,6 @@ void dispatch_letter(ck_letter_t *letter) {
     if (ck_process_kings_letter(letter) != CK_OK) {
       print(&peripherals->huart1, "failed to process king's letter.\r\n");
     }
-    return;
   }
   // TODO: implement other letters
 }
@@ -406,22 +442,25 @@ void default_letter_timer(TimerHandle_t timer) {
 
   // 2b
   if (!default_letter_received) {
-    // TODO: Set bit timing registers from flash
+    HAL_CAN_Stop(&peripherals->hcan);
+    if (can_init(&persistent_data.bit_timing) != APP_OK) {
+      print(&peripherals->huart1,
+            "Error setting CAN timing settings from memory.\r\n");
+      error();
+    }
     if (ck_set_comm_mode(CK_COMM_MODE_SILENT) != CK_OK) {
       print(&peripherals->huart1, "Error setting comm mode.\r\n");
       error();
     }
-    print(&peripherals->huart1, "2b.\r\n");
   }
 }
 
 bool is_startup_finished(bool startup_finished, bool letter_received) {
-  // Check for correctly received letter
   if (startup_finished) {
     return true;
   }
+  // Check for correctly received letter
   if (letter_received) {
-    // 3a
     if (base_number_known) {
       if (ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE) != CK_OK) {
         print(&peripherals->huart1, "Error setting comm mode.\r\n");
@@ -431,19 +470,27 @@ bool is_startup_finished(bool startup_finished, bool letter_received) {
         print(&peripherals->huart1, "Error sending mayor's page.\r\n");
         return false;
       }
-      print(&peripherals->huart1, "3a.\r\n");
-    }
-    // 3b
-    else {
+    } else {
       if (ck_set_comm_mode(CK_COMM_MODE_LISTEN_ONLY) != CK_OK) {
         print(&peripherals->huart1, "Error setting comm mode.\r\n");
         error();
       }
-      print(&peripherals->huart1, "3b.\r\n");
     }
     return true;
   }
   return false;
+}
+
+int save_persistent_data(void) {
+  uint32_t new_base_no = ck_get_base_number();
+  // TODO: save bittiming after adding KP8.
+  if (new_base_no != persistent_data.base_number) {
+    if (flash_write(FLASH_RW_START, &persistent_data,
+                    sizeof(persistent_data)) != APP_OK) {
+      return APP_NOT_OK;
+    }
+  }
+  return APP_OK;
 }
 
 void proc_letter(void *unused) {
@@ -484,7 +531,6 @@ void proc_letter(void *unused) {
       letter = frame_to_letter(&header, data);
 
       // Check for default letter
-      // 2a
       if (!default_letter_received && !default_letter_timeout &&
           is_default_letter(&letter)) {
         default_letter_received = true;
@@ -493,7 +539,7 @@ void proc_letter(void *unused) {
           error();
         }
         startup_finished = true;
-        print(&peripherals->huart1, "default letter received.\r\n");
+        print(&peripherals->huart1, "Default letter received.\r\n");
         break;
       }
 
@@ -501,5 +547,8 @@ void proc_letter(void *unused) {
     }
 
     startup_finished = is_startup_finished(startup_finished, letter_received);
+    if (save_persistent_data() != APP_OK) {
+      print(&peripherals->huart1, "Failed writing to flash");
+    }
   }
 }

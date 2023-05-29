@@ -23,10 +23,17 @@ typedef struct {
   UART_HandleTypeDef huart1;
 } peripherals_t;
 
+typedef struct {
+  uint8_t prescaler;
+  uint8_t tseg1;
+  uint8_t tseg2;
+  uint8_t sjw;
+} can_bit_timing_t;
+
 peripherals_t *get_peripherals(void);
 void adc1_init(void);
 void adc2_init(void);
-void can_init(void);
+int can_init(can_bit_timing_t *bit_timing);
 void i2c1_init(void);
 void spi1_init(void);
 void uart1_init(void);
