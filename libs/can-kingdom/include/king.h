@@ -154,6 +154,21 @@ ck_err_t ck_create_kings_page_1(const ck_kp1_args_t *args, ck_page_t *page);
 ck_err_t ck_create_kings_page_2(const ck_kp2_args_t *args, ck_page_t *page);
 
 /*******************************************************************************
+ * KP8 is used to set the CAN bit timing settings for a city.
+ *
+ * @param address city or group address.
+ * @param args ck_can_bit_timing_t with the desired values.
+ * @param page will be populated with the created king's page.
+ *
+ * @return #CK_ERR_INCOMPATIBLE_PARAMS if some of the args are incompatible.
+ * @return #CK_ERR_INVALID_CAN_ID if the given CAN ID is out of bounds.
+ * @return #CK_OK on success.
+ *******************************************************************************/
+ck_err_t ck_create_kings_page_8(uint8_t address,
+                                const ck_can_bit_timing_t *bit_timing,
+                                ck_page_t *page);
+
+/*******************************************************************************
  * KP16 Sets the folder label and/or places a document into a folder.
  *
  * @param args ck_kp16_args_t value with the desired values.

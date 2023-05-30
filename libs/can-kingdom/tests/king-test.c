@@ -10,24 +10,34 @@ static test_err_t verify_kp_header(int page_no, ck_page_t *page);
 static test_err_t test_kp0(void);
 static test_err_t test_kp1(void);
 static test_err_t test_kp2(void);
+static test_err_t test_kp8(void);
 static test_err_t test_kp16(void);
 static test_err_t test_kp17(void);
 
 int main(void) {
-  if (test_kp0() != TEST_PASS) {
-    return TEST_FAIL;
+  test_err_t ret = test_kp0();
+  if (ret != TEST_PASS) {
+    return ret;
   }
-  if (test_kp1() != TEST_PASS) {
-    return TEST_FAIL;
+  ret = test_kp1();
+  if (ret != TEST_PASS) {
+    return ret;
   }
-  if (test_kp2() != TEST_PASS) {
-    return TEST_FAIL;
+  ret = test_kp2();
+  if (ret != TEST_PASS) {
+    return ret;
   }
-  if (test_kp16() != TEST_PASS) {
-    return TEST_FAIL;
+  ret = test_kp8();
+  if (ret != TEST_PASS) {
+    return ret;
   }
-  if (test_kp17() != TEST_PASS) {
-    return TEST_FAIL;
+  ret = test_kp16();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+  ret = test_kp17();
+  if (ret != TEST_PASS) {
+    return ret;
   }
   return TEST_PASS;
 }
@@ -216,6 +226,18 @@ static test_err_t test_kp2(void) {
   memset(&page, 0, sizeof(page));
   if (ck_create_kings_page_2(&args, &page) != CK_ERR_INCOMPATIBLE_PARAMS) {
     printf("KP2: setting illegal parameter combination succeeded.\n");
+    return TEST_FAIL;
+  }
+
+  return TEST_PASS;
+}
+
+static test_err_t test_kp8(void) {
+  ck_page_t page;
+  ck_can_bit_timing_t default_bit_timing = ck_default_bit_timing();
+  if (ck_create_kings_page_8(test_city_address, &default_bit_timing, &page) !=
+      CK_OK) {
+    printf("KP8: failed to set default bit timing.\n");
     return TEST_FAIL;
   }
 

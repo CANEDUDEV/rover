@@ -45,6 +45,7 @@ static ck_folder_t mayors_folder(void);
 static ck_err_t process_kp0(const ck_page_t *page);
 static ck_err_t process_kp1(const ck_page_t *page);
 static ck_err_t process_kp2(const ck_page_t *page);
+static ck_err_t process_kp8(const ck_page_t *page);
 static ck_err_t process_kp16(const ck_page_t *page);
 static ck_err_t process_kp17(const ck_page_t *page);
 
@@ -166,6 +167,8 @@ ck_err_t ck_process_kings_letter(const ck_letter_t *letter) {
       return process_kp1(&letter->page);
     case CK_KP2:
       return process_kp2(&letter->page);
+    case CK_KP8:
+      return process_kp8(&letter->page);
     case CK_KP16:
       return process_kp16(&letter->page);
     case CK_KP17:
@@ -372,7 +375,7 @@ ck_err_t ck_default_letter_timeout(void) {
   if (ret != CK_OK) {
     // Ignore errors on next function calls as we want to return the original
     // error code.
-    ck_can_bit_timing_t default_bit_timing = default_bit_timing;
+    ck_can_bit_timing_t default_bit_timing = ck_default_bit_timing();
     ck_save_bit_timing(&default_bit_timing);
     ck_set_comm_mode(CK_COMM_MODE_SILENT);
     return ret;
@@ -412,7 +415,7 @@ ck_err_t ck_correct_letter_received(void) {
 
   // If the bit timing has changed and a letter was correctly received,
   // we should save the bit timing settings to persistent storage.
-  ck_can_bit_timing_t default_bit_timing = default_bit_timing;
+  ck_can_bit_timing_t default_bit_timing = ck_default_bit_timing();
   if (memcmp(&default_bit_timing, &mayor.current_bit_timing,
              sizeof(ck_can_bit_timing_t)) != 0) {
     return ck_save_bit_timing(&mayor.current_bit_timing);
@@ -623,6 +626,20 @@ static ck_err_t process_kp2(const ck_page_t *page) {
     default:
       return CK_ERR_INVALID_KINGS_LETTER;
   }
+}
+
+static ck_err_t process_kp8(const ck_page_t *page) {
+  // NOLINTBEGIN(*-magic-numbers)
+  mayor.next_bit_timing.prescaler = page->lines[4];
+  mayor.next_bit_timing.time_quanta = page->lines[5];
+  mayor.next_bit_timing.phase_seg2 = page->lines[6];
+  mayor.next_bit_timing.sjw = page->lines[7];
+  // NOLINTEND(*-magic-numbers)
+
+  // Bit timing settings will be applied on next communication reset or comm
+  // mode change.
+
+  return CK_OK;
 }
 
 static ck_err_t process_kp16(const ck_page_t *page) {

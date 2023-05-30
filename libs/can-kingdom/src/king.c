@@ -89,6 +89,27 @@ ck_err_t ck_create_kings_page_2(const ck_kp2_args_t *args, ck_page_t *page) {
   return CK_OK;
 }
 
+ck_err_t ck_create_kings_page_8(uint8_t address,
+                                const ck_can_bit_timing_t *bit_timing,
+                                ck_page_t *page) {
+  // Null pointer check
+  if (!bit_timing | !page) {
+    return CK_ERR_INVALID_PARAMETER;
+  }
+
+  page->line_count = CK_MAX_LINES_PER_PAGE;
+  page->lines[0] = address;
+  page->lines[1] = CK_KP8;
+  page->lines[2] = 0;
+  page->lines[3] = 0;
+  page->lines[4] = bit_timing->prescaler;
+  page->lines[5] = bit_timing->time_quanta;
+  page->lines[6] = bit_timing->phase_seg2;
+  page->lines[7] = bit_timing->sjw;
+
+  return CK_OK;
+}
+
 ck_err_t ck_create_kings_page_16(const ck_kp16_args_t *args, ck_page_t *page) {
   // Null pointer check
   if (!args || !page) {
