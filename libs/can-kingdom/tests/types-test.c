@@ -117,7 +117,7 @@ static test_err_t test_check_list_type(void) {
 }
 
 static test_err_t test_default_letter(void) {
-  ck_letter_t letter = default_letter();
+  ck_letter_t letter = ck_default_letter();
   if (letter.envelope.envelope_no != CK_DEFAULT_LETTER_ENVELOPE) {
     printf("default_letter: incorrect envelope number, expected: %u, got: %u\n",
            CK_DEFAULT_LETTER_ENVELOPE, letter.envelope.envelope_no);

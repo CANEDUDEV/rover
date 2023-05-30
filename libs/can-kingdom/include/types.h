@@ -397,7 +397,7 @@ ck_err_t ck_check_list_type(ck_list_type_t type);
  *
  * @return the created letter.
  ******************************************************************************/
-ck_letter_t default_letter(void);
+ck_letter_t ck_default_letter(void);
 
 #ifdef __cplusplus
 }

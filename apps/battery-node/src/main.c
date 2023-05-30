@@ -416,7 +416,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 }
 
 bool is_default_letter(ck_letter_t *letter) {
-  ck_letter_t dletter = default_letter();
+  ck_letter_t dletter = ck_default_letter();
   if (letter->envelope.envelope_no == dletter.envelope.envelope_no &&
       letter->page.line_count == dletter.page.line_count &&
       memcmp(letter->page.lines, dletter.page.lines, dletter.page.line_count) ==
