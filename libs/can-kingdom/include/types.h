@@ -176,6 +176,8 @@ typedef enum {
   CK_KP1 = 1,
   /// King's page 2.
   CK_KP2 = 2,
+  /// King's page 8.
+  CK_KP8 = 8,
   /// King's page 16.
   CK_KP16 = 16,
   /// King's page 17.

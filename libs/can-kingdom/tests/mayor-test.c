@@ -56,6 +56,7 @@ static test_err_t test_default_letter_received(void);
 static test_err_t test_process_kp0(void);
 static test_err_t test_process_kp1(void);
 static test_err_t test_process_kp2(void);
+static test_err_t test_process_kp8(void);
 static test_err_t test_process_kp16(void);
 static test_err_t test_process_kp17(void);
 
@@ -244,21 +245,31 @@ static test_err_t test_process_kings_letter(void) {
   }
 
   // Test processing various pages
-  if (test_process_kp0() != TEST_PASS) {
-    return TEST_FAIL;
+  err = test_process_kp0();
+  if (err != TEST_PASS) {
+    return err;
   }
-  if (test_process_kp1() != TEST_PASS) {
-    return TEST_FAIL;
+  err = test_process_kp1();
+  if (err != TEST_PASS) {
+    return err;
   }
-  if (test_process_kp2() != TEST_PASS) {
-    return TEST_FAIL;
+  err = test_process_kp2();
+  if (err != TEST_PASS) {
+    return err;
   }
-  if (test_process_kp16() != TEST_PASS) {
-    return TEST_FAIL;
+  err = test_process_kp8();
+  if (err != TEST_PASS) {
+    return err;
   }
-  if (test_process_kp17() != TEST_PASS) {
-    return TEST_FAIL;
+  err = test_process_kp16();
+  if (err != TEST_PASS) {
+    return err;
   }
+  err = test_process_kp17();
+  if (err != TEST_PASS) {
+    return err;
+  }
+
   return TEST_PASS;
 }
 
@@ -631,6 +642,77 @@ static test_err_t test_process_kp2(void) {
         "process_kp2: expel: wrong envelope count for folder 2, "
         "expected: 0, got: %u.\n",
         data.folders[2].envelope_count);
+    return TEST_FAIL;
+  }
+
+  return TEST_PASS;
+}
+
+static test_err_t test_process_kp8(void) {
+  // This sets up the mayor with the default bit timing.
+  test_err_t err = setup_test();
+  if (err != TEST_PASS) {
+    return err;
+  }
+
+  ck_can_bit_timing_t next_bit_timing = {
+      .prescaler = 10,    // NOLINT
+      .time_quanta = 10,  // NOLINT
+      .phase_seg2 = 4,
+      .sjw = 2,
+  };
+
+  ck_letter_t letter;
+  if (ck_create_kings_page_8(test_city_address, &next_bit_timing,
+                             &letter.page) != CK_OK) {
+    printf("process_kp8: failed to create KP8.\n");
+    return TEST_FAIL;
+  }
+
+  if (ck_process_kings_letter(&letter) != CK_OK) {
+    printf("process_kp8: failed to process KP8.\n");
+    return TEST_FAIL;
+  }
+
+  // Send kp0 reset comm message
+  ck_kp0_args_t args = {
+      .address = test_city_address,
+      .action_mode = CK_ACTION_MODE_KEEP_CURRENT,
+      .comm_mode = CK_COMM_MODE_KEEP_CURRENT,
+      .comm_flags = CK_COMM_RESET,
+      .city_mode = CK_CITY_MODE_KEEP_CURRENT,
+  };
+
+  if (ck_create_kings_page_0(&args, &letter.page) != CK_OK) {
+    printf("process_kp8: failed to create KP0.\n");
+    return TEST_FAIL;
+  }
+
+  if (ck_process_kings_letter(&letter) != CK_OK) {
+    printf("process_kp8: failed to process KP0.\n");
+    return TEST_FAIL;
+  }
+
+  // Emulate reception of a letter, so the bit timing is saved persistently.
+  if (ck_correct_letter_received() != CK_OK) {
+    return TEST_SETUP_FAIL;
+  }
+
+  ck_can_bit_timing_t current_bit_timing;
+  if (ck_load_bit_timing(&current_bit_timing) != CK_OK) {
+    printf("process_kp8: failed to load current bit timing.\n");
+    return TEST_FAIL;
+  }
+
+  if (memcmp(&current_bit_timing, &next_bit_timing,
+             sizeof(ck_can_bit_timing_t)) != 0) {
+    printf("process_kp8: bit timing was not set correctly.\n");
+    printf("expected: prescaler: %u, tq: %u, ps2: %u, sjw: %u.\n",
+           next_bit_timing.prescaler, next_bit_timing.time_quanta,
+           next_bit_timing.phase_seg2, next_bit_timing.sjw);
+    printf("got: prescaler: %u, tq: %u, ps2: %u, sjw: %u.\n",
+           current_bit_timing.prescaler, current_bit_timing.time_quanta,
+           current_bit_timing.phase_seg2, current_bit_timing.sjw);
     return TEST_FAIL;
   }
 
