@@ -1,8 +1,8 @@
 #include "postmaster.h"
 
+#include "error.h"
+#include "flash.h"
 #include "postmaster-hal.h"
-
-static ck_comm_mode_t comm_mode;
 
 ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc) {
   CAN_HandleTypeDef *hcan = get_can_handle();
@@ -40,7 +40,7 @@ ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc) {
   return CK_OK;
 }
 
-ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
+ck_err_t ck_apply_comm_mode(ck_comm_mode_t mode) {
   ck_err_t ret = ck_check_comm_mode(mode);
   if (ret != CK_OK) {
     return ret;
@@ -50,8 +50,6 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
   switch (mode) {
     case CK_COMM_MODE_COMMUNICATE:
     case CK_COMM_MODE_LISTEN_ONLY:
-      comm_mode = mode;
-
       if (HAL_CAN_GetState(hcan) == HAL_CAN_STATE_LISTENING) {
         if (HAL_CAN_Stop(hcan) != HAL_OK) {
           return CK_ERR_SET_MODE_FAILED;
@@ -66,12 +64,9 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
       if (HAL_CAN_Start(hcan) != HAL_OK) {
         return CK_ERR_SET_MODE_FAILED;
       }
-
       break;
 
     case CK_COMM_MODE_SILENT:
-      comm_mode = mode;
-
       if (HAL_CAN_GetState(hcan) == HAL_CAN_STATE_LISTENING) {
         if (HAL_CAN_Stop(hcan) != HAL_OK) {
           return CK_ERR_SET_MODE_FAILED;
@@ -94,5 +89,3 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
   }
   return CK_OK;
 }
-
-ck_comm_mode_t ck_get_comm_mode(void) { return comm_mode; }

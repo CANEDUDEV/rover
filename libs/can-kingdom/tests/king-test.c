@@ -38,6 +38,7 @@ static test_err_t test_kp0(void) {
       .address = test_city_address,
       .action_mode = CK_ACTION_MODE_RUN,
       .comm_mode = CK_COMM_MODE_COMMUNICATE,
+      .comm_flags = CK_COMM_SKIP_LISTEN | CK_COMM_SKIP_WAIT | CK_COMM_RESET,
       .city_mode = CK_CITY_MODE_KEEP_CURRENT,
   };
 
@@ -56,9 +57,14 @@ static test_err_t test_kp0(void) {
            page.lines[2]);
     return TEST_FAIL;
   }
-  if (page.lines[3] != args.comm_mode) {
+  if ((page.lines[3] & 0x3) != args.comm_mode) {
     printf("KP0: wrong comm mode, expected: %x, got: %x.\n", args.comm_mode,
-           page.lines[3]);
+           page.lines[3] & 0x3);
+    return TEST_FAIL;
+  }
+  if ((page.lines[3] & ~0x3) != args.comm_flags) {
+    printf("KP0: wrong flags set, expected: %x, got: %x.\n", args.comm_flags,
+           page.lines[3] & ~0x3);
     return TEST_FAIL;
   }
   if (page.lines[4] != args.city_mode) {

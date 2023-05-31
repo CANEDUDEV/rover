@@ -26,6 +26,8 @@ typedef struct {
   ck_action_mode_t action_mode;
   /// Communication mode.
   ck_comm_mode_t comm_mode;
+  /// Communication mode flags to set.
+  ck_comm_flags_t comm_flags;
   /// City mode. Only #CK_CITY_MODE_KEEP_CURRENT is predefined. Modes are
   /// defined by mayor and specified in their city's documentation.
   ck_city_mode_t city_mode;

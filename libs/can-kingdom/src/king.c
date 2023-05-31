@@ -22,7 +22,7 @@ ck_err_t ck_create_kings_page_0(const ck_kp0_args_t *args, ck_page_t *page) {
   page->lines[0] = args->address;
   page->lines[1] = CK_KP0;
   page->lines[2] = args->action_mode;
-  page->lines[3] = args->comm_mode;
+  page->lines[3] = args->comm_mode | args->comm_flags;
   page->lines[4] = args->city_mode;
   page->lines[5] = 0;
   page->lines[6] = 0;
