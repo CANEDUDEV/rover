@@ -369,8 +369,8 @@ static test_err_t test_process_kp1(void) {
   return TEST_PASS;
 }
 
-// First assign envelopes 2 and 3 to folder 2, then transfer envelope 3 to
-// folder 3, then expel envelope 2.
+// First assign envelopes 200 and 300 to folder 2, then transfer envelope 300 to
+// folder 3, then expel envelope 200.
 static test_err_t test_process_kp2(void) {
   test_err_t err = setup_test();
   if (err != TEST_PASS) {
@@ -382,8 +382,8 @@ static test_err_t test_process_kp2(void) {
   letter.page.lines[0] = test_city_address;
   letter.page.lines[1] = CK_KP2;
 
-  uint32_t envelope2 = 2;
-  uint32_t folder2 = 2;
+  const uint32_t envelope2 = 200;
+  const uint32_t folder2 = 2;
 
   memcpy(&letter.page.lines[2], &envelope2, sizeof(envelope2));
   // NOLINTBEGIN(*-magic-numbers)
@@ -412,7 +412,7 @@ static test_err_t test_process_kp2(void) {
   }
 
   // Assign envelope no 3 to folder no 2.
-  uint32_t envelope3 = 3;
+  const uint32_t envelope3 = 300;
   memcpy(&letter.page.lines[2], &envelope3, sizeof(envelope3));
   if (ck_process_kings_letter(&letter) != CK_OK) {
     printf("process_kp2: assign: failed to process page.\n");
