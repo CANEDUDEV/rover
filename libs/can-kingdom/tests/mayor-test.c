@@ -50,6 +50,9 @@ static test_err_t test_send_document(void);
 static test_err_t test_send_mayors_page(void);
 static test_err_t test_is_kings_envelope(void);
 static test_err_t test_set_comm_mode(void);
+static test_err_t test_set_base_number(void);
+static test_err_t test_is_default_letter(void);
+static test_err_t test_default_letter_received(void);
 static test_err_t test_process_kp0(void);
 static test_err_t test_process_kp1(void);
 static test_err_t test_process_kp2(void);
@@ -59,6 +62,7 @@ static test_err_t test_process_kp17(void);
 // Helpers
 static ck_err_t set_action_mode(ck_action_mode_t mode);
 static ck_err_t set_city_mode(ck_city_mode_t mode);
+static void start_200ms_timer(void);
 
 static test_err_t check_kings_doc_folder(ck_folder_t *folder);
 static test_err_t check_mayors_doc_folder(ck_folder_t *folder);
@@ -115,6 +119,21 @@ int main(void) {
     return ret;
   }
 
+  ret = test_set_base_number();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+
+  ret = test_is_default_letter();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+
+  ret = test_default_letter_received();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+
   return TEST_PASS;
 }
 
@@ -125,12 +144,11 @@ static test_err_t test_mayor_init(void) {
   ck_mayor_t mayor = {
       .ean_no = illegal_ean_no,  // Illegal EAN
       .serial_no = test_serial_no,
-      .city_address = 0,             // Illegal city address
-      .base_no = CK_CAN_MAX_STD_ID,  // Illegal base no
-      .has_extended_id = false,
+      .city_address = 0,  // Illegal city address
       // Illegal function pointers
       .set_action_mode = NULL,
       .set_city_mode = NULL,
+      .start_200ms_timer = start_200ms_timer,
       .folder_count = 0,  // Wrong folder count
       .folders = data.folders,
       .list_count = 0,  // Wrong list count
@@ -150,12 +168,6 @@ static test_err_t test_mayor_init(void) {
   }
 
   mayor.city_address = test_city_address;
-  if (ck_mayor_init(&mayor) == CK_OK) {
-    printf("mayor_init: illegal parameter returned OK.\n");
-    return TEST_FAIL;
-  }
-
-  mayor.base_no = test_base_no;
   if (ck_mayor_init(&mayor) == CK_OK) {
     printf("mayor_init: illegal parameter returned OK.\n");
     return TEST_FAIL;
@@ -364,6 +376,79 @@ static test_err_t test_set_comm_mode(void) {
         CK_COMM_MODE_COMMUNICATE, mode);
     return TEST_FAIL;
   }
+  return TEST_PASS;
+}
+
+static test_err_t test_set_base_number(void) {
+  test_err_t ret = setup_test();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+  if (ck_set_base_number(test_base_no, false) != CK_OK) {
+    printf("set_base_number: failed to set base number.\n");
+    return TEST_FAIL;
+  }
+  uint32_t got_base_no = ck_get_base_number();
+  if (got_base_no != test_base_no) {
+    printf(
+        "set_base_number: get base number returned wrong base number, "
+        "expected: %u, got: %u.\n",
+        test_base_no, got_base_no);
+    return TEST_FAIL;
+  }
+  return TEST_PASS;
+}
+
+static test_err_t test_is_default_letter(void) {
+  ck_letter_t dletter = ck_default_letter();
+  if (ck_is_default_letter(&dletter) != CK_OK) {
+    return TEST_FAIL;
+  }
+  ck_letter_t illegal_letter = {
+      .envelope.envelope_no = 0,
+  };
+  if (ck_is_default_letter(&illegal_letter) == CK_OK) {
+    return TEST_FAIL;
+  }
+  return TEST_PASS;
+}
+
+static test_err_t test_default_letter_received(void) {
+  test_err_t ret = setup_test();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+
+  if (ck_default_letter_received() != CK_OK) {
+    return TEST_FAIL;
+  }
+  ck_comm_mode_t mode = ck_get_comm_mode();
+  if (mode != CK_COMM_MODE_LISTEN_ONLY) {
+    printf(
+        "default_letter_received: comm mode not correct after default letter "
+        "reception, expected: %u, got: %u.\n",
+        CK_COMM_MODE_COMMUNICATE, mode);
+    return TEST_FAIL;
+  }
+
+  ret = setup_test();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+  // Timeout before default letter is received
+  if (ck_default_letter_timeout() != CK_OK) {
+    return TEST_FAIL;
+  }
+  if (ck_default_letter_received() != CK_OK) {
+    return TEST_FAIL;
+  }
+  if (ck_get_comm_mode() != CK_COMM_MODE_SILENT) {
+    printf(
+        "default_letter_received: comm mode changed even though default "
+        "letter was received after timeout.\n");
+    return TEST_FAIL;
+  }
+
   return TEST_PASS;
 }
 
@@ -790,6 +875,8 @@ static ck_err_t set_city_mode(ck_city_mode_t mode) {
   return CK_OK;
 }
 
+static void start_200ms_timer(void) {}
+
 static test_err_t check_kings_doc_folder(ck_folder_t *folder) {
   if (folder->envelope_count != 1) {
     printf(
@@ -835,6 +922,20 @@ static test_err_t check_kings_doc_folder(ck_folder_t *folder) {
 }
 
 static test_err_t check_mayors_doc_folder(ck_folder_t *folder) {
+  if (folder->envelopes[0].enable) {
+    printf(
+        "mayor_init: failed to setup folder for mayor's doc: "
+        "envelope is enabled before setting base number.\n");
+    return TEST_FAIL;
+  }
+
+  if (ck_set_base_number(test_base_no, false) != CK_OK) {
+    printf(
+        "mayor_init: failed to setup folder for mayor's doc: "
+        "couldn't set base number.\n");
+    return TEST_FAIL;
+  }
+
   if (folder->envelope_count != 1) {
     printf(
         "mayor_init: failed to setup folder for mayor's doc: "
@@ -986,10 +1087,9 @@ static test_err_t setup_test(void) {
       .ean_no = test_ean_no,
       .serial_no = test_ean_no,
       .city_address = test_city_address,
-      .base_no = test_base_no,
-      .has_extended_id = false,
       .set_action_mode = set_action_mode,
       .set_city_mode = set_city_mode,
+      .start_200ms_timer = start_200ms_timer,
       .folder_count = FOLDER_COUNT,
       .folders = data.folders,
       .list_count = LIST_COUNT,

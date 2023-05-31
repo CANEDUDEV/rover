@@ -132,6 +132,8 @@ typedef enum {
   CK_ERR_INVALID_CAN_ID,
   /// Invalid CAN DLC.
   CK_ERR_INVALID_CAN_DLC,
+  /// Invalid ck_can_bit_timing_t.
+  CK_ERR_INVALID_CAN_BIT_TIMING,
   /// Invalid King's letter.
   CK_ERR_INVALID_KINGS_LETTER,
   /// Unsupported King's page.
@@ -146,8 +148,6 @@ typedef enum {
   CK_ERR_INVALID_COMM_MODE,
   /// Invalid #ck_list_type_t.
   CK_ERR_INVALID_LIST_TYPE,
-  /// Input argument to function is wrong in some way.
-  CK_ERR_INVALID_PARAMETER,
   /// Missing input argument to function.
   CK_ERR_MISSING_PARAMETER,
   /// List, folder, document or page is full.
@@ -162,6 +162,10 @@ typedef enum {
   CK_ERR_SET_MODE_FAILED,
   /// Error code from boolean return type functions
   CK_ERR_FALSE,
+  /// Failed to access some peripheral.
+  CK_ERR_PERIPHERAL,
+  /// Input argument to function is wrong in some way.
+  CK_ERR_INVALID_PARAMETER,
 } ck_err_t;
 
 /// Supported king's pages.
@@ -373,6 +377,31 @@ typedef enum {
   /// replace the old document with the new one.
   CK_DOCUMENT_INSERT = 3,
 } ck_document_action_t;
+
+/*******************************************************************************
+ * Defines the CAN bit timing parameters needed to set the postoffice settings.
+ *
+ * The value of Phase segment 1 + propagation segment will be inferred from the
+ * following equation: `time_quanta = 1 + prop_seg + phase_seg1 + phase_seg2`,
+ * where `8 <= time_quanta <= 25` and `2 <= phase_seg2 <= 8`.
+ ******************************************************************************/
+typedef struct {
+  /// Defines the clock prescaler, which will determine the bit rate. It's
+  /// important to know the clock frequency of the CAN peripheral to set the
+  /// correct bit rate.
+  ///
+  /// `1 <= prescaler <= 32`
+  uint8_t prescaler;
+
+  uint8_t time_quanta;  /// Number of time quanta.
+
+  uint8_t phase_seg2;  /// Phase segment 2.
+
+  /// Synchronization jump width, `1 <= sjw <= 4`. Must also be less than the
+  /// minimum of phase_seg1 and phase_seg2.
+  uint8_t sjw;
+
+} ck_can_bit_timing_t;
 
 /*******************************************************************************
  * Check if the specified action mode is a valid action mode.

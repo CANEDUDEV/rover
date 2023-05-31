@@ -51,20 +51,18 @@ typedef struct {
   /// The city always belongs to group 0 as well.
   uint8_t group_addresses[CK_MAX_GROUPS_PER_CITY];
 
-  /// The base number of the kingdom. Can be set by the mayor if known
-  /// beforehand, otherwise the king will set it.
-  uint32_t base_no;
-
-  /// Whether to use extended CAN IDs for the base number.
-  bool has_extended_id;
-
-  /// Pointer to function for setting the action mode.
+  /// Function for setting the action mode.
   /// Should return CK_OK on success.
   ck_err_t (*set_action_mode)(ck_action_mode_t);
 
-  /// Pointer to function for setting the city mode. City modes are defined by
+  /// Function for setting the city mode. City modes are defined by
   /// the mayor. Should return CK_OK on success.
   ck_err_t (*set_city_mode)(ck_city_mode_t);
+
+  /// Function for starting a 200ms one-shot timer. When the timer finishes,
+  /// ck_default_letter_timeout() should be called. This should be handled by
+  /// the user application.
+  void (*start_200ms_timer)(void);
 
   /// Number of folders the mayor has. Must be at least 2 for the king's and
   /// mayor's folders, which are initialized by ck_mayor_init().
@@ -138,6 +136,9 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor);
  * @return #CK_ERR_ITEM_NOT_FOUND folder, record or mayor's page not found.
  * @return #CK_ERR_SEND_FAILED failed to send mayor's page.
  *
+ * @return #CK_ERR_INVALID_LIST_TYPE if an accessed list doesn't have a valid
+ *         type.
+ *
  * @return #CK_ERR_INVALID_PARAMETER some parameters on the king's page are
  *         invalid.
  *
@@ -152,6 +153,7 @@ ck_err_t ck_process_kings_letter(const ck_letter_t *letter);
  *
  * @param page the page to add to the mayor's document.
  *
+ * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
  * @return #CK_ERR_INVALID_PARAMETER if page is NULL.
  * @return #CK_ERR_CAPACITY_REACHED if the mayor's document cannot hold more
  *         pages.
@@ -176,6 +178,7 @@ ck_err_t ck_add_mayors_page(ck_page_t *page);
  *
  * @param folder_no the requested folder number.
  *
+ * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
  * @return #CK_ERR_ITEM_NOT_FOUND if the folder or it's document don't exist.
  * @return #CK_ERR_SEND_FAILED if sending a letter fails.
  * @return #CK_OK on success or if document is not sent due to being a receive
@@ -188,6 +191,7 @@ ck_err_t ck_send_document(uint8_t folder_no);
  *
  * @param page_no mayor's page number.
  *
+ * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
  * @return #CK_ERR_ITEM_NOT_FOUND if the page doesn't exist.
  * @return #CK_ERR_SEND_FAILED if sending the letter fails.
  * @return #CK_OK on success or if mayor's folder is disabled for some reason.
@@ -199,6 +203,7 @@ ck_err_t ck_send_mayors_page(uint8_t page_no);
  *
  * @param envelope envelope to check.
  *
+ * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
  * @return #CK_ERR_FALSE if it's not assigned.
  * @return #CK_OK if it's assigned.
  ******************************************************************************/
@@ -209,22 +214,85 @@ ck_err_t ck_is_kings_envelope(ck_envelope_t *envelope);
  *
  * @param mode the desired communication mode.
  *
- * @return #CK_OK on success.
- * @return #CK_ERR_SET_MODE_FAILED if failed setting the communication mode.
- * @return #CK_ERR_INVALID_COMM_MODE if the requested communication mode is
- *         invalid.
+ * @return ck_apply_comm_mode() return codes.
  ******************************************************************************/
 ck_err_t ck_set_comm_mode(ck_comm_mode_t mode);
 
 /*******************************************************************************
- * Return the currently set communication mode.
+ * Return the currently set communication mode. Returned value is not valid if
+ * mayor is not initialized.
  ******************************************************************************/
 ck_comm_mode_t ck_get_comm_mode(void);
 
 /*******************************************************************************
- * Returns the current base number.
+ * Returns the current base number. Returned value is not valid if mayor is not
+ * initialized.
  ******************************************************************************/
 uint32_t ck_get_base_number(void);
+
+/*******************************************************************************
+ * Sets the base number.
+ *
+ * @param base_no the base number to set.
+ * @param has_extended_id whether the base number should use extended CAN IDs.
+ *
+ * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
+ * @return #CK_ERR_INVALID_CAN_ID if the base number is not a valid CAN ID.
+ * @return #CK_OK on success.
+ ******************************************************************************/
+ck_err_t ck_set_base_number(uint32_t base_no, bool has_extended_id);
+
+/*******************************************************************************
+ * Checks if the given letter is the default letter.
+ *
+ * @param letter the letter to check.
+ *
+ * @return #CK_ERR_FALSE if it's not the default letter.
+ * @return #CK_OK if it is.
+ ******************************************************************************/
+ck_err_t ck_is_default_letter(ck_letter_t *letter);
+
+/*******************************************************************************
+ * Function that should be called when the default letter is received.
+ *
+ * The city should always call this function when a default letter is received,
+ * in order for the mayor library to update its state accordingly.
+ *
+ * @return ck_set_comm_mode() return codes.
+ * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
+ * @return #CK_OK on success.
+ ******************************************************************************/
+ck_err_t ck_default_letter_received(void);
+
+/*******************************************************************************
+ * Function that should be called when waiting for a default letter times out.
+ *
+ * The CAN Kingdom startup sequence specifies that a city should wait at most
+ * 200ms for a default letter. Once this timeout is reached, the city should
+ * call this function to update the mayor's state.
+ *
+ * @return ck_set_comm_mode() return codes.
+ * @return ck_load_bit_timing() return codes.
+ * @return ck_set_bit_timing() return codes.
+ * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
+ * @return #CK_OK on success.
+ ******************************************************************************/
+ck_err_t ck_default_letter_timeout(void);
+
+/*******************************************************************************
+ * Function that should be called when a CAN message is correctly received.
+ *
+ * Notifies the mayor library that a correct letter has been received and that
+ * the currently set bit timing parameters are compatible with the current
+ * system.
+ *
+ * @return ck_send_mayors_page() return codes.
+ * @return ck_save_bit_timing() return codes.
+ * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
+ * @return #CK_ERR_SET_MODE_FAILED if failed setting the communication mode.
+ * @return #CK_OK on success.
+ ******************************************************************************/
+ck_err_t ck_correct_letter_received(void);
 
 #ifdef __cplusplus
 }
