@@ -6,6 +6,10 @@
 // NOLINTBEGIN(*magic-numbers)
 
 ck_err_t ck_create_kings_page_0(const ck_kp0_args_t *args, ck_page_t *page) {
+  // Null pointer check
+  if (!args || !page) {
+    return CK_ERR_INVALID_PARAMETER;
+  }
   ck_err_t ret = ck_check_action_mode(args->action_mode);
   if (ret != CK_OK) {
     return ret;
@@ -27,6 +31,10 @@ ck_err_t ck_create_kings_page_0(const ck_kp0_args_t *args, ck_page_t *page) {
 }
 
 ck_err_t ck_create_kings_page_1(const ck_kp1_args_t *args, ck_page_t *page) {
+  // Null pointer check
+  if (!args || !page) {
+    return CK_ERR_INVALID_PARAMETER;
+  }
   // CAN ID bounds check
   if ((!args->has_extended_id && args->base_no > CK_CAN_MAX_STD_ID) ||
       (args->has_extended_id && args->base_no > CK_CAN_MAX_EXT_ID)) {
@@ -47,6 +55,10 @@ ck_err_t ck_create_kings_page_1(const ck_kp1_args_t *args, ck_page_t *page) {
 }
 
 ck_err_t ck_create_kings_page_2(const ck_kp2_args_t *args, ck_page_t *page) {
+  // Null pointer check
+  if (!args || !page) {
+    return CK_ERR_INVALID_PARAMETER;
+  }
   // CAN ID bounds check
   if ((!args->envelope.has_extended_id &&
        args->envelope.envelope_no > CK_CAN_MAX_STD_ID) ||
@@ -78,6 +90,10 @@ ck_err_t ck_create_kings_page_2(const ck_kp2_args_t *args, ck_page_t *page) {
 }
 
 ck_err_t ck_create_kings_page_16(const ck_kp16_args_t *args, ck_page_t *page) {
+  // Null pointer check
+  if (!args || !page) {
+    return CK_ERR_INVALID_PARAMETER;
+  }
   // Folders 0 and 1 are reserved for the king's document and the mayor's
   // document, respectively.
   if (args->folder_no < 2) {
@@ -120,6 +136,10 @@ ck_err_t ck_create_kings_page_16(const ck_kp16_args_t *args, ck_page_t *page) {
 }
 
 ck_err_t ck_create_kings_page_17(const ck_kp17_args_t *args, ck_page_t *page) {
+  // Null pointer check
+  if (!args || !page) {
+    return CK_ERR_INVALID_PARAMETER;
+  }
   ck_err_t ret = ck_check_list_type(args->list_type);
   if (ret != CK_OK) {
     return ret;
