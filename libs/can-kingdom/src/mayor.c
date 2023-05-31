@@ -8,8 +8,24 @@
 struct mayor_state {
   ck_mayor_t user_data;  // Data provided by the user.
 
+  bool base_no_is_known;
+  bool base_no_has_extended_id;
+  uint32_t base_no;
+
+  // For keeping track of startup sequence
+  bool default_letter_received;
+  bool default_letter_timeout;  // 200ms has passed
+  bool correct_letter_received;
+  bool startup_finished;
+
+  bool skip_wait;
+  bool skip_listen;
+
   ck_comm_mode_t comm_mode;
   ck_comm_flags_t comm_flags;
+
+  ck_can_bit_timing_t current_bit_timing;
+  ck_can_bit_timing_t next_bit_timing;
 
   ck_page_t pages[2];  // For storing the predefined mayor's pages.
   ck_document_t mayors_doc;
@@ -57,11 +73,16 @@ static ck_list_t *find_list(ck_list_type_t list_type, ck_direction_t direction,
 static ck_err_t get_source_list_type(ck_list_type_t target_list_type,
                                      ck_list_type_t *source_list_type);
 
+static ck_can_bit_timing_t default_bit_timing(void);
+
+static ck_err_t change_bit_timing(void);
+
 ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
   // Check for unset parameters.
   if (mayor_->ean_no == 0 || mayor_->serial_no == 0 ||
       mayor_->city_address == 0 || !mayor_->set_action_mode ||
-      !mayor_->set_city_mode || !mayor_->folders) {
+      !mayor_->set_city_mode || !mayor_->start_200ms_timer ||
+      !mayor_->folders) {
     return CK_ERR_MISSING_PARAMETER;
   }
 
@@ -75,14 +96,6 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
     return CK_ERR_INVALID_PARAMETER;
   }
 
-  // Base number bounds check
-  if ((!mayor_->has_extended_id &&
-       mayor_->base_no + mayor_->city_address > CK_CAN_MAX_STD_ID) ||
-      (mayor_->has_extended_id &&
-       mayor_->base_no + mayor_->city_address > CK_CAN_MAX_EXT_ID)) {
-    return CK_ERR_INVALID_PARAMETER;
-  }
-
   // Copy user data to internal state.
   // Needs to be done before setting up the internal state.
   memcpy(&mayor.user_data, mayor_, sizeof(ck_mayor_t));
@@ -91,10 +104,33 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
   mayor.comm_mode = CK_COMM_MODE_SILENT;
   mayor.comm_flags = CK_COMM_RESET;
 
+  mayor.default_letter_received = false;
+  mayor.default_letter_timeout = false;
+  mayor.correct_letter_received = false;
+  mayor.startup_finished = false;
+
+  mayor.next_bit_timing = default_bit_timing();
+  ck_err_t ret = change_bit_timing();
+  if (ret != CK_OK) {
+    return ret;
+  }
+
   init_mayors_pages();
   init_documents();
   init_folders();
-  return init_lists();
+  ret = init_lists();
+  if (ret != CK_OK) {
+    return ret;
+  }
+
+  // Go on bus in silent mode
+  ret = ck_set_comm_mode(CK_COMM_MODE_SILENT);
+  if (ret != CK_OK) {
+    return ret;
+  }
+
+  mayor.user_data.start_200ms_timer();
+  return CK_OK;
 }
 
 ck_err_t ck_process_kings_letter(const ck_letter_t *letter) {
@@ -139,6 +175,10 @@ ck_err_t ck_process_kings_letter(const ck_letter_t *letter) {
 }
 
 ck_err_t ck_add_mayors_page(ck_page_t *page) {
+  // Check if mayor has been initialized
+  if (mayor.user_data.city_address == 0) {
+    return CK_ERR_NOT_INITIALIZED;
+  }
   if (!page) {
     return CK_ERR_INVALID_PARAMETER;
   }
@@ -154,6 +194,10 @@ ck_err_t ck_add_mayors_page(ck_page_t *page) {
 }
 
 ck_err_t ck_send_document(uint8_t folder_no) {
+  // Check if mayor has been initialized
+  if (mayor.user_data.city_address == 0) {
+    return CK_ERR_NOT_INITIALIZED;
+  }
   if (mayor.comm_mode != CK_COMM_MODE_COMMUNICATE) {
     return CK_OK;
   }
@@ -199,6 +243,10 @@ ck_err_t ck_send_document(uint8_t folder_no) {
 }
 
 ck_err_t ck_send_mayors_page(uint8_t page_no) {
+  // Check if mayor has been initialized
+  if (mayor.user_data.city_address == 0) {
+    return CK_ERR_NOT_INITIALIZED;
+  }
   // Mayor's page should be sent in listen only mode and communicate mode.
   if (ck_get_comm_mode() == CK_COMM_MODE_SILENT) {
     return CK_OK;
@@ -231,6 +279,10 @@ ck_err_t ck_send_mayors_page(uint8_t page_no) {
 }
 
 ck_err_t ck_is_kings_envelope(ck_envelope_t *envelope) {
+  // Check if mayor has been initialized
+  if (mayor.user_data.city_address == 0) {
+    return CK_ERR_NOT_INITIALIZED;
+  }
   ck_folder_t *folder = &mayor.user_data.folders[CK_KINGS_FOLDER_NO];
   if (find_envelope(folder, envelope) < 0) {
     return CK_ERR_FALSE;
@@ -239,13 +291,137 @@ ck_err_t ck_is_kings_envelope(ck_envelope_t *envelope) {
   return CK_OK;
 }
 
-uint32_t ck_get_base_number(void) { return mayor.user_data.base_no; }
 ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
+  // Check if mayor has been initialized
+  if (mayor.user_data.city_address == 0) {
+    return CK_ERR_NOT_INITIALIZED;
+  }
   mayor.comm_mode = mode;
   return ck_apply_comm_mode(mode);
 }
 
 ck_comm_mode_t ck_get_comm_mode(void) { return mayor.comm_mode; }
+
+uint32_t ck_get_base_number(void) { return mayor.base_no; }
+
+ck_err_t ck_set_base_number(uint32_t base_no, bool has_extended_id) {
+  // Check if mayor has been initialized
+  if (mayor.user_data.city_address == 0) {
+    return CK_ERR_NOT_INITIALIZED;
+  }
+  // Base number bounds check
+  if ((!has_extended_id &&
+       base_no + mayor.user_data.city_address > CK_CAN_MAX_STD_ID) ||
+      (has_extended_id &&
+       base_no + mayor.user_data.city_address > CK_CAN_MAX_EXT_ID)) {
+    return CK_ERR_INVALID_CAN_ID;
+  }
+  mayor.base_no = base_no;
+  mayor.base_no_is_known = true;
+  mayor.base_no_has_extended_id = has_extended_id;
+  ck_envelope_t mayors_envelope = {
+      .envelope_no = base_no + mayor.user_data.city_address,
+      .has_extended_id = has_extended_id,
+      .enable = true,
+  };
+  return assign_envelope(CK_MAYORS_FOLDER_NO, &mayors_envelope);
+}
+
+ck_err_t ck_is_default_letter(ck_letter_t *letter) {
+  ck_letter_t dletter = ck_default_letter();
+  if (letter->envelope.envelope_no == dletter.envelope.envelope_no &&
+      letter->page.line_count == dletter.page.line_count &&
+      memcmp(letter->page.lines, dletter.page.lines, dletter.page.line_count) ==
+          0) {
+    return CK_OK;
+  }
+  return CK_ERR_FALSE;
+}
+
+ck_err_t ck_default_letter_received(void) {
+  // Check if mayor has been initialized
+  if (mayor.user_data.city_address == 0) {
+    return CK_ERR_NOT_INITIALIZED;
+  }
+  if (mayor.default_letter_timeout || mayor.startup_finished) {
+    return CK_OK;
+  }
+  mayor.default_letter_received = true;
+  return ck_set_comm_mode(CK_COMM_MODE_LISTEN_ONLY);
+}
+
+ck_err_t ck_default_letter_timeout(void) {
+  // Check if mayor has been initialized
+  if (mayor.user_data.city_address == 0) {
+    return CK_ERR_NOT_INITIALIZED;
+  }
+  if (mayor.default_letter_timeout || mayor.default_letter_received ||
+      mayor.startup_finished) {
+    return CK_OK;
+  }
+  mayor.default_letter_timeout = true;
+  ck_err_t ret = ck_load_bit_timing(&mayor.next_bit_timing);
+  if (ret != CK_OK) {
+    // Memory error. Restore bit timing
+    mayor.next_bit_timing = mayor.current_bit_timing;
+  }
+
+  // If the read bit timing is invalid for some reason,
+  // write the default bit rate to memory.
+  // ck_set_bit_timing() should always restore a working bit rate on error,
+  // so try to set comm mode either way.
+  ret = change_bit_timing();
+  if (ret != CK_OK) {
+    // Ignore errors on next function calls as we want to return the original
+    // error code.
+    ck_can_bit_timing_t default_bit_timing = default_bit_timing;
+    ck_save_bit_timing(&default_bit_timing);
+    ck_set_comm_mode(CK_COMM_MODE_SILENT);
+    return ret;
+  }
+
+  return ck_set_comm_mode(CK_COMM_MODE_SILENT);
+}
+
+ck_err_t ck_correct_letter_received(void) {
+  // Check if mayor has been initialized
+  if (mayor.user_data.city_address == 0) {
+    return CK_ERR_NOT_INITIALIZED;
+  }
+  if (mayor.correct_letter_received || mayor.startup_finished) {
+    return CK_OK;
+  }
+
+  mayor.correct_letter_received = true;
+
+  if (mayor.base_no_is_known) {
+    ck_err_t ret = ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE);
+    if (ret != CK_OK) {
+      return ret;
+    }
+    ret = ck_send_mayors_page(0);
+    if (ret != CK_OK) {
+      return ret;
+    }
+  } else {
+    ck_err_t ret = ck_set_comm_mode(CK_COMM_MODE_LISTEN_ONLY);
+    if (ret != CK_OK) {
+      return ret;
+    }
+  }
+
+  mayor.startup_finished = true;
+
+  // If the bit timing has changed and a letter was correctly received,
+  // we should save the bit timing settings to persistent storage.
+  ck_can_bit_timing_t default_bit_timing = default_bit_timing;
+  if (memcmp(&default_bit_timing, &mayor.current_bit_timing,
+             sizeof(ck_can_bit_timing_t)) != 0) {
+    return ck_save_bit_timing(&mayor.current_bit_timing);
+  }
+
+  return CK_OK;
+}
 
 static void init_mayors_pages(void) {
   // Init mayor's pages
@@ -326,20 +502,42 @@ static ck_err_t process_kp0(const ck_page_t *page) {
     return CK_ERR_INVALID_KINGS_LETTER;
   }
   mayor.comm_flags = page->lines[3] & ~0x3;
-  if (mayor.comm_flags & CK_COMM_RESET) {
-    // TODO: add action
-  }
+
   if (mayor.comm_flags & CK_COMM_SKIP_WAIT) {
-    // TODO: add action
+    mayor.skip_wait = true;
   }
   if (mayor.comm_flags & CK_COMM_DONT_SKIP_WAIT) {
-    // TODO: add action
+    mayor.skip_wait = false;
   }
   if (mayor.comm_flags & CK_COMM_SKIP_LISTEN) {
-    // TODO: add action
+    mayor.skip_listen = true;
   }
   if (mayor.comm_flags & CK_COMM_DONT_SKIP_LISTEN) {
-    // TODO: add action
+    mayor.skip_wait = false;
+  }
+
+  if (mayor.comm_flags & CK_COMM_RESET) {
+    mayor.startup_finished = false;
+    if (mayor.skip_wait) {
+      mayor.default_letter_received = true;
+      mayor.default_letter_timeout = true;
+    } else {
+      mayor.default_letter_received = false;
+      mayor.default_letter_timeout = false;
+      mayor.user_data.start_200ms_timer();
+    }
+    if (mayor.skip_listen) {
+      mayor.correct_letter_received = true;
+    } else {
+      mayor.correct_letter_received = false;
+    }
+    ret = change_bit_timing();
+    if (ret != CK_OK) {
+      // Go into silent mode with the old bit timing parameters since something
+      // is wrong with the new ones.
+      ck_set_comm_mode(CK_COMM_MODE_SILENT);
+      return ret;
+    }
   }
 
   ret = ck_set_comm_mode(comm_mode);
@@ -366,11 +564,23 @@ static ck_err_t process_kp1(const ck_page_t *page) {
     return CK_ERR_INVALID_CAN_ID;
   }
 
-  mayor.user_data.base_no = base_no;
-  mayor.user_data.has_extended_id = extended_id;
+  // Check if we already assigned an envelope based on this base number.
+  if (mayor.base_no != base_no) {
+    ck_envelope_t mayors_envelope = {
+        .envelope_no = base_no + mayor.user_data.city_address,
+        .has_extended_id = extended_id,
+        .enable = true,
+    };
 
-  mayor.user_data.folders[1].envelopes[0].envelope_no =
-      mayor.user_data.base_no + mayor.user_data.city_address;
+    ck_err_t ret = assign_envelope(CK_MAYORS_FOLDER_NO, &mayors_envelope);
+    if (ret != CK_OK) {
+      return ret;
+    }
+  }
+
+  mayor.base_no = base_no;
+  mayor.base_no_has_extended_id = extended_id;
+  mayor.base_no_is_known = true;
 
   // Send response page if it's requested.
   uint8_t response_page = page->lines[2];
@@ -595,33 +805,31 @@ static ck_err_t process_kp17(const ck_page_t *page) {
 }
 
 static ck_folder_t kings_folder(void) {
-  ck_folder_t folder;
-  folder.folder_no = 0;
-  folder.doc_list_no = 0;
-  folder.doc_no = 0;
-  folder.direction = CK_DIRECTION_RECEIVE;
-  folder.dlc = CK_CAN_MAX_DLC;
-  folder.has_rtr = false;
-  folder.enable = true;
-  folder.envelope_count = 1;
+  ck_folder_t folder = {
+      .folder_no = 0,
+      .doc_list_no = 0,
+      .doc_no = 0,
+      .direction = CK_DIRECTION_RECEIVE,
+      .dlc = CK_CAN_MAX_DLC,
+      .has_rtr = false,
+      .enable = true,
+      .envelope_count = 1,
+  };
   folder.envelopes[0].envelope_no = 0;
   folder.envelopes[0].enable = true;
   return folder;
 }
 
 static ck_folder_t mayors_folder(void) {
-  ck_folder_t folder;
-  folder.folder_no = 1;
-  folder.doc_list_no = 0;
-  folder.doc_no = 0;
-  folder.direction = CK_DIRECTION_TRANSMIT;
-  folder.dlc = CK_CAN_MAX_DLC;
-  folder.has_rtr = false;
-  folder.enable = true;
-  folder.envelope_count = 1;
-  folder.envelopes[0].envelope_no =
-      mayor.user_data.base_no + mayor.user_data.city_address;
-  folder.envelopes[0].enable = true;
+  ck_folder_t folder = {
+      .enable = true,
+      .folder_no = 1,
+      .doc_list_no = 0,
+      .doc_no = 0,
+      .direction = CK_DIRECTION_TRANSMIT,
+      .dlc = CK_CAN_MAX_DLC,
+      .has_rtr = false,
+  };
   return folder;
 }
 
@@ -746,7 +954,27 @@ static ck_err_t get_source_list_type(ck_list_type_t target_list_type,
       break;
 
     default:
-      return CK_ERR_INVALID_PARAMETER;
+      return CK_ERR_INVALID_LIST_TYPE;
   }
+  return CK_OK;
+}
+
+static ck_can_bit_timing_t default_bit_timing(void) {
+  // Start at 125 kbit/s, sampling point 87.5%
+  ck_can_bit_timing_t bit_timing = {
+      .prescaler = ck_get_125kbit_prescaler(),
+      .time_quanta = 16,  // NOLINT
+      .phase_seg2 = 2,
+      .sjw = 1,
+  };
+  return bit_timing;
+}
+
+static ck_err_t change_bit_timing(void) {
+  ck_err_t ret = ck_set_bit_timing(&mayor.next_bit_timing);
+  if (ret != CK_OK) {
+    return ret;
+  }
+  mayor.current_bit_timing = mayor.next_bit_timing;
   return CK_OK;
 }

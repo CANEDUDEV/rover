@@ -63,25 +63,13 @@ static ck_folder_t *cell_folder = &folders[2];
 static ck_folder_t *reg_out_current_folder = &folders[3];
 static ck_folder_t *vbat_out_current_folder = &folders[4];
 
-// Set to true when 200ms has passed without receiving a default letter.
-static bool default_letter_timeout = false;
-static bool default_letter_received = false;
-static bool base_number_known = false;
+// For the CK startup sequence timer
+StaticTimer_t default_letter_timer_buf;
+TimerHandle_t default_letter_timer;
+void default_letter_timer_callback(TimerHandle_t timer);
+void start_default_letter_timer(void);
 
-// Data to store in flash. Should be contiguous and 4-byte aligned.
-struct persistent_data {
-  uint32_t data_valid;  // Symbol to see if data has been written or not.
-  uint32_t base_number;
-  can_bit_timing_t bit_timing;
-};
-
-#define DATA_VALID_SYMBOL 0xDEADBEEF
-#define BASE_NUMBER_UNKNOWN_SYMBOL 0xDEADBEEF
-
-struct persistent_data persistent_data;
-
-void ck_data_init(void);
-void mayor_init(void);
+void ck_init(void);
 void update_pages(BatteryNodeState *batteryNodeState);
 void send_docs(void);
 
@@ -111,47 +99,15 @@ int main(void) {
   adc1_init();
   adc2_init();
   i2c1_init();
-
-  // 125 Kbit/s by default. Sample point at 87.5%.
-  can_bit_timing_t default_bit_timing = {
-      .prescaler = 18,  // 36MHz clock / 18 = 125000  // NOLINT
-      .tseg1 = 13,      // NOLINT
-      .tseg2 = 2,
-      .sjw = 1,
-  };
-
-  // Always start with 125 Kbit/s
-  if (can_init(&default_bit_timing) != APP_OK) {
-    print(&peripherals->huart1, "Error setting CAN bit timing.\r\n");
-    error();
-  };
+  can_init();
 
   if (flash_init() != APP_OK) {
     print(&peripherals->huart1, "Error initiliazing flash.\r\n");
     error();
   }
 
-  if (flash_read(FLASH_RW_START, &persistent_data, sizeof(persistent_data)) !=
-      APP_OK) {
-    print(&peripherals->huart1, "Error reading flash.\r\n");
-    error();
-  }
-  if (persistent_data.data_valid != DATA_VALID_SYMBOL) {
-    persistent_data.data_valid = DATA_VALID_SYMBOL;
-    persistent_data.base_number = BASE_NUMBER_UNKNOWN_SYMBOL;
-    persistent_data.bit_timing = default_bit_timing;
-    if (flash_write(FLASH_RW_START, &persistent_data,
-                    sizeof(persistent_data)) != APP_OK) {
-      print(&peripherals->huart1, "Error writing flash.\r\n");
-      error();
-    }
-  }
-  if (persistent_data.base_number != BASE_NUMBER_UNKNOWN_SYMBOL) {
-    base_number_known = true;
-  }
-
-  mayor_init();
   task_init();
+  ck_init();
 
   print(&peripherals->huart1, "Starting application...\r\n");
 
@@ -244,17 +200,20 @@ void ck_folder_init(void) {
   vbat_out_current_folder->dlc = sizeof(uint32_t);
 }
 
-void ck_data_init(void) {
+void ck_init(void) {
   ck_page_init();
   ck_doc_init();
   ck_list_init();
   ck_folder_init();
-}
 
-void mayor_init(void) {
-  ck_data_init();
   peripherals_t *peripherals = get_peripherals();
-  postmaster_init(&(peripherals->hcan));  // Set up the postmaster
+  postmaster_init(&peripherals->hcan);  // Set up the postmaster
+
+  default_letter_timer = xTimerCreateStatic(
+      "default letter timer", pdMS_TO_TICKS(200),
+      pdFALSE,  // Auto reload timer
+      NULL,     // Timer ID, unused
+      default_letter_timer_callback, &default_letter_timer_buf);
 
   ck_mayor_t mayor = {
       .ean_no = 123,       // NOLINT(*-magic-numbers)
@@ -262,24 +221,15 @@ void mayor_init(void) {
       .city_address = 13,  // NOLINT(*-magic-numbers)
       .set_action_mode = set_action_mode,
       .set_city_mode = set_city_mode,
+      .start_200ms_timer = start_default_letter_timer,
       .folder_count = FOLDER_COUNT,
       .folders = folders,
       .list_count = LIST_COUNT,
       .lists = lists,
   };
 
-  if (persistent_data.base_number != BASE_NUMBER_UNKNOWN_SYMBOL) {
-    mayor.base_no = persistent_data.base_number;
-  }
-
   if (ck_mayor_init(&mayor) != CK_OK) {
     print(&peripherals->huart1, "Error setting up mayor.\r\n");
-    error();
-  }
-
-  // Go on bus in silent mode
-  if (ck_set_comm_mode(CK_COMM_MODE_SILENT) != CK_OK) {
-    print(&peripherals->huart1, "Error setting comm mode.\r\n");
     error();
   }
 }
@@ -415,18 +365,14 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-bool is_default_letter(ck_letter_t *letter) {
-  ck_letter_t dletter = ck_default_letter();
-  if (letter->envelope.envelope_no == dletter.envelope.envelope_no &&
-      letter->page.line_count == dletter.page.line_count &&
-      memcmp(letter->page.lines, dletter.page.lines, dletter.page.line_count) ==
-          0) {
-    return true;
-  }
-  return false;
-}
-
 void dispatch_letter(ck_letter_t *letter) {
+  // Check for default letter
+  if (ck_is_default_letter(letter) == CK_OK) {
+    if (ck_default_letter_received() != CK_OK) {
+      print(&peripherals->huart1,
+            "CAN Kingdom error in ck_default_letter_received().\r\n");
+    }
+  }
   // Check for king's letter
   if (ck_is_kings_envelope(&letter->envelope) == CK_OK) {
     if (ck_process_kings_letter(letter) != CK_OK) {
@@ -436,85 +382,25 @@ void dispatch_letter(ck_letter_t *letter) {
   // TODO: implement other letters
 }
 
-void default_letter_timer(TimerHandle_t timer) {
+void default_letter_timer_callback(TimerHandle_t timer) {
   (void)timer;
-  default_letter_timeout = true;
 
-  // 2b
-  if (!default_letter_received) {
-    HAL_CAN_Stop(&peripherals->hcan);
-    if (can_init(&persistent_data.bit_timing) != APP_OK) {
-      print(&peripherals->huart1,
-            "Error setting CAN timing settings from memory.\r\n");
-      error();
-    }
-    if (ck_set_comm_mode(CK_COMM_MODE_SILENT) != CK_OK) {
-      print(&peripherals->huart1, "Error setting comm mode.\r\n");
-      error();
-    }
+  if (ck_default_letter_timeout() != CK_OK) {
+    print(&peripherals->huart1,
+          "CAN Kingdom error in ck_default_letter_timeout().\r\n");
   }
 }
 
-bool is_startup_finished(bool startup_finished, bool letter_received) {
-  if (startup_finished) {
-    return true;
-  }
-  // Check for correctly received letter
-  if (letter_received) {
-    if (base_number_known) {
-      if (ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE) != CK_OK) {
-        print(&peripherals->huart1, "Error setting comm mode.\r\n");
-        error();
-      }
-      if (ck_send_mayors_page(0) != CK_OK) {
-        print(&peripherals->huart1, "Error sending mayor's page.\r\n");
-        return false;
-      }
-    } else {
-      if (ck_set_comm_mode(CK_COMM_MODE_LISTEN_ONLY) != CK_OK) {
-        print(&peripherals->huart1, "Error setting comm mode.\r\n");
-        error();
-      }
-    }
-    return true;
-  }
-  return false;
-}
-
-int save_persistent_data(void) {
-  uint32_t new_base_no = ck_get_base_number();
-  // TODO: save bittiming after adding KP8.
-  if (new_base_no != persistent_data.base_number) {
-    if (flash_write(FLASH_RW_START, &persistent_data,
-                    sizeof(persistent_data)) != APP_OK) {
-      return APP_NOT_OK;
-    }
-  }
-  return APP_OK;
+void start_default_letter_timer(void) {
+  xTimerStart(default_letter_timer, portMAX_DELAY);
 }
 
 void proc_letter(void *unused) {
   (void)unused;
 
-  // Timer to check for default letter. 200ms according to CAN Kingdom spec.
-  StaticTimer_t timer_buf;
-  TimerHandle_t timer =
-      xTimerCreateStatic("default letter timer", pdMS_TO_TICKS(200),
-                         pdFALSE,  // Auto reload timer
-                         NULL,     // Timer ID, unused
-                         default_letter_timer, &timer_buf);
-
-  xTimerStart(timer, portMAX_DELAY);
-
   CAN_RxHeaderTypeDef header;
   uint8_t data[CK_CAN_MAX_DLC];
   ck_letter_t letter;
-
-  // Set to true when a CAN frame has been received correctly,
-  // indicating compatible bus parameters.
-  bool letter_received = false;
-
-  bool startup_finished = false;
 
   for (;;) {
     if (HAL_CAN_ActivateNotification(&peripherals->hcan,
@@ -527,28 +413,12 @@ void proc_letter(void *unused) {
     // Process all messages
     while (HAL_CAN_GetRxMessage(&peripherals->hcan, CAN_RX_FIFO0, &header,
                                 data) == HAL_OK) {
-      letter_received = true;
-      letter = frame_to_letter(&header, data);
-
-      // Check for default letter
-      if (!default_letter_received && !default_letter_timeout &&
-          is_default_letter(&letter)) {
-        default_letter_received = true;
-        if (ck_set_comm_mode(CK_COMM_MODE_LISTEN_ONLY) != CK_OK) {
-          print(&peripherals->huart1, "Error setting comm mode.\r\n");
-          error();
-        }
-        startup_finished = true;
-        print(&peripherals->huart1, "Default letter received.\r\n");
-        break;
+      if (ck_correct_letter_received() != CK_OK) {
+        print(&peripherals->huart1,
+              "CAN Kingdom error in ck_correct_letter_received().\r\n");
       }
-
+      letter = frame_to_letter(&header, data);
       dispatch_letter(&letter);
-    }
-
-    startup_finished = is_startup_finished(startup_finished, letter_received);
-    if (save_persistent_data() != APP_OK) {
-      print(&peripherals->huart1, "Failed writing to flash");
     }
   }
 }
