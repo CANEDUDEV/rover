@@ -8,21 +8,31 @@
 static test_err_t test_check_action_mode(void);
 static test_err_t test_check_comm_mode(void);
 static test_err_t test_check_list_type(void);
+static test_err_t test_check_can_bit_timing(void);
 static test_err_t test_default_letter(void);
 
 int main(void) {
-  if (test_check_action_mode() != TEST_PASS) {
-    return TEST_FAIL;
+  test_err_t ret = test_check_action_mode();
+  if (ret != TEST_PASS) {
+    return ret;
   }
-  if (test_check_comm_mode() != TEST_PASS) {
-    return TEST_FAIL;
+  ret = test_check_comm_mode();
+  if (ret != TEST_PASS) {
+    return ret;
   }
-  if (test_check_list_type() != TEST_PASS) {
-    return TEST_FAIL;
+  ret = test_check_list_type();
+  if (ret != TEST_PASS) {
+    return ret;
   }
-  if (test_default_letter() != TEST_PASS) {
-    return TEST_FAIL;
+  ret = test_check_can_bit_timing();
+  if (ret != TEST_PASS) {
+    return ret;
   }
+  ret = test_default_letter();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+
   return TEST_PASS;
 }
 
@@ -113,6 +123,44 @@ static test_err_t test_check_list_type(void) {
     printf("check_list_type: invalid type returns OK.\n");
     return TEST_FAIL;
   }
+  return TEST_PASS;
+}
+
+static test_err_t test_check_can_bit_timing(void) {
+  ck_can_bit_timing_t bit_timing = ck_default_bit_timing();
+  if (ck_check_can_bit_timing(&bit_timing) != CK_OK) {
+    printf("check_can_bit_timing: valid bit timing returns error.\n");
+    return TEST_FAIL;
+  }
+
+  // Illegal parameters test
+  ck_can_bit_timing_t illegal_prescaler = bit_timing;
+  ck_can_bit_timing_t illegal_tq = bit_timing;
+  ck_can_bit_timing_t illegal_ps2 = bit_timing;
+  ck_can_bit_timing_t illegal_sjw = bit_timing;
+
+  illegal_prescaler.prescaler = 0;
+  illegal_tq.time_quanta = 0;
+  illegal_ps2.phase_seg2 = 0;
+  illegal_sjw.sjw = 0;
+
+  if (ck_check_can_bit_timing(&illegal_prescaler) == CK_OK) {
+    printf("check_can_bit_timing: illegal prescaler returned OK.\n");
+    return TEST_FAIL;
+  }
+  if (ck_check_can_bit_timing(&illegal_tq) == CK_OK) {
+    printf("check_can_bit_timing: illegal time quanta returned OK.\n");
+    return TEST_FAIL;
+  }
+  if (ck_check_can_bit_timing(&illegal_ps2) == CK_OK) {
+    printf("check_can_bit_timing: illegal phase seg 2 returned OK.\n");
+    return TEST_FAIL;
+  }
+  if (ck_check_can_bit_timing(&illegal_sjw) == CK_OK) {
+    printf("check_can_bit_timing: illegal sjw returned OK.\n");
+    return TEST_FAIL;
+  }
+
   return TEST_PASS;
 }
 

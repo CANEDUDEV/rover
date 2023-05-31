@@ -1,5 +1,14 @@
 #include "types.h"
 
+#include "postmaster.h"
+
+inline int min(int a, int b) {  // NOLINT
+  if (a < b) {
+    return a;
+  }
+  return b;
+}
+
 ck_err_t ck_check_action_mode(ck_action_mode_t mode) {
   switch (mode) {
     case CK_ACTION_MODE_KEEP_CURRENT:
@@ -36,6 +45,32 @@ ck_err_t ck_check_list_type(ck_list_type_t type) {
   }
 }
 
+ck_err_t ck_check_can_bit_timing(const ck_can_bit_timing_t *bit_timing) {
+  if (!bit_timing) {
+    return CK_ERR_INVALID_CAN_ID;
+  }
+  // NOLINTBEGIN(*-magic-numbers)
+  int tseg1 = bit_timing->time_quanta - 1 - bit_timing->phase_seg2;
+  if (bit_timing->prescaler < 1 || bit_timing->prescaler > 32) {
+    return CK_ERR_INVALID_CAN_BIT_TIMING;
+  }
+  if (bit_timing->time_quanta < 8 || bit_timing->time_quanta > 25) {
+    return CK_ERR_INVALID_CAN_BIT_TIMING;
+  }
+  if (bit_timing->phase_seg2 < 1 || bit_timing->phase_seg2 > 8) {
+    return CK_ERR_INVALID_CAN_BIT_TIMING;
+  }
+  if (tseg1 < 1) {
+    return CK_ERR_INVALID_CAN_BIT_TIMING;
+  }
+  if (bit_timing->sjw < 1 || bit_timing->sjw > 4 ||
+      bit_timing->sjw > min(tseg1, bit_timing->phase_seg2)) {
+    return CK_ERR_INVALID_CAN_BIT_TIMING;
+  }
+  // NOLINTEND(*-magic-numbers)
+  return CK_OK;
+}
+
 ck_letter_t ck_default_letter(void) {
   ck_letter_t letter = {
       .envelope =
@@ -50,4 +85,14 @@ ck_letter_t ck_default_letter(void) {
           },
   };
   return letter;
+}
+
+ck_can_bit_timing_t ck_default_bit_timing(void) {
+  ck_can_bit_timing_t bit_timing = {
+      .prescaler = ck_get_125kbit_prescaler(),
+      .time_quanta = 16,  // NOLINT
+      .phase_seg2 = 2,
+      .sjw = 1,
+  };
+  return bit_timing;
 }

@@ -4,6 +4,19 @@
 #include "flash.h"
 #include "postmaster-hal.h"
 
+// Helpers
+static ck_err_t check_bit_timing(const ck_can_bit_timing_t *bit_timing);
+static int get_tseg1(const ck_can_bit_timing_t *bit_timing);
+static int get_tseg2(const ck_can_bit_timing_t *bit_timing);
+static int get_sjw(const ck_can_bit_timing_t *bit_timing);
+
+inline int min(int a, int b) {  // NOLINT
+  if (a < b) {
+    return a;
+  }
+  return b;
+}
+
 ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc) {
   CAN_HandleTypeDef *hcan = get_can_handle();
 
@@ -94,115 +107,24 @@ uint8_t ck_get_125kbit_prescaler(void) {
 }
 
 ck_err_t ck_set_bit_timing(const ck_can_bit_timing_t *bit_timing) {
+  if (!bit_timing) {
+    return CK_ERR_INVALID_PARAMETER;
+  }
+
+  ck_err_t ret = check_bit_timing(bit_timing);
+  if (ret != CK_OK) {
+    return ret;
+  }
+
   CAN_HandleTypeDef *hcan = get_can_handle();
 
-  // NOLINTBEGIN(*-magic-numbers)
-  if (bit_timing->prescaler < 1 || bit_timing->prescaler > 32) {
-    return CK_ERR_INVALID_CAN_BIT_TIMING;
-  }
+  // Store old values
+  CAN_InitTypeDef old_init = hcan->Init;
+
   hcan->Init.Prescaler = bit_timing->prescaler;
-
-  uint8_t tseg1 = bit_timing->time_quanta - 1 - bit_timing->phase_seg2;
-
-  switch (tseg1) {
-    case 1:
-      hcan->Init.TimeSeg1 = CAN_BS1_1TQ;
-      break;
-    case 2:
-      hcan->Init.TimeSeg1 = CAN_BS1_2TQ;
-      break;
-    case 3:
-      hcan->Init.TimeSeg1 = CAN_BS1_3TQ;
-      break;
-    case 4:
-      hcan->Init.TimeSeg1 = CAN_BS1_4TQ;
-      break;
-    case 5:
-      hcan->Init.TimeSeg1 = CAN_BS1_5TQ;
-      break;
-    case 6:
-      hcan->Init.TimeSeg1 = CAN_BS1_6TQ;
-      break;
-    case 7:
-      hcan->Init.TimeSeg1 = CAN_BS1_7TQ;
-      break;
-    case 8:
-      hcan->Init.TimeSeg1 = CAN_BS1_8TQ;
-      break;
-    case 9:
-      hcan->Init.TimeSeg1 = CAN_BS1_9TQ;
-      break;
-    case 10:
-      hcan->Init.TimeSeg1 = CAN_BS1_10TQ;
-      break;
-    case 11:
-      hcan->Init.TimeSeg1 = CAN_BS1_11TQ;
-      break;
-    case 12:
-      hcan->Init.TimeSeg1 = CAN_BS1_12TQ;
-      break;
-    case 13:
-      hcan->Init.TimeSeg1 = CAN_BS1_13TQ;
-      break;
-    case 14:
-      hcan->Init.TimeSeg1 = CAN_BS1_14TQ;
-      break;
-    case 15:
-      hcan->Init.TimeSeg1 = CAN_BS1_15TQ;
-      break;
-    case 16:
-      hcan->Init.TimeSeg1 = CAN_BS1_16TQ;
-      break;
-    default:
-      return CK_ERR_INVALID_CAN_BIT_TIMING;
-  }
-
-  switch (bit_timing->phase_seg2) {
-    case 1:
-      hcan->Init.TimeSeg2 = CAN_BS2_1TQ;
-      break;
-    case 2:
-      hcan->Init.TimeSeg2 = CAN_BS2_2TQ;
-      break;
-    case 3:
-      hcan->Init.TimeSeg2 = CAN_BS2_3TQ;
-      break;
-    case 4:
-      hcan->Init.TimeSeg2 = CAN_BS2_4TQ;
-      break;
-    case 5:
-      hcan->Init.TimeSeg2 = CAN_BS2_5TQ;
-      break;
-    case 6:
-      hcan->Init.TimeSeg2 = CAN_BS2_6TQ;
-      break;
-    case 7:
-      hcan->Init.TimeSeg2 = CAN_BS2_7TQ;
-      break;
-    case 8:
-      hcan->Init.TimeSeg2 = CAN_BS2_8TQ;
-      break;
-    default:
-      return CK_ERR_INVALID_CAN_BIT_TIMING;
-  }
-
-  switch (bit_timing->sjw) {
-    case 1:
-      hcan->Init.SyncJumpWidth = CAN_SJW_1TQ;
-      break;
-    case 2:
-      hcan->Init.SyncJumpWidth = CAN_SJW_2TQ;
-      break;
-    case 3:
-      hcan->Init.SyncJumpWidth = CAN_SJW_3TQ;
-      break;
-    case 4:
-      hcan->Init.SyncJumpWidth = CAN_SJW_4TQ;
-      break;
-    default:
-      return CK_ERR_INVALID_CAN_BIT_TIMING;
-  }
-  // NOLINTEND(*-magic-numbers)
+  hcan->Init.TimeSeg1 = get_tseg1(bit_timing);
+  hcan->Init.TimeSeg2 = get_tseg2(bit_timing);
+  hcan->Init.SyncJumpWidth = get_sjw(bit_timing);
 
   // Go off bus
   if (HAL_CAN_GetState(hcan) == HAL_CAN_STATE_LISTENING) {
@@ -212,6 +134,9 @@ ck_err_t ck_set_bit_timing(const ck_can_bit_timing_t *bit_timing) {
   }
 
   if (HAL_CAN_Init(hcan) != HAL_OK) {
+    // Try to recover bit timing
+    hcan->Init = old_init;
+    HAL_CAN_Init(hcan);
     return CK_ERR_INVALID_CAN_BIT_TIMING;
   }
 
@@ -232,4 +157,108 @@ ck_err_t ck_load_bit_timing(ck_can_bit_timing_t *bit_timing) {
     return CK_ERR_PERIPHERAL;
   }
   return CK_OK;
+}
+
+// Check bit timing based on stm32 hardware constraints.
+static ck_err_t check_bit_timing(const ck_can_bit_timing_t *bit_timing) {
+  if (bit_timing->prescaler < 1) {
+    return CK_ERR_INVALID_CAN_BIT_TIMING;
+  }
+  if (bit_timing->phase_seg2 < 1 || bit_timing->phase_seg2 > 8) {  // NOLINT
+    return CK_ERR_INVALID_CAN_BIT_TIMING;
+  }
+  int tseg1 = bit_timing->time_quanta - 1 - bit_timing->phase_seg2;
+  if (tseg1 < 1 || tseg1 > 16) {  // NOLINT
+    return CK_ERR_INVALID_CAN_BIT_TIMING;
+  }
+  if (bit_timing->sjw < 1 || bit_timing->sjw > 4) {
+    return CK_ERR_INVALID_CAN_BIT_TIMING;
+  }
+  if (bit_timing->sjw > min(tseg1, bit_timing->phase_seg2)) {
+    return CK_ERR_INVALID_CAN_BIT_TIMING;
+  }
+  return CK_OK;
+}
+
+static int get_tseg1(const ck_can_bit_timing_t *bit_timing) {
+  int tseg1 = bit_timing->time_quanta - 1 - bit_timing->phase_seg2;
+
+  // NOLINTBEGIN(*-magic-numbers)
+  switch (tseg1) {
+    case 1:
+      return CAN_BS1_1TQ;
+    case 2:
+      return CAN_BS1_2TQ;
+    case 3:
+      return CAN_BS1_3TQ;
+    case 4:
+      return CAN_BS1_4TQ;
+    case 5:
+      return CAN_BS1_5TQ;
+    case 6:
+      return CAN_BS1_6TQ;
+    case 7:
+      return CAN_BS1_7TQ;
+    case 8:
+      return CAN_BS1_8TQ;
+    case 9:
+      return CAN_BS1_9TQ;
+    case 10:
+      return CAN_BS1_10TQ;
+    case 11:
+      return CAN_BS1_11TQ;
+    case 12:
+      return CAN_BS1_12TQ;
+    case 13:
+      return CAN_BS1_13TQ;
+    case 14:
+      return CAN_BS1_14TQ;
+    case 15:
+      return CAN_BS1_15TQ;
+    case 16:
+      return CAN_BS1_16TQ;
+    default:
+      return tseg1;
+  }
+  // NOLINTEND(*-magic-numbers)
+}
+
+static int get_tseg2(const ck_can_bit_timing_t *bit_timing) {
+  // NOLINTBEGIN(*-magic-numbers)
+  switch (bit_timing->phase_seg2) {
+    case 1:
+      return CAN_BS2_1TQ;
+    case 2:
+      return CAN_BS2_2TQ;
+    case 3:
+      return CAN_BS2_3TQ;
+    case 4:
+      return CAN_BS2_4TQ;
+    case 5:
+      return CAN_BS2_5TQ;
+    case 6:
+      return CAN_BS2_6TQ;
+    case 7:
+      return CAN_BS2_7TQ;
+    case 8:
+      return CAN_BS2_8TQ;
+    default:
+      return bit_timing->phase_seg2;
+  }
+  // NOLINTEND(*-magic-numbers)
+}
+
+static int get_sjw(const ck_can_bit_timing_t *bit_timing) {
+  switch (bit_timing->sjw) {
+    case 1:
+      return CAN_SJW_1TQ;
+    case 2:
+      return CAN_SJW_2TQ;
+    case 3:
+      return CAN_SJW_3TQ;
+    case 4:
+      return CAN_SJW_4TQ;
+    default:
+      return bit_timing->sjw;
+  }
 }
