@@ -434,7 +434,22 @@ ck_err_t ck_check_comm_mode(ck_comm_mode_t mode);
 ck_err_t ck_check_list_type(ck_list_type_t type);
 
 /*******************************************************************************
- * Creates a CAN Kingdom default letter.
+ * Check if the given ck_can_bit_timing_t is valid.
+ *
+ * The checking performed by the function relate to the CAN standard for what is
+ * allowed and what is not allowed. Some hardware may be able to set some values
+ * that this function will reject. In that case, the user will have to perform
+ * validation themselves.
+ *
+ * @param bit_timing pointer to parameters to check.
+ *
+ * @return #CK_ERR_INVALID_CAN_BIT_TIMING if bit_timing is invalid.
+ * @return #CK_OK on success.
+ ******************************************************************************/
+ck_err_t ck_check_can_bit_timing(const ck_can_bit_timing_t *bit_timing);
+
+/*******************************************************************************
+ * Returns a CAN Kingdom default letter.
  *
  * The default letter is a letter with CAN ID 2031 and 8 lines each containing
  * `0xAA`.
@@ -442,6 +457,14 @@ ck_err_t ck_check_list_type(ck_list_type_t type);
  * @return the created letter.
  ******************************************************************************/
 ck_letter_t ck_default_letter(void);
+
+/*******************************************************************************
+ * Returns bit timing parameters specifying a bit rate of 125 Kbit/s and a
+ * sampling point of 87.5%.
+ *
+ * @return the ck_can_bit_timing_t.
+ ******************************************************************************/
+ck_can_bit_timing_t ck_default_bit_timing(void);
 
 #ifdef __cplusplus
 }

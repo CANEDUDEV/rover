@@ -140,7 +140,7 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor);
  *         type.
  *
  * @return #CK_ERR_INVALID_PARAMETER some parameters on the king's page are
- *         invalid.
+ *         invalid, or the passed letter is NULL.
  *
  * @return #CK_OK on success or if the letter is not addressed to the caller.
  ******************************************************************************/

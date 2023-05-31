@@ -73,8 +73,6 @@ static ck_list_t *find_list(ck_list_type_t list_type, ck_direction_t direction,
 static ck_err_t get_source_list_type(ck_list_type_t target_list_type,
                                      ck_list_type_t *source_list_type);
 
-static ck_can_bit_timing_t default_bit_timing(void);
-
 static ck_err_t change_bit_timing(void);
 
 ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
@@ -109,7 +107,7 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
   mayor.correct_letter_received = false;
   mayor.startup_finished = false;
 
-  mayor.next_bit_timing = default_bit_timing();
+  mayor.next_bit_timing = ck_default_bit_timing();
   ck_err_t ret = change_bit_timing();
   if (ret != CK_OK) {
     return ret;
@@ -134,6 +132,9 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
 }
 
 ck_err_t ck_process_kings_letter(const ck_letter_t *letter) {
+  if (!letter) {
+    return CK_ERR_INVALID_PARAMETER;
+  }
   // Check if mayor has been initialized
   if (mayor.user_data.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
@@ -362,14 +363,11 @@ ck_err_t ck_default_letter_timeout(void) {
   mayor.default_letter_timeout = true;
   ck_err_t ret = ck_load_bit_timing(&mayor.next_bit_timing);
   if (ret != CK_OK) {
-    // Memory error. Restore bit timing
+    // Memory error. Restore bit timing.
     mayor.next_bit_timing = mayor.current_bit_timing;
   }
 
-  // If the read bit timing is invalid for some reason,
-  // write the default bit rate to memory.
-  // ck_set_bit_timing() should always restore a working bit rate on error,
-  // so try to set comm mode either way.
+  // Assume the read bit timing is valid.
   ret = change_bit_timing();
   if (ret != CK_OK) {
     // Ignore errors on next function calls as we want to return the original
@@ -957,17 +955,6 @@ static ck_err_t get_source_list_type(ck_list_type_t target_list_type,
       return CK_ERR_INVALID_LIST_TYPE;
   }
   return CK_OK;
-}
-
-static ck_can_bit_timing_t default_bit_timing(void) {
-  // Start at 125 kbit/s, sampling point 87.5%
-  ck_can_bit_timing_t bit_timing = {
-      .prescaler = ck_get_125kbit_prescaler(),
-      .time_quanta = 16,  // NOLINT
-      .phase_seg2 = 2,
-      .sjw = 1,
-  };
-  return bit_timing;
 }
 
 static ck_err_t change_bit_timing(void) {

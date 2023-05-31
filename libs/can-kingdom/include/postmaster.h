@@ -51,7 +51,7 @@ ck_err_t ck_apply_comm_mode(ck_comm_mode_t mode);
 
 /*******************************************************************************
  * Return the ck_can_bit_timing_t prescaler that will give a bit rate of
- * 125 kbit/s on the target hardware.
+ * 125 Kbit/s on the target hardware.
  ******************************************************************************/
 uint8_t ck_get_125kbit_prescaler(void);
 
