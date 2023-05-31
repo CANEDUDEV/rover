@@ -3,10 +3,15 @@
 #include <string.h>
 
 #include "postmaster.h"
+#include "types.h"
 
 struct mayor_state {
   ck_mayor_t user_data;  // Data provided by the user.
-  ck_page_t pages[2];    // For storing the predefined mayor's pages.
+
+  ck_comm_mode_t comm_mode;
+  ck_comm_flags_t comm_flags;
+
+  ck_page_t pages[2];  // For storing the predefined mayor's pages.
   ck_document_t mayors_doc;
   ck_document_t kings_doc;  // Dummy king's document.
 };
@@ -82,6 +87,10 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
   // Needs to be done before setting up the internal state.
   memcpy(&mayor.user_data, mayor_, sizeof(ck_mayor_t));
 
+  // Always start in silent mode
+  mayor.comm_mode = CK_COMM_MODE_SILENT;
+  mayor.comm_flags = CK_COMM_RESET;
+
   init_mayors_pages();
   init_documents();
   init_folders();
@@ -145,7 +154,7 @@ ck_err_t ck_add_mayors_page(ck_page_t *page) {
 }
 
 ck_err_t ck_send_document(uint8_t folder_no) {
-  if (ck_get_comm_mode() != CK_COMM_MODE_COMMUNICATE) {
+  if (mayor.comm_mode != CK_COMM_MODE_COMMUNICATE) {
     return CK_OK;
   }
   int folder_index = find_folder(folder_no);
@@ -231,6 +240,12 @@ ck_err_t ck_is_kings_envelope(ck_envelope_t *envelope) {
 }
 
 uint32_t ck_get_base_number(void) { return mayor.user_data.base_no; }
+ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
+  mayor.comm_mode = mode;
+  return ck_apply_comm_mode(mode);
+}
+
+ck_comm_mode_t ck_get_comm_mode(void) { return mayor.comm_mode; }
 
 static void init_mayors_pages(void) {
   // Init mayor's pages
@@ -262,8 +277,8 @@ static void init_documents(void) {
 
 static void init_folders(void) {
   // Init mayor's folders
-  mayor.user_data.folders[0] = kings_folder();
-  mayor.user_data.folders[1] = mayors_folder();
+  mayor.user_data.folders[CK_KINGS_FOLDER_NO] = kings_folder();
+  mayor.user_data.folders[CK_MAYORS_FOLDER_NO] = mayors_folder();
 }
 
 static ck_err_t init_lists(void) {
@@ -305,10 +320,26 @@ static ck_err_t process_kp0(const ck_page_t *page) {
     return ret;
   }
 
-  ck_comm_mode_t comm_mode = page->lines[3];
+  ck_comm_mode_t comm_mode = page->lines[3] & 0x3;
   ret = ck_check_comm_mode(comm_mode);
   if (ret != CK_OK) {
     return CK_ERR_INVALID_KINGS_LETTER;
+  }
+  mayor.comm_flags = page->lines[3] & ~0x3;
+  if (mayor.comm_flags & CK_COMM_RESET) {
+    // TODO: add action
+  }
+  if (mayor.comm_flags & CK_COMM_SKIP_WAIT) {
+    // TODO: add action
+  }
+  if (mayor.comm_flags & CK_COMM_DONT_SKIP_WAIT) {
+    // TODO: add action
+  }
+  if (mayor.comm_flags & CK_COMM_SKIP_LISTEN) {
+    // TODO: add action
+  }
+  if (mayor.comm_flags & CK_COMM_DONT_SKIP_LISTEN) {
+    // TODO: add action
   }
 
   ret = ck_set_comm_mode(comm_mode);

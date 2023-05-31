@@ -205,6 +205,23 @@ ck_err_t ck_send_mayors_page(uint8_t page_no);
 ck_err_t ck_is_kings_envelope(ck_envelope_t *envelope);
 
 /*******************************************************************************
+ * Set the communication mode.
+ *
+ * @param mode the desired communication mode.
+ *
+ * @return #CK_OK on success.
+ * @return #CK_ERR_SET_MODE_FAILED if failed setting the communication mode.
+ * @return #CK_ERR_INVALID_COMM_MODE if the requested communication mode is
+ *         invalid.
+ ******************************************************************************/
+ck_err_t ck_set_comm_mode(ck_comm_mode_t mode);
+
+/*******************************************************************************
+ * Return the currently set communication mode.
+ ******************************************************************************/
+ck_comm_mode_t ck_get_comm_mode(void);
+
+/*******************************************************************************
  * Returns the current base number.
  ******************************************************************************/
 uint32_t ck_get_base_number(void);

@@ -202,6 +202,21 @@ typedef enum {
   CK_COMM_MODE_COMMUNICATE = 0x3,
 } ck_comm_mode_t;
 
+/// Communication mode flags, used in KP0.
+typedef enum {
+  /// Reset communication by going through the startup sequence with new bit
+  /// timing settings.
+  CK_COMM_RESET = 0x4,
+  /// Skip listening for a good message during startup sequence.
+  CK_COMM_SKIP_LISTEN = 0x8,
+  /// Don't skip listening for a good message during startup sequence.
+  CK_COMM_DONT_SKIP_LISTEN = 0x10,
+  /// Skip 200ms wait for default letter during startup sequence.
+  CK_COMM_SKIP_WAIT = 0x20,
+  /// Don't 200ms wait for default letter during startup sequence.
+  CK_COMM_DONT_SKIP_WAIT = 0x40,
+} ck_comm_flags_t;
+
 /// Only #CK_CITY_MODE_KEEP_CURRENT is defined, the rest is defined by the user.
 typedef enum {
   /// Keep the current mode.

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "king.h"
 #include "test.h"
 
 #define RX_BIT_COUNT 1
@@ -45,9 +46,10 @@ static struct city_data data;
 static test_err_t test_mayor_init(void);
 static test_err_t test_process_kings_letter(void);
 static test_err_t test_add_mayors_page(void);
-static test_err_t test_ck_send_document(void);
-static test_err_t test_ck_send_mayors_page(void);
-static test_err_t test_ck_is_kings_envelope(void);
+static test_err_t test_send_document(void);
+static test_err_t test_send_mayors_page(void);
+static test_err_t test_is_kings_envelope(void);
+static test_err_t test_set_comm_mode(void);
 static test_err_t test_process_kp0(void);
 static test_err_t test_process_kp1(void);
 static test_err_t test_process_kp2(void);
@@ -77,22 +79,43 @@ int main(void) {
     printf("Process before init succeeded.\n");
     return TEST_FAIL;
   }
-  if (test_mayor_init() != TEST_PASS) {
-    return TEST_FAIL;
+
+  test_err_t ret = test_mayor_init();
+  if (ret != TEST_PASS) {
+    return ret;
   }
-  if (test_process_kings_letter() != TEST_PASS) {
-    return TEST_FAIL;
+
+  ret = test_process_kings_letter();
+  if (ret != TEST_PASS) {
+    return ret;
   }
-  if (test_add_mayors_page() != TEST_PASS) {
-    return TEST_FAIL;
+
+  ret = test_add_mayors_page();
+  if (ret != TEST_PASS) {
+    return ret;
   }
-  if (test_ck_send_document() != TEST_PASS) {
-    return TEST_FAIL;
+
+  ret = test_send_document();
+  if (ret != TEST_PASS) {
+    return ret;
   }
-  if (test_ck_send_mayors_page() != TEST_PASS) {
-    return TEST_FAIL;
+
+  ret = test_send_mayors_page();
+  if (ret != TEST_PASS) {
+    return ret;
   }
-  return test_ck_is_kings_envelope();
+
+  ret = test_is_kings_envelope();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+
+  ret = test_set_comm_mode();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+
+  return TEST_PASS;
 }
 
 static test_err_t test_mayor_init(void) {
@@ -257,11 +280,13 @@ static test_err_t test_add_mayors_page(void) {
   return TEST_PASS;
 }
 
-static test_err_t test_ck_send_document(void) {
+static test_err_t test_send_document(void) {
   test_err_t err = setup_test();
   if (err != TEST_PASS) {
     return err;
   }
+
+  ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE);
 
   // Test valid folder number
   if (ck_send_document(2) != CK_OK) {
@@ -278,11 +303,13 @@ static test_err_t test_ck_send_document(void) {
   return TEST_PASS;
 }
 
-static test_err_t test_ck_send_mayors_page(void) {
+static test_err_t test_send_mayors_page(void) {
   test_err_t err = setup_test();
   if (err != TEST_PASS) {
     return err;
   }
+
+  ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE);
 
   // Test valid page number
   if (ck_send_mayors_page(0) != CK_OK) {
@@ -299,7 +326,7 @@ static test_err_t test_ck_send_mayors_page(void) {
   return TEST_PASS;
 }
 
-static test_err_t test_ck_is_kings_envelope(void) {
+static test_err_t test_is_kings_envelope(void) {
   ck_envelope_t good_envelope = {.envelope_no = 0};
   ck_envelope_t bad_envelope = {.envelope_no = 1};
 
@@ -316,18 +343,51 @@ static test_err_t test_ck_is_kings_envelope(void) {
   return TEST_PASS;
 }
 
+static test_err_t test_set_comm_mode(void) {
+  test_err_t ret = setup_test();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+  if (ck_get_comm_mode() != CK_COMM_MODE_SILENT) {
+    printf("set_comm_mode: comm mode not init to CK_COMM_MODE_SILENT.\n");
+    return TEST_FAIL;
+  }
+  if (ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE) != CK_OK) {
+    printf("set_comm_mode: failed to set comm mode.\n");
+    return TEST_FAIL;
+  }
+  ck_comm_mode_t mode = ck_get_comm_mode();
+  if (mode != CK_COMM_MODE_COMMUNICATE) {
+    printf(
+        "set_comm_mode: get comm mode returned wrong comm mode, "
+        "expected: %u, got: %u.\n",
+        CK_COMM_MODE_COMMUNICATE, mode);
+    return TEST_FAIL;
+  }
+  return TEST_PASS;
+}
+
 static test_err_t test_process_kp0(void) {
-  ck_letter_t letter = {.page = {.line_count = CK_MAX_LINES_PER_PAGE}};
-  letter.page.lines[0] = test_city_address;
-  letter.page.lines[1] = CK_KP0;
-  letter.page.lines[2] = CK_ACTION_MODE_FREEZE;
-  letter.page.lines[3] = CK_COMM_MODE_SILENT;
-  letter.page.lines[4] = CK_CITY_MODE_KEEP_CURRENT;
+  ck_kp0_args_t args = {
+      .address = test_city_address,
+      .action_mode = CK_ACTION_MODE_FREEZE,
+      .comm_mode = CK_COMM_MODE_SILENT,
+      .comm_flags = CK_COMM_RESET,
+      .city_mode = CK_CITY_MODE_KEEP_CURRENT,
+  };
+
+  ck_letter_t letter;
+  ck_err_t ret = ck_create_kings_page_0(&args, &letter.page);
+  if (ret != CK_OK) {
+    printf("process_kp0: failed to create king's page.\n");
+    return TEST_FAIL;
+  }
 
   if (ck_process_kings_letter(&letter) != CK_OK) {
     printf("process_kp0: failed to process page.\n");
     return TEST_FAIL;
   }
+
   return TEST_PASS;
 }
 
@@ -777,40 +837,41 @@ static test_err_t check_kings_doc_folder(ck_folder_t *folder) {
 static test_err_t check_mayors_doc_folder(ck_folder_t *folder) {
   if (folder->envelope_count != 1) {
     printf(
-        "mayor_init: failed to setup folder for mayors's doc: "
+        "mayor_init: failed to setup folder for mayor's doc: "
         "wrong envelope count, expected: 1, got: %u.\n",
         folder->envelope_count);
     return TEST_FAIL;
   }
+
   if (folder->envelopes[0].envelope_no != test_base_no + test_city_address) {
     printf(
-        "mayor_init: failed to setup folder for mayors's doc: "
+        "mayor_init: failed to setup folder for mayor's doc: "
         "wrong envelope number, expected: %u, got: %u.\n",
         test_base_no + test_city_address, folder->envelopes[0].envelope_no);
     return TEST_FAIL;
   }
   if (!folder->envelopes[0].enable) {
     printf(
-        "mayor_init: failed to setup folder for mayors's doc: "
+        "mayor_init: failed to setup folder for mayor's doc: "
         "envelope not enabled.\n");
     return TEST_FAIL;
   }
   if (folder->dlc != CK_CAN_MAX_DLC) {
     printf(
-        "mayor_init: failed to setup folder for mayors's doc: "
+        "mayor_init: failed to setup folder for mayor's doc: "
         "wrong DLC, expected: %u, got: %u.\n",
         CK_CAN_MAX_DLC, folder->dlc);
     return TEST_FAIL;
   }
   if (!folder->enable) {
     printf(
-        "mayor_init: failed to setup folder for mayors's doc: "
+        "mayor_init: failed to setup folder for mayor's doc: "
         "folder not enabled.\n");
     return TEST_FAIL;
   }
   if (folder->direction != CK_DIRECTION_TRANSMIT) {
     printf(
-        "mayor_init: failed to setup folder for mayors's doc: "
+        "mayor_init: failed to setup folder for mayor's doc: "
         "wrong direction, expected: %u, got: %u.\n",
         CK_DIRECTION_TRANSMIT, folder->direction);
     return TEST_FAIL;
@@ -894,8 +955,8 @@ static void init_lists(void) {
 }
 
 static void init_folders(void) {
-  // Set up folders 2 and 3. 0 and 1 are reserved for the king's doc and mayor's
-  // doc, which are set up by the mayor lib.
+  // Set up folders 2 and 3. 0 and 1 are reserved for the king's doc and
+  // mayor's doc, which are set up by the mayor lib.
   data.folders[2].folder_no = 2;
   data.folders[2].doc_list_no = 0;
   data.folders[2].doc_no = 1;  // Doc no 0 is reserved for the mayor's doc

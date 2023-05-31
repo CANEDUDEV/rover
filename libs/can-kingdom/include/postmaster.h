@@ -32,7 +32,8 @@ extern "C" {
 ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc);
 
 /*******************************************************************************
- * Set the communication mode of the city.
+ * Apply the requested communication mode in hardware. This function shouldn't
+ * be called from user applications, use ck_set_comm_mode() instead.
  *
  * @param mode the desired communication mode.
  *
@@ -41,14 +42,7 @@ ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc);
  * @return #CK_ERR_INVALID_COMM_MODE if the requested communication mode is
  *         invalid.
  ******************************************************************************/
-ck_err_t ck_set_comm_mode(ck_comm_mode_t mode);
-
-/*******************************************************************************
- * Get the currently set communication mode.
- *
- * @return ck_comm_mode_t containing the current mode.
- ******************************************************************************/
-ck_comm_mode_t ck_get_comm_mode(void);
+ck_err_t ck_apply_comm_mode(ck_comm_mode_t mode);
 
 #ifdef __cplusplus
 }
