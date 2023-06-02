@@ -29,7 +29,7 @@ static StackType_t battery_monitor_stack[configMINIMAL_STACK_SIZE];
 void battery_monitor(void *unused);
 
 // CAN Kingdom process received letters task
-static TaskHandle_t proc_letter_task;
+static TaskHandle_t process_letter_task;
 static StaticTask_t proc_letter_buf;
 static StackType_t proc_letter_stack[configMINIMAL_STACK_SIZE];
 void proc_letter(void *unused);
@@ -70,7 +70,7 @@ void default_letter_timer_callback(TimerHandle_t timer);
 void start_default_letter_timer(void);
 
 void ck_init(void);
-void update_pages(BatteryNodeState *batteryNodeState);
+void update_pages(battery_state_t *battery_state);
 void send_docs(void);
 
 // Application
@@ -78,7 +78,7 @@ void send_docs(void);
 #define LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD 10
 
 // Set to 1 by GPIO external interrupt on the OVER_CURRENT pin.
-static uint8_t OverCurrentFault = 0;
+static uint8_t over_current_fault = 0;
 
 /**
  * @brief  The application entry point.
@@ -239,92 +239,92 @@ void task_init(void) {
       battery_monitor, "battery monitor", configMINIMAL_STACK_SIZE, NULL,
       LOWEST_TASK_PRIORITY, battery_monitor_stack, &battery_monitor_buf);
 
-  proc_letter_task = xTaskCreateStatic(
+  process_letter_task = xTaskCreateStatic(
       proc_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
       LOWEST_TASK_PRIORITY + 1, proc_letter_stack, &proc_letter_buf);
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
   (void)hadc;
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(battery_monitor_task, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  BaseType_t higher_priority_task_woken = pdFALSE;
+  vTaskNotifyGiveFromISR(battery_monitor_task, &higher_priority_task_woken);
+  portYIELD_FROM_ISR(higher_priority_task_woken);
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin != OVER_CURRENT_Pin) {
     return;
   }
-  OverCurrentFault = 1;
+  over_current_fault = 1;
 }
 
-void battery_monitor_timer(TimerHandle_t xTimer) {
-  (void)xTimer;
+void battery_monitor_timer(TimerHandle_t timer) {
+  (void)timer;
   xTaskNotifyGive(battery_monitor_task);
 }
 
 void battery_monitor(void *unused) {
   (void)unused;
 
-  SetJumperConfig(ALL_ON);
-  ConfigureVoltageRegulator(&peripherals->hi2c1, POT_IVRA_DEFAULT);
+  set_jumper_config(ALL_ON);
+  config_voltage_regulator(&peripherals->hi2c1, POT_IVRA_DEFAULT);
   HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(POWER_OFF_GPIO_Port, POWER_OFF_Pin, GPIO_PIN_SET);
 
   StaticTimer_t timer_buf;
-  TimerHandle_t xTimer = xTimerCreateStatic(
+  TimerHandle_t timer = xTimerCreateStatic(
       "battery monitor timer", pdMS_TO_TICKS(BATTERY_MONITOR_TASK_PERIOD),
       pdTRUE,  // Auto reload timer
       NULL,    // Timer ID, unused
       battery_monitor_timer, &timer_buf);
 
-  xTimerStart(xTimer, portMAX_DELAY);
+  xTimerStart(timer, portMAX_DELAY);
 
-  BatteryNodeState batteryNodeState;
-  ADCReading adcBuf;
-  BatteryCharge charge = CHARGE_100_PERCENT;
+  battery_state_t battery_state;
+  adc_reading_t adcBuf;
+  battery_charge_t charge = CHARGE_100_PERCENT;
   uint8_t lowPowerReportCount = 0;
 
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
 
     // Start both ADCs
-    HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adcBuf.adc1Buf,
-                      sizeof(adcBuf.adc1Buf) / sizeof(uint16_t));
-    HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adcBuf.adc2Buf,
-                      sizeof(adcBuf.adc2Buf) / sizeof(uint16_t));
+    HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adcBuf.adc1_buf,
+                      sizeof(adcBuf.adc1_buf) / sizeof(uint16_t));
+    HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adcBuf.adc2_buf,
+                      sizeof(adcBuf.adc2_buf) / sizeof(uint16_t));
 
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for DMA
 
-    ParseADCValues(&adcBuf, &batteryNodeState);
+    parse_adc_values(&adcBuf, &battery_state);
 
     // Check if over current or low voltage protection has triggered.
     if (lowPowerReportCount > LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD ||
-        OverCurrentFault != 0) {
+        over_current_fault != 0) {
       // Turn off the power outputs to reduce the battery power drain.
       HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_SET);
       HAL_GPIO_WritePin(POWER_OFF_GPIO_Port, POWER_OFF_Pin, GPIO_PIN_RESET);
       // Blink LEDs red to show user something is wrong.
-      BlinkLEDsRed();
+      blink_leds_red();
     } else {  // Only update the charge state if no fault has occured.
-      charge = ReadBatteryCharge(&batteryNodeState);
-      lowPowerReportCount += SetChargeStateLED(&charge);
+      charge = read_battery_charge(&battery_state);
+      lowPowerReportCount += set_charge_state_led(&charge);
     }
 
-    update_pages(&batteryNodeState);
+    update_pages(&battery_state);
     send_docs();
   }
 }
 
-void update_pages(BatteryNodeState *batteryNodeState) {
+void update_pages(battery_state_t *battery_state) {
   // Copy cells 0,1,2 to page 0 of cell doc, cells 3,4,5 to page 1.
-  memcpy(&cell_page0->lines[1], &batteryNodeState->cells[0], cell_folder->dlc);
-  memcpy(&cell_page1->lines[1], &batteryNodeState->cells[3], cell_folder->dlc);
+  memcpy(&cell_page0->lines[1], &battery_state->cells[0], cell_folder->dlc);
+  memcpy(&cell_page1->lines[1], &battery_state->cells[3], cell_folder->dlc);
 
-  memcpy(reg_out_current_page->lines, &batteryNodeState->regOutCurrent,
+  memcpy(reg_out_current_page->lines, &battery_state->reg_out_current,
          reg_out_current_folder->dlc);
 
-  memcpy(vbat_out_current_page->lines, &batteryNodeState->vbatOutCurrent,
+  memcpy(vbat_out_current_page->lines, &battery_state->vbat_out_current,
          vbat_out_current_folder->dlc);
 }
 
@@ -361,9 +361,9 @@ ck_letter_t frame_to_letter(CAN_RxHeaderTypeDef *header, uint8_t *data) {
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
   HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
 
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(proc_letter_task, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  BaseType_t higher_priority_task_woken = pdFALSE;
+  vTaskNotifyGiveFromISR(process_letter_task, &higher_priority_task_woken);
+  portYIELD_FROM_ISR(higher_priority_task_woken);
 }
 
 void dispatch_letter(ck_letter_t *letter) {

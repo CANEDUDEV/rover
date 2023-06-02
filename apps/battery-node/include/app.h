@@ -22,7 +22,7 @@ extern "C" {
 
 #define POT_IVRA_DEFAULT 40  // Default potentiometer value
 
-void ConfigureVoltageRegulator(I2C_HandleTypeDef *hi2c, uint8_t potValue);
+void config_voltage_regulator(I2C_HandleTypeDef *hi2c, uint8_t pot_value);
 
 /*
  * X11 and X12 jumper configuration
@@ -38,39 +38,40 @@ typedef enum {
   X11_ON,
   X12_ON,
   ALL_ON,
-} JumperConfig;
+} jumper_config_t;
 
-void SetJumperConfig(JumperConfig jumperConfig);
+void set_jumper_config(jumper_config_t jumper_config);
 
 typedef enum {
   NONE = 0,
   RED,
   GREEN,
   ORANGE,
-} LEDColor;
+} led_color_t;
 
 // Naming based on battery node schematic
 typedef enum {
   LED6 = 0,
   LED7,
-} LED;
+} led_t;
 
-void SetLEDColor(LED led, LEDColor color);
-void BlinkLEDsRed(void);
+void set_led_color(led_t led, led_color_t color);
+void blink_leds_red(void);
 
 typedef struct {
-  uint16_t adc1Buf[ADC1_NUM_CHANNELS];
-  uint16_t adc2Buf[ADC2_NUM_CHANNELS];
-} ADCReading;
+  uint16_t adc1_buf[ADC1_NUM_CHANNELS];
+  uint16_t adc2_buf[ADC2_NUM_CHANNELS];
+} adc_reading_t;
 
 typedef struct {
   uint16_t cells[BATTERY_CELLS_MAX];
-  uint16_t regOutCurrent;
-  uint32_t vbatOutCurrent;
-} BatteryNodeState;
+  uint16_t reg_out_current;
+  uint32_t vbat_out_current;
+} battery_state_t;
 
-// ParseADCValues parses an ADCReading and populates a BatteryNodeState struct.
-void ParseADCValues(const ADCReading *adcReading, BatteryNodeState *bns);
+// Parses an adc reading and uses it to update the battery state.
+void parse_adc_values(const adc_reading_t *adc_reading,
+                      battery_state_t *battery_state);
 
 // Define some charge states in mV. Based on LiPo batteries. Assumes maximum
 // cell voltage of 4200 mV and a low voltage cutoff at 3200 mV.
@@ -81,11 +82,11 @@ typedef enum {
   CHARGE_60_PERCENT = 3800,
   CHARGE_80_PERCENT = 4000,
   CHARGE_100_PERCENT = 4200,
-} BatteryCharge;
+} battery_charge_t;
 
-uint8_t SetChargeStateLED(const BatteryCharge *charge);
+uint8_t set_charge_state_led(const battery_charge_t *charge);
 
-BatteryCharge ReadBatteryCharge(const BatteryNodeState *bns);
+battery_charge_t read_battery_charge(const battery_state_t *battery_state);
 
 #ifdef __cplusplus
 }
