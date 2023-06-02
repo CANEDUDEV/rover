@@ -14,185 +14,182 @@
 // detection threshold voltage at 100 mV.
 #define BATTERY_CELL_DETECTION_THRESHOLD 100
 
-// CAN message lengths
-#define BNS_CELLS_1_TO_4_DLC 8
-#define BNS_CELLS_5_TO_6_DLC 4
-#define BNS_REG_OUT_CURRENT_DLC 2
-#define BNS_VBAT_OUT_CURRENT_DLC 4
+static uint32_t vbat_sense_rout;
 
-static uint32_t VBatSenseRout;
-
-void SetJumperConfig(JumperConfig jumperConfig) {
-  switch (jumperConfig) {
+void set_jumper_config(jumper_config_t jumper_config) {
+  switch (jumper_config) {
     case ALL_OFF:
-      VBatSenseRout = 10200;  // NOLINT
+      vbat_sense_rout = 10200;  // NOLINT
       break;
     case X11_ON:
-      VBatSenseRout = 5100;  // NOLINT
+      vbat_sense_rout = 5100;  // NOLINT
       break;
     case X12_ON:
-      VBatSenseRout = 3400;  // NOLINT
+      vbat_sense_rout = 3400;  // NOLINT
       break;
     case ALL_ON:
-      VBatSenseRout = 2550;  // NOLINT
+      vbat_sense_rout = 2550;  // NOLINT
       break;
   }
 }
 
-void SetLEDColor(LED led, LEDColor color) {
-  GPIO_TypeDef *redLEDPort = LED1_GPIO_Port;
-  GPIO_TypeDef *greenLEDPort = LED2_GPIO_Port;
-  uint16_t redLED = LED1_Pin;
-  uint16_t greenLED = LED2_Pin;
+void set_led_color(led_t led, led_color_t color) {
+  GPIO_TypeDef *red_led_port = LED1_GPIO_Port;
+  GPIO_TypeDef *green_led_port = LED2_GPIO_Port;
+  uint16_t red_led = LED1_Pin;
+  uint16_t green_led = LED2_Pin;
 
   if (led == LED7) {
-    redLEDPort = LED3_GPIO_Port;
-    greenLEDPort = LED4_GPIO_Port;
-    redLED = LED3_Pin;
-    greenLED = LED4_Pin;
+    red_led_port = LED3_GPIO_Port;
+    green_led_port = LED4_GPIO_Port;
+    red_led = LED3_Pin;
+    green_led = LED4_Pin;
   }
 
   switch (color) {
     case NONE:
-      HAL_GPIO_WritePin(redLEDPort, redLED, GPIO_PIN_RESET);
-      HAL_GPIO_WritePin(greenLEDPort, greenLED, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(red_led_port, red_led, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(green_led_port, green_led, GPIO_PIN_RESET);
       break;
     case RED:
-      HAL_GPIO_WritePin(redLEDPort, redLED, GPIO_PIN_SET);
-      HAL_GPIO_WritePin(greenLEDPort, greenLED, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(red_led_port, red_led, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(green_led_port, green_led, GPIO_PIN_RESET);
       break;
     case GREEN:
-      HAL_GPIO_WritePin(redLEDPort, redLED, GPIO_PIN_RESET);
-      HAL_GPIO_WritePin(greenLEDPort, greenLED, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(red_led_port, red_led, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(green_led_port, green_led, GPIO_PIN_SET);
       break;
     case ORANGE:
-      HAL_GPIO_WritePin(redLEDPort, redLED, GPIO_PIN_SET);
-      HAL_GPIO_WritePin(greenLEDPort, greenLED, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(red_led_port, red_led, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(green_led_port, green_led, GPIO_PIN_SET);
       break;
   }
 }
 
-void BlinkLEDsRed(void) {
+void blink_leds_red(void) {
   static uint8_t blink = 0;
   if (blink > 0) {
     blink = 0;
-    SetLEDColor(LED6, RED);
-    SetLEDColor(LED7, RED);
+    set_led_color(LED6, RED);
+    set_led_color(LED7, RED);
   } else {
     blink = 1;
-    SetLEDColor(LED6, NONE);
-    SetLEDColor(LED7, NONE);
+    set_led_color(LED6, NONE);
+    set_led_color(LED7, NONE);
   }
 }
 
-void ConfigureVoltageRegulator(I2C_HandleTypeDef *hi2c, uint8_t potValue) {
-  uint8_t ivraWrite[2] = {POT_IVRA_ADDR, potValue};
-  HAL_I2C_Master_Transmit(hi2c, POT_ADDR, ivraWrite, sizeof(ivraWrite),
+void config_voltage_regulator(I2C_HandleTypeDef *hi2c, uint8_t pot_value) {
+  uint8_t ivra_write[2] = {POT_IVRA_ADDR, pot_value};
+  HAL_I2C_Master_Transmit(hi2c, POT_ADDR, ivra_write, sizeof(ivra_write),
                           HAL_MAX_DELAY);
 }
 
 /* Voltage divider with R1 = 1kOhm and R2 = 2kOhm
- * Vcell = Vout * (R1 + R2) / R2
- * Vout is measured by ADC, Vout = ADC_REF_VOLTAGE * adcValue / ADC_MAX
+ * v_cell = v_out * (R1 + R2) / R2
+ * v_out is measured by ADC, v_out = ADC_REF_VOLTAGE * adc_value / ADC_MAX
  */
-uint16_t ADCToCellVoltage(const uint16_t adcValue) {
-  uint32_t Vout = (ADC_REF_VOLTAGE * adcValue) / ADC_MAX;
-  const uint32_t numerator = Vout * (1000 + 2000);
+uint16_t adc_to_cell_voltage(const uint16_t adc_value) {
+  uint32_t v_out = (ADC_REF_VOLTAGE * adc_value) / ADC_MAX;
+  const uint32_t numerator = v_out * (1000 + 2000);
   const uint32_t denominator = 2000;
-  uint16_t Vcell = (uint16_t)(numerator / denominator);
-  return Vcell;
+  uint16_t v_cell = (uint16_t)(numerator / denominator);
+  return v_cell;
 }
 
 /* The LT6106 current sensor specifies that
- * Isense = Vout * Rin / (Rsense * Rout).
- * Vout is measured by ADC, Vout = ADC_REF_VOLTAGE * adcValue / ADC_MAX
+ * i_sense = v_out * r_in / (r_sense * r_out).
+ * v_out is measured by ADC, v_out = ADC_REF_VOLTAGE * adc_value / ADC_MAX
  *
  * Resistances for Battery Node rev B:
- * Rin = 51 Ohm
- * Rsense = 0.005 Ohm
- * Rout = 5100 Ohm
+ * r_in = 51 Ohm
+ * r_sense = 0.005 Ohm
+ * r_out = 5100 Ohm
  */
-uint16_t ADCToRegOutCurrent(const uint16_t adcValue) {
-  uint32_t Vout = (ADC_REF_VOLTAGE * adcValue) / ADC_MAX;
-  const uint32_t Rin = 51;
-  const uint32_t Rout = 5100;
-  // Invert Rsense to avoid floating point, 1/0.005Ohm = 200 Ohm
-  const uint32_t invRsense = 200;
+uint16_t adc_to_reg_out_current(const uint16_t adc_value) {
+  uint32_t v_out = (ADC_REF_VOLTAGE * adc_value) / ADC_MAX;
+  const uint32_t r_in = 51;
+  const uint32_t r_out = 5100;
+  // Invert r_sense to avoid floating point, 1/0.005Ohm = 200 Ohm
+  const uint32_t inv_r_sense = 200;
 
-  // Multiply by invRsense instead of dividing by Rsense
-  uint16_t Isense = (uint16_t)((Vout * Rin * invRsense) / Rout);  // in mA
-  return Isense;
+  // Multiply by inv_r_sense instead of dividing by r_sense
+  uint16_t i_sense = (uint16_t)((v_out * r_in * inv_r_sense) / r_out);  // in mA
+  return i_sense;
 }
 
 /*
- * Uses LT6106 as well, with variable Rout configured by placing jumpers on X11
+ * Uses LT6106 as well, with variable r_out configured by placing jumpers on X11
  * and X12.
- * Isense = Vout * Rin / (Rsense * Rout)
+ * i_sense = v_out * r_in / (r_sense * r_out)
  *
- * Vout is measured by ADC, Vout = ADC_REF_VOLTAGE * adcValue / ADC_MAX
+ * v_out is measured by ADC, v_out = ADC_REF_VOLTAGE * adc_value / ADC_MAX
  *
  * Resistances:
- * Rin = 51 Ohm
- * Rsense = 0.5 mOhm
- * Rout: See VBatSenseRout
+ * r_in = 51 Ohm
+ * r_sense = 0.5 mOhm
+ * r_out: See VBatSenser_out
  *
  * Note: we use uint32_t because we can measure values from 20 mA to 120 A.
  */
-uint32_t ADCToVbatOutCurrent(const uint16_t adcValue) {
-  uint32_t Vout = (ADC_REF_VOLTAGE * adcValue) / ADC_MAX;  // in mV
-  const uint32_t Rin = 51;
-  // Invert Rsense to avoid floating point, 1/0.5mOhm = 2000 Ohm
-  const uint32_t invRsense = 2000;
+uint32_t adc_to_vbat_out_current(const uint16_t adc_value) {
+  uint32_t v_out = (ADC_REF_VOLTAGE * adc_value) / ADC_MAX;  // in mV
+  const uint32_t r_in = 51;
+  // Invert r_sense to avoid floating point, 1/0.5mOhm = 2000 Ohm
+  const uint32_t inv_r_sense = 2000;
 
-  // Multiply by invRsense instead of dividing by Rsense
-  uint32_t Isense = (Vout * Rin * invRsense) / VBatSenseRout;  // in mA
-  return Isense;
+  // Multiply by inv_r_sense instead of dividing by r_sense
+  uint32_t i_sense = (v_out * r_in * inv_r_sense) / vbat_sense_rout;  // in mA
+  return i_sense;
 }
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
-void ParseADCValues(const ADCReading *adcReading, BatteryNodeState *bns) {
+void parse_adc_values(const adc_reading_t *adc_reading,
+                      battery_state_t *battery_state) {
   for (int i = 0; i < 4; i++) {
-    bns->cells[i] = ADCToCellVoltage(adcReading->adc1Buf[i]);
+    battery_state->cells[i] = adc_to_cell_voltage(adc_reading->adc1_buf[i]);
   }
-  bns->cells[4] = ADCToCellVoltage(adcReading->adc2Buf[0]);
-  bns->cells[5] = ADCToCellVoltage(adcReading->adc2Buf[1]);
-  bns->regOutCurrent = ADCToRegOutCurrent(adcReading->adc2Buf[2]);
-  bns->vbatOutCurrent = ADCToVbatOutCurrent(adcReading->adc2Buf[3]);
+  battery_state->cells[4] = adc_to_cell_voltage(adc_reading->adc2_buf[0]);
+  battery_state->cells[5] = adc_to_cell_voltage(adc_reading->adc2_buf[1]);
+  battery_state->reg_out_current =
+      adc_to_reg_out_current(adc_reading->adc2_buf[2]);
+  battery_state->vbat_out_current =
+      adc_to_vbat_out_current(adc_reading->adc2_buf[3]);
 }
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
 
-BatteryCharge lowestCell(const BatteryCharge *cellCharge) {
-  BatteryCharge lowest = CHARGE_100_PERCENT;
+battery_charge_t lowest_cell(const battery_charge_t *cell_charge) {
+  battery_charge_t lowest = CHARGE_100_PERCENT;
   for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
     // Comparison based on enum ordering
-    if (cellCharge[i] < lowest) {
-      lowest = cellCharge[i];
+    if (cell_charge[i] < lowest) {
+      lowest = cell_charge[i];
     }
   }
   return lowest;
 }
 
-uint8_t SetChargeStateLED(const BatteryCharge *charge) {
+uint8_t set_charge_state_led(const battery_charge_t *charge) {
   switch (*charge) {
     case CHARGE_100_PERCENT:
-      SetLEDColor(LED6, GREEN);
-      SetLEDColor(LED7, GREEN);
+      set_led_color(LED6, GREEN);
+      set_led_color(LED7, GREEN);
       return 0;
     case CHARGE_80_PERCENT:
-      SetLEDColor(LED6, GREEN);
-      SetLEDColor(LED7, NONE);
+      set_led_color(LED6, GREEN);
+      set_led_color(LED7, NONE);
       return 0;
     case CHARGE_60_PERCENT:
-      SetLEDColor(LED6, ORANGE);
-      SetLEDColor(LED7, ORANGE);
+      set_led_color(LED6, ORANGE);
+      set_led_color(LED7, ORANGE);
       return 0;
     case CHARGE_40_PERCENT:
-      SetLEDColor(LED6, ORANGE);
-      SetLEDColor(LED7, NONE);
+      set_led_color(LED6, ORANGE);
+      set_led_color(LED7, NONE);
       return 0;
     case CHARGE_20_PERCENT:
-      SetLEDColor(LED6, RED);
-      SetLEDColor(LED7, RED);
+      set_led_color(LED6, RED);
+      set_led_color(LED7, RED);
       return 0;
     case LOW_VOLTAGE_CUTOFF:
     default:
@@ -201,29 +198,29 @@ uint8_t SetChargeStateLED(const BatteryCharge *charge) {
 }
 
 // Always report lowest detected charge to detect the most discharged cell.
-BatteryCharge ReadBatteryCharge(const BatteryNodeState *bns) {
-  BatteryCharge cellCharge[BATTERY_CELLS_MAX];
+battery_charge_t read_battery_charge(const battery_state_t *battery_state) {
+  battery_charge_t cell_charge[BATTERY_CELLS_MAX];
   for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
     // If cell is not connected, we report it as fully charged to not use its
     // values in the low voltage detection logic.
-    if (bns->cells[i] < BATTERY_CELL_DETECTION_THRESHOLD) {
-      cellCharge[i] = CHARGE_100_PERCENT;
+    if (battery_state->cells[i] < BATTERY_CELL_DETECTION_THRESHOLD) {
+      cell_charge[i] = CHARGE_100_PERCENT;
       continue;
     }
 
-    if (bns->cells[i] <= LOW_VOLTAGE_CUTOFF) {
-      cellCharge[i] = LOW_VOLTAGE_CUTOFF;
-    } else if (bns->cells[i] <= CHARGE_20_PERCENT) {
-      cellCharge[i] = CHARGE_20_PERCENT;
-    } else if (bns->cells[i] <= CHARGE_40_PERCENT) {
-      cellCharge[i] = CHARGE_40_PERCENT;
-    } else if (bns->cells[i] <= CHARGE_60_PERCENT) {
-      cellCharge[i] = CHARGE_60_PERCENT;
-    } else if (bns->cells[i] <= CHARGE_80_PERCENT) {
-      cellCharge[i] = CHARGE_80_PERCENT;
+    if (battery_state->cells[i] <= LOW_VOLTAGE_CUTOFF) {
+      cell_charge[i] = LOW_VOLTAGE_CUTOFF;
+    } else if (battery_state->cells[i] <= CHARGE_20_PERCENT) {
+      cell_charge[i] = CHARGE_20_PERCENT;
+    } else if (battery_state->cells[i] <= CHARGE_40_PERCENT) {
+      cell_charge[i] = CHARGE_40_PERCENT;
+    } else if (battery_state->cells[i] <= CHARGE_60_PERCENT) {
+      cell_charge[i] = CHARGE_60_PERCENT;
+    } else if (battery_state->cells[i] <= CHARGE_80_PERCENT) {
+      cell_charge[i] = CHARGE_80_PERCENT;
     } else {
-      cellCharge[i] = CHARGE_100_PERCENT;
+      cell_charge[i] = CHARGE_100_PERCENT;
     }
   }
-  return lowestCell(cellCharge);
+  return lowest_cell(cell_charge);
 }
