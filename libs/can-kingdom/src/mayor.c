@@ -325,8 +325,10 @@ ck_err_t ck_set_base_number(uint32_t base_no, bool has_extended_id) {
   mayor.base_no_has_extended_id = has_extended_id;
   ck_envelope_t mayors_envelope = {
       .envelope_no = base_no + mayor.user_data.city_address,
-      .has_extended_id = has_extended_id,
       .enable = true,
+      .has_extended_id = has_extended_id,
+      .is_remote = false,
+      .is_compressed = false,
   };
   return assign_envelope(CK_MAYORS_FOLDER_NO, &mayors_envelope);
 }
@@ -569,8 +571,10 @@ static ck_err_t process_kp1(const ck_page_t *page) {
   if (mayor.base_no != base_no) {
     ck_envelope_t mayors_envelope = {
         .envelope_no = base_no + mayor.user_data.city_address,
-        .has_extended_id = extended_id,
         .enable = true,
+        .has_extended_id = extended_id,
+        .is_compressed = false,
+        .is_remote = false,
     };
 
     ck_err_t ret = assign_envelope(CK_MAYORS_FOLDER_NO, &mayors_envelope);
@@ -599,6 +603,7 @@ static ck_err_t process_kp2(const ck_page_t *page) {
   envelope.envelope_no &= CK_CAN_ID_MASK;
   envelope.has_extended_id = (page->lines[5] >> 7) & 0x01;
   envelope.is_compressed = (page->lines[5] >> 6) & 0x01;
+  envelope.is_remote = false;
 
   uint8_t folder_no = page->lines[6];
   envelope.enable = page->lines[7] & 0x01;
