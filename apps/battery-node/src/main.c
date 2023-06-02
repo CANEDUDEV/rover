@@ -101,11 +101,6 @@ int main(void) {
   i2c1_init();
   can_init();
 
-  if (flash_init() != APP_OK) {
-    print(&peripherals->huart1, "Error initiliazing flash.\r\n");
-    error();
-  }
-
   task_init();
   ck_init();
 
