@@ -56,10 +56,6 @@ int main(void) {
   // Reset of all peripherals, Initializes the Flash interface and the Systick.
   HAL_Init();
 
-  if (flash_init() != APP_OK) {
-    error();
-  }
-
   // Configure the system clock
   system_clock_init();
 

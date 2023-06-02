@@ -1,34 +1,12 @@
 #include "flash.h"
 
+#include <stdbool.h>
 #include <string.h>
 
 #include "error.h"
 #include "stm32f3xx_hal.h"
 
 #define FLASH_ERASE_OK 0xFFFFFFFF  // Specified by STM32 HAL
-#define FLASH_ERASED_SYMBOL 0xDEADBEEF
-
-/* Check if we have erased the flash by checking for existence of
- * FLASH_ERASED_SYMBOL. If we haven't, we erase it then write the
- * FLASH_ERASED_SYMBOL to end of writable area. Erasing flash is only needed
- * before first time use, which is why we write the FLASH_ERASED_SYMBOL.
- */
-int flash_init(void) {
-  uint32_t flash_erased = 0;
-  if (flash_read(FLASH_RW_END - sizeof(flash_erased), &flash_erased,
-                 sizeof(flash_erased)) != APP_OK) {
-    return APP_NOT_OK;
-  }
-  // Check if flash is already erased
-  if (flash_erased == FLASH_ERASED_SYMBOL) {
-    return APP_OK;
-  }
-  flash_erase();
-  flash_erased = FLASH_ERASED_SYMBOL;
-
-  return flash_write(FLASH_RW_END - sizeof(uint32_t), &flash_erased,
-                     sizeof(flash_erased));
-}
 
 int flash_erase(void) {
   // 1 page = 2KB
@@ -72,14 +50,28 @@ int flash_write(uint32_t addr, const void *data, size_t len) {
     return APP_NOT_OK;
   }
 
+  // Erase before write
+  if (flash_erase() != APP_OK) {
+    return APP_NOT_OK;
+  }
+
   const size_t word_length = 4;
   uint32_t word = 0;
   HAL_FLASH_Unlock();
+  bool flash_failed = false;
   for (size_t i = 0; i < len; i += word_length) {
     memcpy(&word, (uint8_t *)data + i, word_length);
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr + i, (uint64_t)word);
+    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr + i, (uint64_t)word) !=
+        HAL_OK) {
+      flash_failed = true;
+      break;
+    }
   }
   HAL_FLASH_Lock();
+
+  if (flash_failed) {
+    return APP_NOT_OK;
+  }
 
   return APP_OK;
 }
