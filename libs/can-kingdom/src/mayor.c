@@ -866,10 +866,19 @@ static int find_folder(uint8_t folder_no) {
   return -1;
 }
 
+static bool is_envelope_equal(const ck_envelope_t *envelope1,
+                              const ck_envelope_t *envelope2) {
+  // Don't check the enable flag
+  return (envelope1->envelope_no == envelope2->envelope_no &&
+          envelope1->has_extended_id == envelope2->has_extended_id &&
+          envelope1->is_remote == envelope2->is_remote &&
+          envelope1->is_compressed == envelope2->is_compressed);
+}
+
 static int find_envelope(const ck_folder_t *folder,
                          const ck_envelope_t *envelope) {
   for (uint8_t i = 0; i < folder->envelope_count; i++) {
-    if (folder->envelopes[i].envelope_no == envelope->envelope_no) {
+    if (is_envelope_equal(&folder->envelopes[i], envelope)) {
       return i;
     }
   }
@@ -888,8 +897,14 @@ static ck_err_t assign_envelope(uint8_t folder_no,
     return CK_ERR_CAPACITY_REACHED;
   }
 
-  folder->envelopes[folder->envelope_count] = *envelope;
-  folder->envelope_count++;
+  // Only add envelope if it's not assigned to this folder already
+  int envelope_index = find_envelope(folder, envelope);
+  if (envelope_index < 0) {
+    folder->envelopes[folder->envelope_count] = *envelope;
+    folder->envelope_count++;
+  } else {  // Update only the enable flag.
+    folder->envelopes[envelope_index].enable = envelope->enable;
+  }
 
   return CK_OK;
 }
