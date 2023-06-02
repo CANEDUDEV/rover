@@ -25,11 +25,9 @@ int flash_init(void) {
   }
   flash_erase();
   flash_erased = FLASH_ERASED_SYMBOL;
-  if (flash_write(FLASH_RW_END - sizeof(uint32_t), &flash_erased,
-                  sizeof(flash_erased)) != APP_OK) {
-    return APP_NOT_OK;
-  }
-  return APP_OK;
+
+  return flash_write(FLASH_RW_END - sizeof(uint32_t), &flash_erased,
+                     sizeof(flash_erased));
 }
 
 int flash_erase(void) {
