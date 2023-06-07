@@ -8,6 +8,7 @@
 #define DMA2_Channel1_IRQ_PRIORITY 5
 #define EXTI15_10_IRQ_PRIORITY 5
 #define USB_LP_CAN_RX0_IRQ_PRIORITY 5
+#define USART1_IRQ_PRIORITY 5
 #define PENDSV_IRQ_PRIORITY 15
 
 static peripherals_t peripherals;
@@ -702,6 +703,10 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart) {
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /* USART1 interrupt Init */
+    HAL_NVIC_SetPriority(USART1_IRQn, USART1_IRQ_PRIORITY, 0);
+    HAL_NVIC_EnableIRQ(USART1_IRQn);
   }
 }
 
@@ -721,5 +726,8 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart) {
     PA10     ------> USART1_RX
     */
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9 | GPIO_PIN_10);
+
+    /* USART1 interrupt DeInit */
+    HAL_NVIC_DisableIRQ(USART1_IRQn);
   }
 }
