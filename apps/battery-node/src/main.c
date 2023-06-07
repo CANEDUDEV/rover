@@ -276,25 +276,25 @@ void battery_monitor(void *unused) {
   xTimerStart(timer, portMAX_DELAY);
 
   battery_state_t battery_state;
-  adc_reading_t adcBuf;
-  battery_charge_t charge = CHARGE_100_PERCENT;
-  uint8_t lowPowerReportCount = 0;
+  adc_reading_t adc_reading;
+  battery_charge_t battery_charge = CHARGE_100_PERCENT;
+  uint8_t low_power_report_count = 0;
 
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
 
     // Start both ADCs
-    HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adcBuf.adc1_buf,
-                      sizeof(adcBuf.adc1_buf) / sizeof(uint16_t));
-    HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adcBuf.adc2_buf,
-                      sizeof(adcBuf.adc2_buf) / sizeof(uint16_t));
+    HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc_reading.adc1_buf,
+                      sizeof(adc_reading.adc1_buf) / sizeof(uint16_t));
+    HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc_reading.adc2_buf,
+                      sizeof(adc_reading.adc2_buf) / sizeof(uint16_t));
 
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for DMA
 
-    parse_adc_values(&adcBuf, &battery_state);
+    parse_adc_values(&adc_reading, &battery_state);
 
     // Check if over current or low voltage protection has triggered.
-    if (lowPowerReportCount > LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD ||
+    if (low_power_report_count > LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD ||
         over_current_fault != 0) {
       // Turn off the power outputs to reduce the battery power drain.
       HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_SET);
@@ -302,8 +302,8 @@ void battery_monitor(void *unused) {
       // Blink LEDs red to show user something is wrong.
       blink_leds_red();
     } else {  // Only update the charge state if no fault has occured.
-      charge = read_battery_charge(&battery_state);
-      lowPowerReportCount += set_charge_state_led(&charge);
+      battery_charge = read_battery_charge(&battery_state);
+      low_power_report_count += set_charge_state_led(&battery_charge);
     }
 
     update_pages(&battery_state);

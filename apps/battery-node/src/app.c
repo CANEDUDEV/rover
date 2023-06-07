@@ -14,21 +14,21 @@
 // detection threshold voltage at 100 mV.
 #define BATTERY_CELL_DETECTION_THRESHOLD 100
 
-static uint32_t vbat_sense_rout;
+static uint32_t vbat_sense_r_out;
 
 void set_jumper_config(jumper_config_t jumper_config) {
   switch (jumper_config) {
     case ALL_OFF:
-      vbat_sense_rout = 10200;  // NOLINT
+      vbat_sense_r_out = 10200;  // NOLINT
       break;
     case X11_ON:
-      vbat_sense_rout = 5100;  // NOLINT
+      vbat_sense_r_out = 5100;  // NOLINT
       break;
     case X12_ON:
-      vbat_sense_rout = 3400;  // NOLINT
+      vbat_sense_r_out = 3400;  // NOLINT
       break;
     case ALL_ON:
-      vbat_sense_rout = 2550;  // NOLINT
+      vbat_sense_r_out = 2550;  // NOLINT
       break;
   }
 }
@@ -128,7 +128,7 @@ uint16_t adc_to_reg_out_current(const uint16_t adc_value) {
  * Resistances:
  * r_in = 51 Ohm
  * r_sense = 0.5 mOhm
- * r_out: See VBatSenser_out
+ * r_out: See vbat_sense_r_out
  *
  * Note: we use uint32_t because we can measure values from 20 mA to 120 A.
  */
@@ -139,7 +139,7 @@ uint32_t adc_to_vbat_out_current(const uint16_t adc_value) {
   const uint32_t inv_r_sense = 2000;
 
   // Multiply by inv_r_sense instead of dividing by r_sense
-  uint32_t i_sense = (v_out * r_in * inv_r_sense) / vbat_sense_rout;  // in mA
+  uint32_t i_sense = (v_out * r_in * inv_r_sense) / vbat_sense_r_out;  // in mA
   return i_sense;
 }
 
