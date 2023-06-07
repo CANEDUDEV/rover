@@ -21,3 +21,8 @@ void USB_LP_CAN_RX0_IRQHandler(void) {
 
 // EXTI line[15:10] interrupt handler.
 void EXTI15_10_IRQHandler(void) { HAL_GPIO_EXTI_IRQHandler(OVER_CURRENT_Pin); }
+
+void USART1_IRQHandler(void) {
+  peripherals_t *peripherals = get_peripherals();
+  HAL_UART_IRQHandler(&peripherals->huart1);
+}

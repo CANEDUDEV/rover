@@ -9,7 +9,6 @@ void USB_HP_CAN_TX_IRQHandler(void) {
   HAL_CAN_IRQHandler(&peripherals->hcan);
 }
 
-// UART1 interrupt handler.
 void USART1_IRQHandler(void) {
   peripherals_t *peripherals = get_peripherals();
   HAL_UART_IRQHandler(&peripherals->huart1);
