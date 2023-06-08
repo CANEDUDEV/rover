@@ -16,6 +16,8 @@ extern "C" {
 typedef struct {
   // Provided by CPU board
   common_peripherals_t *common_peripherals;
+
+  UART_HandleTypeDef huart2;
 } peripherals_t;
 
 peripherals_t *get_peripherals(void);
