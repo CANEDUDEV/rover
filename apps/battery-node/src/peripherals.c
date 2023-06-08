@@ -25,11 +25,11 @@ void peripherals_init(void) {
   common_peripherals_init();
   peripherals.common_peripherals = get_common_peripherals();
 
+  gpio_init();
+  dma_init();  // Must be called before ADC init functions.
   adc1_init();
   adc2_init();
   i2c1_init();
-  dma_init();
-  gpio_init();
 }
 
 /**
