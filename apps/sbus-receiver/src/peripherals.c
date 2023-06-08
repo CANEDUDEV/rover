@@ -3,10 +3,6 @@
 #include "error.h"
 #include "stm32f3xx_hal.h"
 
-#define USART1_IRQ_PRIORITY 5
-#define USB_HP_CAN_TX_IRQ_PRIORITY 5
-#define PENDSV_IRQ_PRIORITY 15
-
 static peripherals_t peripherals;
 
 void gpio_init(void);
@@ -26,18 +22,6 @@ void gpio_init(void) {
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-}
-
-/**
- * Initializes the Global MSP.
- */
-void HAL_MspInit(void) {
-  __HAL_RCC_SYSCFG_CLK_ENABLE();
-  __HAL_RCC_PWR_CLK_ENABLE();
-
-  /* System interrupt init*/
-  /* PendSV_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(PendSV_IRQn, PENDSV_IRQ_PRIORITY, 0);
 }
 
 /**

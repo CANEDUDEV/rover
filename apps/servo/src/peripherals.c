@@ -5,9 +5,6 @@
 
 #define DMA1_Channel1_IRQ_PRIORITY 5
 #define DMA2_Channel1_IRQ_PRIORITY 5
-#define USART1_IRQ_PRIORITY 5
-#define USB_HP_CAN_TX_IRQ_PRIORITY 5
-#define PENDSV_IRQ_PRIORITY 15
 
 static peripherals_t peripherals;
 
@@ -363,18 +360,6 @@ void gpio_init(void) {
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SPI3_NSS_GPIO_PORT, &GPIO_InitStruct);
-}
-
-/**
- * Initializes the Global MSP.
- */
-void HAL_MspInit(void) {
-  __HAL_RCC_SYSCFG_CLK_ENABLE();
-  __HAL_RCC_PWR_CLK_ENABLE();
-
-  /* System interrupt init*/
-  /* PendSV_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(PendSV_IRQn, PENDSV_IRQ_PRIORITY, 0);
 }
 
 /* ADC1 DMA Init */
