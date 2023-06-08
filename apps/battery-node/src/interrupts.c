@@ -13,4 +13,4 @@ void DMA2_Channel1_IRQHandler(void) {
   HAL_DMA_IRQHandler(&peripherals->hdma_adc2);
 }
 
-void EXTI15_10_IRQHandler(void) { HAL_GPIO_EXTI_IRQHandler(OVER_CURRENT_Pin); }
+void EXTI15_10_IRQHandler(void) { HAL_GPIO_EXTI_IRQHandler(OVER_CURRENT_PIN); }

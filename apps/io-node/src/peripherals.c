@@ -174,46 +174,46 @@ void gpio_init(void) {
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC,
-                    GPIO0_Pin | GPIO1_Pin | GPIO2_Pin | GPIO3_Pin |
-                        GPIO_PWRON_1_Pin | GPIO_PWRON_2_Pin,
+                    GPIO0_PIN | GPIO1_PIN | GPIO2_PIN | GPIO3_PIN |
+                        GPIO_PWRON_1_PIN | GPIO_PWRON_2_PIN,
                     GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB,
-                    GPIO_PWRON_3_Pin | GPIO_PWRON_4_Pin | VDD_IO_LEVEL_Pin,
+                    GPIO_PWRON_3_PIN | GPIO_PWRON_4_PIN | VDD_IO_LEVEL_PIN,
                     GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SPI3_NSS_GPIO_Port, SPI3_NSS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SPI3_NSS_GPIO_PORT, SPI3_NSS_PIN, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : GPIO0_Pin GPIO1_Pin GPIO2_Pin GPIO3_Pin
-                           GPIO_PWRON_1_Pin GPIO_PWRON_2_Pin */
-  GPIO_InitStruct.Pin = GPIO0_Pin | GPIO1_Pin | GPIO2_Pin | GPIO3_Pin |
-                        GPIO_PWRON_1_Pin | GPIO_PWRON_2_Pin;
+  /*Configure GPIO pins : GPIO0_PIN GPIO1_PIN GPIO2_PIN GPIO3_PIN
+                           GPIO_PWRON_1_PIN GPIO_PWRON_2_PIN */
+  GPIO_InitStruct.Pin = GPIO0_PIN | GPIO1_PIN | GPIO2_PIN | GPIO3_PIN |
+                        GPIO_PWRON_1_PIN | GPIO_PWRON_2_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : GPIO_PWRON_3_Pin GPIO_PWRON_4_Pin VDD_IO_LEVEL_Pin */
-  GPIO_InitStruct.Pin = GPIO_PWRON_3_Pin | GPIO_PWRON_4_Pin | VDD_IO_LEVEL_Pin;
+  /*Configure GPIO pins : GPIO_PWRON_3_PIN GPIO_PWRON_4_PIN VDD_IO_LEVEL_PIN */
+  GPIO_InitStruct.Pin = GPIO_PWRON_3_PIN | GPIO_PWRON_4_PIN | VDD_IO_LEVEL_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SWITCH1_PIN1_Pin SWITCH1_PIN2_Pin */
-  GPIO_InitStruct.Pin = SWITCH1_PIN1_Pin | SWITCH1_PIN2_Pin;
+  /*Configure GPIO pins : SWITCH1_PIN1_PIN SWITCH1_PIN2_PIN */
+  GPIO_InitStruct.Pin = SWITCH1_PIN1_PIN | SWITCH1_PIN2_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : SPI3_NSS_Pin */
-  GPIO_InitStruct.Pin = SPI3_NSS_Pin;
+  /*Configure GPIO pin : SPI3_NSS_PIN */
+  GPIO_InitStruct.Pin = SPI3_NSS_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SPI3_NSS_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(SPI3_NSS_GPIO_PORT, &GPIO_InitStruct);
 }
 
 /**
@@ -247,7 +247,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     PA2     ------> ADC1_IN3
     PA3     ------> ADC1_IN4
     */
-    GPIO_InitStruct.Pin = AN1_Pin | AN2_Pin | AN3_Pin | AN4_Pin;
+    GPIO_InitStruct.Pin = AN1_PIN | AN2_PIN | AN3_PIN | AN4_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -287,7 +287,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
     PA2     ------> ADC1_IN3
     PA3     ------> ADC1_IN4
     */
-    HAL_GPIO_DeInit(GPIOA, AN1_Pin | AN2_Pin | AN3_Pin | AN4_Pin);
+    HAL_GPIO_DeInit(GPIOA, AN1_PIN | AN2_PIN | AN3_PIN | AN4_PIN);
 
     /* ADC1 DMA DeInit */
     HAL_DMA_DeInit(hadc->DMA_Handle);

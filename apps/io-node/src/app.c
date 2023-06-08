@@ -59,24 +59,24 @@ enum SWITCH_STATE getSwitchState(GPIO_PinState pin1, GPIO_PinState pin2) {
 
 void ReadSwitches(uint8_t *data) {
   GPIO_PinState sw1p1 =
-      HAL_GPIO_ReadPin(SWITCH1_PIN1_GPIO_Port, SWITCH1_PIN1_Pin);
+      HAL_GPIO_ReadPin(SWITCH1_PIN1_GPIO_PORT, SWITCH1_PIN1_PIN);
   GPIO_PinState sw1p2 =
-      HAL_GPIO_ReadPin(SWITCH1_PIN2_GPIO_Port, SWITCH1_PIN2_Pin);
+      HAL_GPIO_ReadPin(SWITCH1_PIN2_GPIO_PORT, SWITCH1_PIN2_PIN);
 
   GPIO_PinState sw2p1 =
-      HAL_GPIO_ReadPin(SWITCH2_PIN1_GPIO_Port, SWITCH2_PIN1_Pin);
+      HAL_GPIO_ReadPin(SWITCH2_PIN1_GPIO_PORT, SWITCH2_PIN1_PIN);
   GPIO_PinState sw2p2 =
-      HAL_GPIO_ReadPin(SWITCH2_PIN2_GPIO_Port, SWITCH2_PIN2_Pin);
+      HAL_GPIO_ReadPin(SWITCH2_PIN2_GPIO_PORT, SWITCH2_PIN2_PIN);
 
   GPIO_PinState sw3p1 =
-      HAL_GPIO_ReadPin(SWITCH3_PIN1_GPIO_Port, SWITCH3_PIN1_Pin);
+      HAL_GPIO_ReadPin(SWITCH3_PIN1_GPIO_PORT, SWITCH3_PIN1_PIN);
   GPIO_PinState sw3p2 =
-      HAL_GPIO_ReadPin(SWITCH3_PIN2_GPIO_Port, SWITCH3_PIN2_Pin);
+      HAL_GPIO_ReadPin(SWITCH3_PIN2_GPIO_PORT, SWITCH3_PIN2_PIN);
 
   GPIO_PinState sw4p1 =
-      HAL_GPIO_ReadPin(SWITCH4_PIN1_GPIO_Port, SWITCH4_PIN1_Pin);
+      HAL_GPIO_ReadPin(SWITCH4_PIN1_GPIO_PORT, SWITCH4_PIN1_PIN);
   GPIO_PinState sw4p2 =
-      HAL_GPIO_ReadPin(SWITCH4_PIN2_GPIO_Port, SWITCH4_PIN2_Pin);
+      HAL_GPIO_ReadPin(SWITCH4_PIN2_GPIO_PORT, SWITCH4_PIN2_PIN);
 
   data[0] = getSwitchState(sw1p1, sw1p2);
   data[1] = getSwitchState(sw2p1, sw2p2);
