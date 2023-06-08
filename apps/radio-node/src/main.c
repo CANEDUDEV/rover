@@ -60,11 +60,8 @@ int main(void) {
   system_clock_init();
 
   // Initialize all configured peripherals
+  peripherals_init();
   peripherals = get_peripherals();
-  gpio_init();
-  can_init();
-  uart1_init();
-  spi1_init();
 
   task_init();
 
@@ -162,13 +159,15 @@ void can_tx(void *argument) {
   UNUSED(argument);
 
   peripherals_t *peripherals = get_peripherals();
-  HAL_CAN_ActivateNotification(&peripherals->hcan, CAN_IT_TX_MAILBOX_EMPTY);
-  HAL_CAN_Start(&peripherals->hcan);
+  HAL_CAN_ActivateNotification(&peripherals->common_peripherals->hcan,
+                               CAN_IT_TX_MAILBOX_EMPTY);
+  HAL_CAN_Start(&peripherals->common_peripherals->hcan);
 
   uint32_t mailbox = 0;
 
   for (;;) {
-    if (HAL_CAN_GetTxMailboxesFreeLevel(&peripherals->hcan) == 0) {
+    if (HAL_CAN_GetTxMailboxesFreeLevel(
+            &peripherals->common_peripherals->hcan) == 0) {
       // Wait for mailbox to become available
       ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     }
@@ -182,7 +181,8 @@ void can_tx(void *argument) {
         .DLC = frame.dlc,
     };
 
-    HAL_CAN_AddTxMessage(&peripherals->hcan, &header, frame.data, &mailbox);
+    HAL_CAN_AddTxMessage(&peripherals->common_peripherals->hcan, &header,
+                         frame.data, &mailbox);
   }
 }
 
@@ -196,11 +196,11 @@ void sbus_read(void *argument) {
   // Wait until reception of one complete message, in case we power up in the
   // middle of a transmission
   while (sbusHeader != SBUS_HEADER) {
-    HAL_UART_Receive(&peripherals->huart1, &sbusHeader, sizeof(sbusHeader),
-                     HAL_MAX_DELAY);
+    HAL_UART_Receive(&peripherals->common_peripherals->huart1, &sbusHeader,
+                     sizeof(sbusHeader), HAL_MAX_DELAY);
   }
-  HAL_UART_Receive(&peripherals->huart1, sbusData, sizeof(sbusData) - 1,
-                   HAL_MAX_DELAY);
+  HAL_UART_Receive(&peripherals->common_peripherals->huart1, sbusData,
+                   sizeof(sbusData) - 1, HAL_MAX_DELAY);
 
   CANFrame frames[3];
   for (int i = 0; i < 3; i++) {
@@ -208,10 +208,11 @@ void sbus_read(void *argument) {
     frames[i].dlc = CAN_MAX_DLC;
   }
 
-  HAL_CAN_Start(&peripherals->hcan);
+  HAL_CAN_Start(&peripherals->common_peripherals->hcan);
   for (;;) {
     memset(sbusData, 0, sizeof(sbusData));
-    HAL_UART_Receive_IT(&peripherals->huart1, sbusData, sizeof(sbusData));
+    HAL_UART_Receive_IT(&peripherals->common_peripherals->huart1, sbusData,
+                        sizeof(sbusData));
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     for (int i = 0; i < 3; i++) {

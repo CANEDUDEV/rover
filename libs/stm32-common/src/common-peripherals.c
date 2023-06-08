@@ -1,0 +1,237 @@
+#include "common-peripherals.h"
+
+#include "common-ports.h"
+#include "error.h"
+
+#define USART1_IRQ_PRIORITY 5
+#define USB_LP_CAN_RX0_IRQ_PRIORITY 5
+
+static common_peripherals_t common_peripherals;
+
+void can_init(void);
+void canfd_init(void);
+void uart1_init(void);
+
+common_peripherals_t* get_common_peripherals(void) {
+  return &common_peripherals;
+}
+
+void common_peripherals_init(void) {
+  can_init();
+  canfd_init();
+  uart1_init();
+}
+
+/**
+ * @brief CAN Initialization Function
+ * @param None
+ * @retval None
+ */
+void can_init(void) {
+  CAN_HandleTypeDef* hcan = &common_peripherals.hcan;
+  hcan->Instance = CAN;
+  hcan->Init.Mode = CAN_MODE_NORMAL;
+  hcan->Init.Prescaler = 18;  // NOLINT
+  hcan->Init.TimeSeg1 = CAN_BS1_13TQ;
+  hcan->Init.TimeSeg2 = CAN_BS2_2TQ;
+  hcan->Init.SyncJumpWidth = CAN_SJW_1TQ;
+  hcan->Init.TimeTriggeredMode = DISABLE;
+  hcan->Init.AutoBusOff = DISABLE;
+  hcan->Init.AutoWakeUp = DISABLE;
+  hcan->Init.AutoRetransmission = DISABLE;
+  hcan->Init.ReceiveFifoLocked = DISABLE;
+  hcan->Init.TransmitFifoPriority = DISABLE;
+  if (HAL_CAN_Init(hcan) != HAL_OK) {
+    error();
+  }
+
+  CAN_FilterTypeDef allow_all = {
+      .FilterIdHigh = 0,
+      .FilterIdLow = 0,
+      .FilterMaskIdHigh = 0,
+      .FilterMaskIdLow = 0,
+      .FilterFIFOAssignment = CAN_RX_FIFO0,
+      .FilterBank = 0,
+      .FilterMode = CAN_FILTERMODE_IDMASK,
+      .FilterScale = CAN_FILTERSCALE_32BIT,
+      .FilterActivation = CAN_FILTER_ENABLE,
+  };
+
+  if (HAL_CAN_ConfigFilter(hcan, &allow_all) != HAL_OK) {
+    error();
+  }
+}
+
+void canfd_init(void) {
+  GPIO_InitTypeDef GPIO_InitStruct;
+  /*Configure GPIO pins : CAN_FD_INT_PIN CAN_FD_SOF_PIN */
+  GPIO_InitStruct.Pin = CAN_FD_INT_PIN | CAN_FD_SOF_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : CAN_FD_INT1_PIN CAN_FD_INT0_PIN */
+  GPIO_InitStruct.Pin = CAN_FD_INT1_PIN | CAN_FD_INT0_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  SPI_HandleTypeDef* hcanfd = &common_peripherals.hcanfd;
+  /* SPI1 parameter configuration*/
+  hcanfd->Instance = SPI1;
+  hcanfd->Init.Mode = SPI_MODE_MASTER;
+  hcanfd->Init.Direction = SPI_DIRECTION_2LINES;
+  hcanfd->Init.DataSize = SPI_DATASIZE_4BIT;
+  hcanfd->Init.CLKPolarity = SPI_POLARITY_LOW;
+  hcanfd->Init.CLKPhase = SPI_PHASE_1EDGE;
+  hcanfd->Init.NSS = SPI_NSS_HARD_OUTPUT;
+  hcanfd->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+  hcanfd->Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hcanfd->Init.TIMode = SPI_TIMODE_DISABLE;
+  hcanfd->Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hcanfd->Init.CRCPolynomial = 7;  // NOLINT
+  hcanfd->Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hcanfd->Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  if (HAL_SPI_Init(hcanfd) != HAL_OK) {
+    error();
+  }
+}
+
+/**
+ * @brief USART1 Initialization Function
+ * @param None
+ * @retval None
+ */
+void uart1_init(void) {
+  UART_HandleTypeDef* huart1 = &common_peripherals.huart1;
+  huart1->Instance = USART1;
+  huart1->Init.BaudRate = 115200;  // NOLINT
+  huart1->Init.WordLength = UART_WORDLENGTH_8B;
+  huart1->Init.StopBits = UART_STOPBITS_1;
+  huart1->Init.Parity = UART_PARITY_NONE;
+  huart1->Init.Mode = UART_MODE_TX_RX;
+  huart1->Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1->Init.OverSampling = UART_OVERSAMPLING_16;
+  huart1->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart1->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(huart1) != HAL_OK) {
+    error();
+  }
+}
+
+void can_msp_init(void) {
+  GPIO_InitTypeDef GPIO_InitStruct;
+  /* Peripheral clock enable */
+  __HAL_RCC_CAN1_CLK_ENABLE();
+
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  /**CAN GPIO Configuration
+  PB8     ------> CAN_RX
+  PB9     ------> CAN_TX
+  */
+  GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF9_CAN;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* CAN interrupt Init */
+  HAL_NVIC_SetPriority(USB_LP_CAN_RX0_IRQn, USB_LP_CAN_RX0_IRQ_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(USB_LP_CAN_RX0_IRQn);
+}
+
+void can_msp_deinit(void) {
+  /* Peripheral clock disable */
+  __HAL_RCC_CAN1_CLK_DISABLE();
+
+  /**CAN GPIO Configuration
+  PB8     ------> CAN_RX
+  PB9     ------> CAN_TX
+  */
+  HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8 | GPIO_PIN_9);
+
+  /* CAN interrupt DeInit */
+  HAL_NVIC_DisableIRQ(USB_LP_CAN_RX0_IRQn);
+}
+
+void spi1_msp_init(void) {
+  GPIO_InitTypeDef GPIO_InitStruct;
+  /* Peripheral clock enable */
+  __HAL_RCC_SPI1_CLK_ENABLE();
+
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  /**SPI1 GPIO Configuration
+  PA15     ------> SPI1_NSS
+  PB3     ------> SPI1_SCK
+  PB4     ------> SPI1_MISO
+  PB5     ------> SPI1_MOSI
+  */
+  GPIO_InitStruct.Pin = CAN_FD_SPI_CS_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+  HAL_GPIO_Init(CAN_FD_SPI_CS_GPIO_PORT, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin =
+      CAN_FD_SPI_SCK_PIN | CAN_FD_SPI_MISO_PIN | CAN_FD_SPI_MOSI_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+}
+
+void spi1_msp_deinit(void) {
+  /* Peripheral clock disable */
+  __HAL_RCC_SPI1_CLK_DISABLE();
+
+  /**SPI1 GPIO Configuration
+  PA15     ------> SPI1_NSS
+  PB3     ------> SPI1_SCK
+  PB4     ------> SPI1_MISO
+  PB5     ------> SPI1_MOSI
+  */
+  HAL_GPIO_DeInit(CAN_FD_SPI_CS_GPIO_PORT, CAN_FD_SPI_CS_PIN);
+
+  HAL_GPIO_DeInit(
+      GPIOB, CAN_FD_SPI_SCK_PIN | CAN_FD_SPI_MISO_PIN | CAN_FD_SPI_MOSI_PIN);
+}
+
+void uart1_msp_init(void) {
+  GPIO_InitTypeDef GPIO_InitStruct;
+  /* Peripheral clock enable */
+  __HAL_RCC_USART1_CLK_ENABLE();
+
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  /**USART1 GPIO Configuration
+  PA9     ------> USART1_TX
+  PA10     ------> USART1_RX
+  */
+  GPIO_InitStruct.Pin = GPIO_PIN_9 | GPIO_PIN_10;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /* USART1 interrupt Init */
+  HAL_NVIC_SetPriority(USART1_IRQn, USART1_IRQ_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(USART1_IRQn);
+}
+
+void uart1_msp_deinit(void) {
+  /* Peripheral clock disable */
+  __HAL_RCC_USART1_CLK_DISABLE();
+
+  /**USART1 GPIO Configuration
+  PA9     ------> USART1_TX
+  PA10     ------> USART1_RX
+  */
+  HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9 | GPIO_PIN_10);
+
+  /* USART1 interrupt DeInit */
+  HAL_NVIC_DisableIRQ(USART1_IRQn);
+}

@@ -55,18 +55,8 @@ int main(void) {
   system_clock_init();
 
   // Initialize all configured peripherals
+  peripherals_init();
   peripherals = get_peripherals();
-  gpio_init();
-  dma_init();
-  can_init();
-  uart1_init();
-  spi1_init();
-  adc1_init();
-  adc2_init();
-  i2c1_init();
-  i2c3_init();
-  spi3_init();
-  tim1_init();
 
   InitPotentiometers();
 
@@ -74,7 +64,8 @@ int main(void) {
 
   can_message_queue = xQueueCreate(CAN_MESSAGE_QUEUE_LENGTH, sizeof(CANFrame));
 
-  print(&peripherals->huart1, "Starting application...\r\n");
+  print(&peripherals->common_peripherals->huart1,
+        "Starting application...\r\n");
 
   // Start scheduler
   vTaskStartScheduler();
@@ -142,13 +133,15 @@ void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *_hcan) {
 void can_tx(void *argument) {
   UNUSED(argument);
 
-  HAL_CAN_ActivateNotification(&peripherals->hcan, CAN_IT_TX_MAILBOX_EMPTY);
-  HAL_CAN_Start(&peripherals->hcan);
+  HAL_CAN_ActivateNotification(&peripherals->common_peripherals->hcan,
+                               CAN_IT_TX_MAILBOX_EMPTY);
+  HAL_CAN_Start(&peripherals->common_peripherals->hcan);
 
   uint32_t mailbox = 0;
 
   for (;;) {
-    if (HAL_CAN_GetTxMailboxesFreeLevel(&peripherals->hcan) == 0) {
+    if (HAL_CAN_GetTxMailboxesFreeLevel(
+            &peripherals->common_peripherals->hcan) == 0) {
       // Wait for mailbox to become available
       ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     }
@@ -162,7 +155,8 @@ void can_tx(void *argument) {
         .DLC = frame.dlc,
     };
 
-    HAL_CAN_AddTxMessage(&peripherals->hcan, &header, frame.data, &mailbox);
+    HAL_CAN_AddTxMessage(&peripherals->common_peripherals->hcan, &header,
+                         frame.data, &mailbox);
   }
 }
 

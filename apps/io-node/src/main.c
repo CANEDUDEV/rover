@@ -38,19 +38,12 @@ int main(void) {
   system_clock_init();
 
   // Initialize all configured peripherals
+  peripherals_init();
   peripherals = get_peripherals();
-  gpio_init();
-  dma_init();
-  adc1_init();
-  can_init();
-  i2c1_init();
-  uart1_init();
-  spi1_init();
-  spi3_init();
 
   task_init();
 
-  print(&peripherals->huart1, "Starting application...\n");
+  print(&peripherals->common_peripherals->huart1, "Starting application...\n");
 
   // Start scheduler
   vTaskStartScheduler();
@@ -92,7 +85,7 @@ void io_read(void *argument) {
                    NULL,    // Timer ID, unused
                    io_read_timer);
 
-  HAL_CAN_Start(&peripherals->hcan);
+  HAL_CAN_Start(&peripherals->common_peripherals->hcan);
 
   xTimerStart(xTimer, portMAX_DELAY);
 
