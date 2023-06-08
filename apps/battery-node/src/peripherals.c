@@ -247,33 +247,33 @@ void gpio_init(void) {
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC,
-                    LED4_Pin | LED3_Pin | LED2_Pin | LED1_Pin | POWER_OFF_Pin,
+                    LED4_PIN | LED3_PIN | LED2_PIN | LED1_PIN | POWER_OFF_PIN,
                     GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(REG_PWR_ON_GPIO_PORT, REG_PWR_ON_PIN, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : OVER_CURRENT_Pin */
-  GPIO_InitStruct.Pin = OVER_CURRENT_Pin;
+  /*Configure GPIO pin : OVER_CURRENT_PIN */
+  GPIO_InitStruct.Pin = OVER_CURRENT_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(OVER_CURRENT_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(OVER_CURRENT_GPIO_PORT, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LED4_Pin LED3_Pin LED2_Pin LED1_Pin
-                           POWER_OFF_Pin */
+  /*Configure GPIO pins : LED4_PIN LED3_PIN LED2_PIN LED1_PIN
+                           POWER_OFF_PIN */
   GPIO_InitStruct.Pin =
-      LED4_Pin | LED3_Pin | LED2_Pin | LED1_Pin | POWER_OFF_Pin;
+      LED4_PIN | LED3_PIN | LED2_PIN | LED1_PIN | POWER_OFF_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : REG_PWR_ON_Pin */
-  GPIO_InitStruct.Pin = REG_PWR_ON_Pin;
+  /*Configure GPIO pin : REG_PWR_ON_PIN */
+  GPIO_InitStruct.Pin = REG_PWR_ON_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(REG_PWR_ON_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(REG_PWR_ON_GPIO_PORT, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, EXTI15_10_IRQ_PRIORITY, 0);
@@ -349,8 +349,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     PA2     ------> ADC1_IN3
     PA3     ------> ADC1_IN4
     */
-    GPIO_InitStruct.Pin = CELL1_MEASURE_Pin | CELL2_MEASURE_Pin |
-                          CELL3_MEASURE_Pin | CELL4_MEASURE_Pin;
+    GPIO_InitStruct.Pin = CELL1_MEASURE_PIN | CELL2_MEASURE_PIN |
+                          CELL3_MEASURE_PIN | CELL4_MEASURE_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -372,15 +372,15 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     PC5     ------> ADC2_IN11
     */
     GPIO_InitStruct.Pin =
-        CELL5_MEASURE_Pin | CELL6_MEASURE_Pin | I_PWR_A_MEASURE_Pin;
+        CELL5_MEASURE_PIN | CELL6_MEASURE_PIN | I_PWR_A_MEASURE_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = VBAT_I_MEASURE_Pin;
+    GPIO_InitStruct.Pin = VBAT_I_MEASURE_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(VBAT_I_MEASURE_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(VBAT_I_MEASURE_GPIO_PORT, &GPIO_InitStruct);
     adc2_dma_init(hadc);
   }
 }
@@ -405,8 +405,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
     PA2     ------> ADC1_IN3
     PA3     ------> ADC1_IN4
     */
-    HAL_GPIO_DeInit(GPIOA, CELL1_MEASURE_Pin | CELL2_MEASURE_Pin |
-                               CELL3_MEASURE_Pin | CELL4_MEASURE_Pin);
+    HAL_GPIO_DeInit(GPIOA, CELL1_MEASURE_PIN | CELL2_MEASURE_PIN |
+                               CELL3_MEASURE_PIN | CELL4_MEASURE_PIN);
 
     /* ADC1 DMA DeInit */
     HAL_DMA_DeInit(hadc->DMA_Handle);
@@ -425,9 +425,9 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
     PC5     ------> ADC2_IN11
     */
     HAL_GPIO_DeInit(
-        GPIOA, CELL5_MEASURE_Pin | CELL6_MEASURE_Pin | I_PWR_A_MEASURE_Pin);
+        GPIOA, CELL5_MEASURE_PIN | CELL6_MEASURE_PIN | I_PWR_A_MEASURE_PIN);
 
-    HAL_GPIO_DeInit(VBAT_I_MEASURE_GPIO_Port, VBAT_I_MEASURE_Pin);
+    HAL_GPIO_DeInit(VBAT_I_MEASURE_GPIO_PORT, VBAT_I_MEASURE_PIN);
 
     /* ADC2 DMA DeInit */
     HAL_DMA_DeInit(hadc->DMA_Handle);

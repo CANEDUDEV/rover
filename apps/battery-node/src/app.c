@@ -34,16 +34,16 @@ void set_jumper_config(jumper_config_t jumper_config) {
 }
 
 void set_led_color(led_t led, led_color_t color) {
-  GPIO_TypeDef *red_led_port = LED1_GPIO_Port;
-  GPIO_TypeDef *green_led_port = LED2_GPIO_Port;
-  uint16_t red_led = LED1_Pin;
-  uint16_t green_led = LED2_Pin;
+  GPIO_TypeDef *red_led_port = LED1_GPIO_PORT;
+  GPIO_TypeDef *green_led_port = LED2_GPIO_PORT;
+  uint16_t red_led = LED1_PIN;
+  uint16_t green_led = LED2_PIN;
 
   if (led == LED7) {
-    red_led_port = LED3_GPIO_Port;
-    green_led_port = LED4_GPIO_Port;
-    red_led = LED3_Pin;
-    green_led = LED4_Pin;
+    red_led_port = LED3_GPIO_PORT;
+    green_led_port = LED4_GPIO_PORT;
+    red_led = LED3_PIN;
+    green_led = LED4_PIN;
   }
 
   switch (color) {

@@ -241,8 +241,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
   portYIELD_FROM_ISR(higher_priority_task_woken);
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-  if (GPIO_Pin != OVER_CURRENT_Pin) {
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_PIN) {
+  if (GPIO_PIN != OVER_CURRENT_PIN) {
     return;
   }
   over_current_fault = 1;
@@ -258,8 +258,8 @@ void battery_monitor(void *unused) {
 
   set_jumper_config(ALL_ON);
   config_voltage_regulator(&peripherals->hi2c1, POT_IVRA_DEFAULT);
-  HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(POWER_OFF_GPIO_Port, POWER_OFF_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(REG_PWR_ON_GPIO_PORT, REG_PWR_ON_PIN, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(POWER_OFF_GPIO_PORT, POWER_OFF_PIN, GPIO_PIN_SET);
 
   StaticTimer_t timer_buf;
   TimerHandle_t timer = xTimerCreateStatic(
@@ -292,8 +292,8 @@ void battery_monitor(void *unused) {
     if (low_power_report_count > LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD ||
         over_current_fault != 0) {
       // Turn off the power outputs to reduce the battery power drain.
-      HAL_GPIO_WritePin(REG_PWR_ON_GPIO_Port, REG_PWR_ON_Pin, GPIO_PIN_SET);
-      HAL_GPIO_WritePin(POWER_OFF_GPIO_Port, POWER_OFF_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(REG_PWR_ON_GPIO_PORT, REG_PWR_ON_PIN, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(POWER_OFF_GPIO_PORT, POWER_OFF_PIN, GPIO_PIN_RESET);
       // Blink LEDs red to show user something is wrong.
       blink_leds_red();
     } else {  // Only update the charge state if no fault has occured.

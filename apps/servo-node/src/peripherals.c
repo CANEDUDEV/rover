@@ -314,55 +314,55 @@ void gpio_init(void) {
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA,
-                    DEBUG_LED_Pin | H_BRIDGE_ENABLE_Pin | H_BRIDGE_MODE1_Pin,
+                    DEBUG_LED_PIN | H_BRIDGE_ENABLE_PIN | H_BRIDGE_MODE1_PIN,
                     GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, H_BRIDDGE_MODE2_Pin | H_BRIDGE_PHASE_Pin,
+  HAL_GPIO_WritePin(GPIOC, H_BRIDDGE_MODE2_PIN | H_BRIDGE_PHASE_PIN,
                     GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(H_BRIDGE_nSLEEP_GPIO_Port, H_BRIDGE_nSLEEP_Pin,
+  HAL_GPIO_WritePin(H_BRIDGE_nSLEEP_GPIO_PORT, H_BRIDGE_nSLEEP_PIN,
                     GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SPI3_NSS_GPIO_Port, SPI3_NSS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SPI3_NSS_GPIO_PORT, SPI3_NSS_PIN, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : DEBUG_LED_Pin H_BRIDGE_ENABLE_Pin H_BRIDGE_MODE1_Pin
+  /*Configure GPIO pins : DEBUG_LED_PIN H_BRIDGE_ENABLE_PIN H_BRIDGE_MODE1_PIN
    */
   GPIO_InitStruct.Pin =
-      DEBUG_LED_Pin | H_BRIDGE_ENABLE_Pin | H_BRIDGE_MODE1_Pin;
+      DEBUG_LED_PIN | H_BRIDGE_ENABLE_PIN | H_BRIDGE_MODE1_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : H_BRIDDGE_MODE2_Pin H_BRIDGE_PHASE_Pin */
-  GPIO_InitStruct.Pin = H_BRIDDGE_MODE2_Pin | H_BRIDGE_PHASE_Pin;
+  /*Configure GPIO pins : H_BRIDDGE_MODE2_PIN H_BRIDGE_PHASE_PIN */
+  GPIO_InitStruct.Pin = H_BRIDDGE_MODE2_PIN | H_BRIDGE_PHASE_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : H_BRIDGE_nSLEEP_Pin */
-  GPIO_InitStruct.Pin = H_BRIDGE_nSLEEP_Pin;
+  /*Configure GPIO pin : H_BRIDGE_nSLEEP_PIN */
+  GPIO_InitStruct.Pin = H_BRIDGE_nSLEEP_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(H_BRIDGE_nSLEEP_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(H_BRIDGE_nSLEEP_GPIO_PORT, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : H_BRIDGE_nFAULT_Pin */
-  GPIO_InitStruct.Pin = H_BRIDGE_nFAULT_Pin;
+  /*Configure GPIO pin : H_BRIDGE_nFAULT_PIN */
+  GPIO_InitStruct.Pin = H_BRIDGE_nFAULT_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(H_BRIDGE_nFAULT_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(H_BRIDGE_nFAULT_GPIO_PORT, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : SPI3_NSS_Pin */
-  GPIO_InitStruct.Pin = SPI3_NSS_Pin;
+  /*Configure GPIO pin : SPI3_NSS_PIN */
+  GPIO_InitStruct.Pin = SPI3_NSS_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SPI3_NSS_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(SPI3_NSS_GPIO_PORT, &GPIO_InitStruct);
 }
 
 /**
@@ -434,7 +434,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     PA3     ------> ADC1_IN4
     */
     GPIO_InitStruct.Pin =
-        SENSOR_POWER_Pin | SERVO_CURRENT_Pin | BAT_VOLTAGE_Pin;
+        SENSOR_POWER_PIN | SERVO_CURRENT_PIN | BAT_VOLTAGE_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -452,7 +452,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     PA4     ------> ADC2_IN1
     PA5     ------> ADC2_IN2
     */
-    GPIO_InitStruct.Pin = VCC_SERVO_VOLTAGE_Pin | H_BRIDGE_VPROP_Pin;
+    GPIO_InitStruct.Pin = VCC_SERVO_VOLTAGE_PIN | H_BRIDGE_VPROP_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -480,7 +480,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
     PA3     ------> ADC1_IN4
     */
     HAL_GPIO_DeInit(GPIOA,
-                    SENSOR_POWER_Pin | SERVO_CURRENT_Pin | BAT_VOLTAGE_Pin);
+                    SENSOR_POWER_PIN | SERVO_CURRENT_PIN | BAT_VOLTAGE_PIN);
 
     /* ADC1 DMA DeInit */
     HAL_DMA_DeInit(hadc->DMA_Handle);
@@ -496,7 +496,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
     PA4     ------> ADC2_IN1
     PA5     ------> ADC2_IN2
     */
-    HAL_GPIO_DeInit(GPIOA, VCC_SERVO_VOLTAGE_Pin | H_BRIDGE_VPROP_Pin);
+    HAL_GPIO_DeInit(GPIOA, VCC_SERVO_VOLTAGE_PIN | H_BRIDGE_VPROP_PIN);
 
     /* ADC2 DMA DeInit */
     HAL_DMA_DeInit(hadc->DMA_Handle);
@@ -683,12 +683,12 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim) {
     /**TIM1 GPIO Configuration
     PC3     ------> TIM1_CH4
     */
-    GPIO_InitStruct.Pin = SERVO_PWM_Pin;
+    GPIO_InitStruct.Pin = SERVO_PWM_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF2_TIM1;
-    HAL_GPIO_Init(SERVO_PWM_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(SERVO_PWM_GPIO_PORT, &GPIO_InitStruct);
   }
 }
 /**
