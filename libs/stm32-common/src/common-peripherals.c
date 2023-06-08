@@ -5,6 +5,7 @@
 
 #define USART1_IRQ_PRIORITY 5
 #define USB_LP_CAN_RX0_IRQ_PRIORITY 5
+#define PENDSV_IRQ_PRIORITY 15
 
 static common_peripherals_t common_peripherals;
 
@@ -234,4 +235,16 @@ void uart1_msp_deinit(void) {
 
   /* USART1 interrupt DeInit */
   HAL_NVIC_DisableIRQ(USART1_IRQn);
+}
+
+/**
+ * Initializes the Global MSP.
+ */
+void HAL_MspInit(void) {
+  __HAL_RCC_SYSCFG_CLK_ENABLE();
+  __HAL_RCC_PWR_CLK_ENABLE();
+
+  /* System interrupt init*/
+  /* PendSV_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(PendSV_IRQn, PENDSV_IRQ_PRIORITY, 0);
 }

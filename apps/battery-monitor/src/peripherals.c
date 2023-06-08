@@ -7,7 +7,6 @@
 #define DMA1_Channel1_IRQ_PRIORITY 5
 #define DMA2_Channel1_IRQ_PRIORITY 5
 #define EXTI15_10_IRQ_PRIORITY 5
-#define PENDSV_IRQ_PRIORITY 15
 
 static peripherals_t peripherals;
 
@@ -278,18 +277,6 @@ void gpio_init(void) {
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, EXTI15_10_IRQ_PRIORITY, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-}
-
-/**
- * Initializes the Global MSP.
- */
-void HAL_MspInit(void) {
-  __HAL_RCC_SYSCFG_CLK_ENABLE();
-  __HAL_RCC_PWR_CLK_ENABLE();
-
-  /* System interrupt init*/
-  /* PendSV_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(PendSV_IRQn, PENDSV_IRQ_PRIORITY, 0);
 }
 
 /* ADC1 DMA Init */
