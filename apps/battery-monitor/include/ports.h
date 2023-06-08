@@ -43,6 +43,9 @@ extern "C" {
 #define VBAT_I_MEASURE_GPIO_PORT GPIOC
 #define REG_PWR_ON_PIN GPIO_PIN_2
 #define REG_PWR_ON_GPIO_PORT GPIOD
+#define I2C1_SCL_GPIO_PORT GPIOB
+#define I2C1_SCL_PIN GPIO_PIN_6
+#define I2C1_SDA_PIN GPIO_PIN_7
 
 #ifdef __cplusplus
 }

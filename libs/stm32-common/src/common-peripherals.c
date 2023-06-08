@@ -68,13 +68,13 @@ void canfd_init(void) {
   GPIO_InitStruct.Pin = CAN_FD_INT_PIN | CAN_FD_SOF_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(CAN_FD_INT_GPIO_PORT, &GPIO_InitStruct);
 
   /*Configure GPIO pins : CAN_FD_INT1_PIN CAN_FD_INT0_PIN */
   GPIO_InitStruct.Pin = CAN_FD_INT1_PIN | CAN_FD_INT0_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(CAN_FD_INT1_GPIO_PORT, &GPIO_InitStruct);
 
   SPI_HandleTypeDef* hcanfd = &common_peripherals.hcanfd;
   /* SPI1 parameter configuration*/
@@ -129,12 +129,12 @@ void can_msp_init(void) {
   PB8     ------> CAN_RX
   PB9     ------> CAN_TX
   */
-  GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
+  GPIO_InitStruct.Pin = CAN_RX_PIN | CAN_TX_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   GPIO_InitStruct.Alternate = GPIO_AF9_CAN;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(CAN_GPIO_PORT, &GPIO_InitStruct);
 
   /* CAN interrupt Init */
   HAL_NVIC_SetPriority(USB_LP_CAN_RX0_IRQn, USB_LP_CAN_RX0_IRQ_PRIORITY, 0);
@@ -149,7 +149,7 @@ void can_msp_deinit(void) {
   PB8     ------> CAN_RX
   PB9     ------> CAN_TX
   */
-  HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8 | GPIO_PIN_9);
+  HAL_GPIO_DeInit(CAN_GPIO_PORT, CAN_RX_PIN | CAN_TX_PIN);
 
   /* CAN interrupt DeInit */
   HAL_NVIC_DisableIRQ(USB_LP_CAN_RX0_IRQn);
@@ -181,7 +181,7 @@ void spi1_msp_init(void) {
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(CAN_FD_SPI_MISO_GPIO_PORT, &GPIO_InitStruct);
 }
 
 void spi1_msp_deinit(void) {
@@ -210,12 +210,12 @@ void uart1_msp_init(void) {
   PA9     ------> USART1_TX
   PA10     ------> USART1_RX
   */
-  GPIO_InitStruct.Pin = GPIO_PIN_9 | GPIO_PIN_10;
+  GPIO_InitStruct.Pin = UART1_RX_PIN | UART1_TX_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(UART1_GPIO_PORT, &GPIO_InitStruct);
 
   /* USART1 interrupt Init */
   HAL_NVIC_SetPriority(USART1_IRQn, USART1_IRQ_PRIORITY, 0);
@@ -230,7 +230,7 @@ void uart1_msp_deinit(void) {
   PA9     ------> USART1_TX
   PA10     ------> USART1_RX
   */
-  HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9 | GPIO_PIN_10);
+  HAL_GPIO_DeInit(UART1_GPIO_PORT, UART1_RX_PIN | UART1_TX_PIN);
 
   /* USART1 interrupt DeInit */
   HAL_NVIC_DisableIRQ(USART1_IRQn);

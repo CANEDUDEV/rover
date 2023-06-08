@@ -7,6 +7,14 @@ extern "C" {
 
 #include "stm32f3xx_hal.h"
 
+#define CAN_GPIO_PORT GPIOB
+#define CAN_RX_PIN GPIO_PIN_8
+#define CAN_TX_PIN GPIO_PIN_9
+
+#define UART1_GPIO_PORT GPIOA
+#define UART1_RX_PIN GPIO_PIN_10
+#define UART1_TX_PIN GPIO_PIN_9
+
 #define CAN_FD_INT_PIN GPIO_PIN_7
 #define CAN_FD_INT_GPIO_PORT GPIOC
 #define CAN_FD_SOF_PIN GPIO_PIN_8
