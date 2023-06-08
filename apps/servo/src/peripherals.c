@@ -313,13 +313,13 @@ void gpio_init(void) {
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA,
+  HAL_GPIO_WritePin(DEBUG_LED_GPIO_PORT,
                     DEBUG_LED_PIN | H_BRIDGE_ENABLE_PIN | H_BRIDGE_MODE1_PIN,
                     GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, H_BRIDDGE_MODE2_PIN | H_BRIDGE_PHASE_PIN,
-                    GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(H_BRIDDGE_MODE2_GPIO_PORT,
+                    H_BRIDDGE_MODE2_PIN | H_BRIDGE_PHASE_PIN, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(H_BRIDGE_nSLEEP_GPIO_PORT, H_BRIDGE_nSLEEP_PIN,
@@ -335,14 +335,14 @@ void gpio_init(void) {
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(DEBUG_LED_GPIO_PORT, &GPIO_InitStruct);
 
   /*Configure GPIO pins : H_BRIDDGE_MODE2_PIN H_BRIDGE_PHASE_PIN */
   GPIO_InitStruct.Pin = H_BRIDDGE_MODE2_PIN | H_BRIDGE_PHASE_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(H_BRIDDGE_MODE2_GPIO_PORT, &GPIO_InitStruct);
 
   /*Configure GPIO pin : H_BRIDGE_nSLEEP_PIN */
   GPIO_InitStruct.Pin = H_BRIDGE_nSLEEP_PIN;
@@ -437,7 +437,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
         SENSOR_POWER_PIN | SERVO_CURRENT_PIN | BAT_VOLTAGE_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_Init(SENSOR_POWER_GPIO_PORT, &GPIO_InitStruct);
     adc1_dma_init(hadc);
 
   } else if (hadc->Instance == ADC2) {
@@ -455,7 +455,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     GPIO_InitStruct.Pin = VCC_SERVO_VOLTAGE_PIN | H_BRIDGE_VPROP_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_Init(VCC_SERVO_VOLTAGE_GPIO_PORT, &GPIO_InitStruct);
     adc2_dma_init(hadc);
   }
 }
@@ -479,7 +479,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
     PA2     ------> ADC1_IN3
     PA3     ------> ADC1_IN4
     */
-    HAL_GPIO_DeInit(GPIOA,
+    HAL_GPIO_DeInit(SENSOR_POWER_GPIO_PORT,
                     SENSOR_POWER_PIN | SERVO_CURRENT_PIN | BAT_VOLTAGE_PIN);
 
     /* ADC1 DMA DeInit */
@@ -496,7 +496,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
     PA4     ------> ADC2_IN1
     PA5     ------> ADC2_IN2
     */
-    HAL_GPIO_DeInit(GPIOA, VCC_SERVO_VOLTAGE_PIN | H_BRIDGE_VPROP_PIN);
+    HAL_GPIO_DeInit(VCC_SERVO_VOLTAGE_GPIO_PORT,
+                    VCC_SERVO_VOLTAGE_PIN | H_BRIDGE_VPROP_PIN);
 
     /* ADC2 DMA DeInit */
     HAL_DMA_DeInit(hadc->DMA_Handle);
@@ -541,12 +542,12 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c) {
     PB6     ------> I2C1_SCL
     PB7     ------> I2C1_SDA
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;
+    GPIO_InitStruct.Pin = I2C1_SCL_PIN | I2C1_SDA_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_Init(I2C1_SCL_GPIO_PORT, &GPIO_InitStruct);
 
     /* Peripheral clock enable */
     __HAL_RCC_I2C1_CLK_ENABLE();
@@ -558,19 +559,19 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c) {
     PC9     ------> I2C3_SDA
     PA8     ------> I2C3_SCL
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_9;
+    GPIO_InitStruct.Pin = I2C3_SDA_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF3_I2C3;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_Init(I2C3_SDA_PORT, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_8;
+    GPIO_InitStruct.Pin = I2C3_SCL_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF3_I2C3;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_Init(I2C3_SCL_PORT, &GPIO_InitStruct);
 
     /* Peripheral clock enable */
     __HAL_RCC_I2C3_CLK_ENABLE();
@@ -592,9 +593,7 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c) {
     PB6     ------> I2C1_SCL
     PB7     ------> I2C1_SDA
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_6);
-
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_7);
+    HAL_GPIO_DeInit(I2C1_SCL_GPIO_PORT, I2C1_SCL_PIN | I2C1_SDA_PIN);
 
   } else if (hi2c->Instance == I2C3) {
     /* Peripheral clock disable */
@@ -604,9 +603,9 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c) {
     PC9     ------> I2C3_SDA
     PA8     ------> I2C3_SCL
     */
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_9);
+    HAL_GPIO_DeInit(I2C3_SDA_PORT, I2C3_SDA_PIN);
 
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_8);
+    HAL_GPIO_DeInit(I2C3_SCL_PORT, I2C3_SCL_PIN);
   }
 }
 
@@ -631,12 +630,12 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi) {
     PC11     ------> SPI3_MISO
     PC12     ------> SPI3_MOSI
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12;
+    GPIO_InitStruct.Pin = SPI3_SCK_PIN | SPI3_MISO_PIN | SPI3_MOSI_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_Init(SPI3_SCK_GPIO_PORT, &GPIO_InitStruct);
   }
 }
 
@@ -659,7 +658,8 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi) {
     PC11     ------> SPI3_MISO
     PC12     ------> SPI3_MOSI
     */
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12);
+    HAL_GPIO_DeInit(SPI3_SCK_GPIO_PORT,
+                    SPI3_SCK_PIN | SPI3_MISO_PIN | SPI3_MOSI_PIN);
   }
 }
 

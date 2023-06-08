@@ -173,13 +173,13 @@ void gpio_init(void) {
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC,
+  HAL_GPIO_WritePin(GPIO0_GPIO_PORT,
                     GPIO0_PIN | GPIO1_PIN | GPIO2_PIN | GPIO3_PIN |
                         GPIO_PWRON_1_PIN | GPIO_PWRON_2_PIN,
                     GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB,
+  HAL_GPIO_WritePin(GPIO_PWRON_3_GPIO_PORT,
                     GPIO_PWRON_3_PIN | GPIO_PWRON_4_PIN | VDD_IO_LEVEL_PIN,
                     GPIO_PIN_RESET);
 
@@ -193,20 +193,20 @@ void gpio_init(void) {
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIO0_GPIO_PORT, &GPIO_InitStruct);
 
   /*Configure GPIO pins : GPIO_PWRON_3_PIN GPIO_PWRON_4_PIN VDD_IO_LEVEL_PIN */
   GPIO_InitStruct.Pin = GPIO_PWRON_3_PIN | GPIO_PWRON_4_PIN | VDD_IO_LEVEL_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIO_PWRON_3_GPIO_PORT, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SWITCH1_PIN1_PIN SWITCH1_PIN2_PIN */
   GPIO_InitStruct.Pin = SWITCH1_PIN1_PIN | SWITCH1_PIN2_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(SWITCH1_PIN1_GPIO_PORT, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SPI3_NSS_PIN */
   GPIO_InitStruct.Pin = SPI3_NSS_PIN;
@@ -250,7 +250,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     GPIO_InitStruct.Pin = AN1_PIN | AN2_PIN | AN3_PIN | AN4_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_Init(AN1_GPIO_PORT, &GPIO_InitStruct);
 
     /* ADC1 DMA Init */
     DMA_HandleTypeDef* hdma_adc1 = &peripherals.hdma_adc1;
@@ -287,7 +287,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
     PA2     ------> ADC1_IN3
     PA3     ------> ADC1_IN4
     */
-    HAL_GPIO_DeInit(GPIOA, AN1_PIN | AN2_PIN | AN3_PIN | AN4_PIN);
+    HAL_GPIO_DeInit(AN1_GPIO_PORT, AN1_PIN | AN2_PIN | AN3_PIN | AN4_PIN);
 
     /* ADC1 DMA DeInit */
     HAL_DMA_DeInit(hadc->DMA_Handle);
@@ -332,12 +332,12 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c) {
     PB6     ------> I2C1_SCL
     PB7     ------> I2C1_SDA
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;
+    GPIO_InitStruct.Pin = I2C1_SCL_PIN | I2C1_SDA_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_Init(I2C1_SCL_GPIO_PORT, &GPIO_InitStruct);
 
     /* Peripheral clock enable */
     __HAL_RCC_I2C1_CLK_ENABLE();
@@ -359,9 +359,7 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c) {
     PB6     ------> I2C1_SCL
     PB7     ------> I2C1_SDA
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_6);
-
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_7);
+    HAL_GPIO_DeInit(I2C1_SCL_GPIO_PORT, I2C1_SCL_PIN | I2C1_SDA_PIN);
   }
 }
 
@@ -386,12 +384,12 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi) {
     PC11     ------> SPI3_MISO
     PC12     ------> SPI3_MOSI
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12;
+    GPIO_InitStruct.Pin = SPI3_SCK_PIN | SPI3_MISO_PIN | SPI3_MOSI_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_Init(SPI3_SCK_GPIO_PORT, &GPIO_InitStruct);
   }
 }
 
@@ -414,7 +412,8 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi) {
     PC11     ------> SPI3_MISO
     PC12     ------> SPI3_MOSI
     */
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12);
+    HAL_GPIO_DeInit(SPI3_SCK_GPIO_PORT,
+                    SPI3_SCK_PIN | SPI3_MISO_PIN | SPI3_MOSI_PIN);
   }
 }
 
