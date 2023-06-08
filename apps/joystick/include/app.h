@@ -1,7 +1,7 @@
 /*******************************************************************************
  * @file app.h
  *
- * Provides application logic for the io-node application.
+ * Provides application logic for the joystick application.
  ******************************************************************************/
 #ifndef APP_H
 #define APP_H

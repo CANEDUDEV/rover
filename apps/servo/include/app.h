@@ -1,7 +1,7 @@
 /******************************************************************************
  * @file app.h
  *
- * Contains functions that compose the servo node application.
+ * Contains functions that compose the servo application.
  *
  *****************************************************************************/
 #ifndef APP_H

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * @file app.h
  *
- * Provides data structures and application logic for the battery node
+ * Provides data structures and application logic for the battery monitor
  * application.
  ******************************************************************************/
 #ifndef APP_H
@@ -49,7 +49,7 @@ typedef enum {
   ORANGE,
 } led_color_t;
 
-// Naming based on battery node schematic
+// Naming based on power board schematic
 typedef enum {
   LED6 = 0,
   LED7,

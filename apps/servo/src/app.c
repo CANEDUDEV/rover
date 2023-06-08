@@ -41,7 +41,7 @@ void ADCToSensorPowerMessage(uint16_t adcValue, CANFrame *frame) {
  * Isense = Vout * Rin / (Rsense * Rout).
  * Vout is measured by ADC, Vout = ADC_REF_VOLTAGE * adcValue / ADC_MAX
  *
- * Resistances for Servo Node rev E:
+ * Resistances for servo board rev. E:
  * Rin = R1 = 51 Ohm
  * Rsense = R2 = 0.002 Ohm
  * Rout = R3 = 5100 Ohm
@@ -96,7 +96,7 @@ void ADCToVCCServoVoltageMessage(uint16_t adcValue, CANFrame *frame) {
  * Specified relationship between VPROPI and Vsense: Vsense = VPROPI / 5
  * Thus, Isense = Vsense / Rsense = VPROPI / (Rsense * 5)
  * VPROPI is measured by ADC, VPROPI = ADC_REF_VOLTAGE * adcValue / ADC_MAX
- * Rsense = R33 = 0.2 Ohm (from servo node rev E schematic)
+ * Rsense = R33 = 0.2 Ohm (from servo board rev. E schematic)
  * To simplify, Isense = VPROPI / (0.2*5) = VPROPI
  */
 void ADCToHBridgeWindingCurrentMessage(uint16_t adcValue, CANFrame *frame) {
