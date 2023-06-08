@@ -1,5 +1,3 @@
-#include "interrupts.h"
-
 #include "peripherals.h"
 #include "ports.h"
 

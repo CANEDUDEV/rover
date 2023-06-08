@@ -1,5 +1,3 @@
-#include "interrupts.h"
-
 #include "peripherals.h"
 #include "stm32f3xx_hal.h"
 
