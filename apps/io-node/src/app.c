@@ -29,7 +29,8 @@ void SendAnalogPortMessage(const uint16_t *data) {
     canData[i] = data[i];
   }
   peripherals_t *peripherals = get_peripherals();
-  HAL_CAN_AddTxMessage(&peripherals->hcan, &header, canData, &mailbox);
+  HAL_CAN_AddTxMessage(&peripherals->common_peripherals->hcan, &header, canData,
+                       &mailbox);
 }
 
 void SendSwitchPortMessage(const uint8_t *data) {
@@ -39,7 +40,8 @@ void SendSwitchPortMessage(const uint8_t *data) {
   };
   uint32_t mailbox = 0;
   peripherals_t *peripherals = get_peripherals();
-  HAL_CAN_AddTxMessage(&peripherals->hcan, &header, data, &mailbox);
+  HAL_CAN_AddTxMessage(&peripherals->common_peripherals->hcan, &header, data,
+                       &mailbox);
 }
 
 enum SWITCH_STATE getSwitchState(GPIO_PinState pin1, GPIO_PinState pin2) {

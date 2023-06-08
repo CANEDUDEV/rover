@@ -14,7 +14,6 @@ extern "C" {
 
 void DMA1_Channel1_IRQHandler(void);
 void DMA2_Channel1_IRQHandler(void);
-void USB_LP_CAN_RX0_IRQHandler(void);
 void EXTI15_10_IRQHandler(void);
 
 #ifdef __cplusplus

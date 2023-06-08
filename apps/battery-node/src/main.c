@@ -91,20 +91,14 @@ int main(void) {
   system_clock_init();
 
   // Initialize all configured peripherals
+  peripherals_init();
   peripherals = get_peripherals();
-  gpio_init();
-  dma_init();
-  uart1_init();
-  spi1_init();
-  adc1_init();
-  adc2_init();
-  i2c1_init();
-  can_init();
 
   task_init();
   ck_init();
 
-  print(&peripherals->huart1, "Starting application...\r\n");
+  print(&peripherals->common_peripherals->huart1,
+        "Starting application...\r\n");
 
   // Start scheduler
   vTaskStartScheduler();
@@ -201,8 +195,8 @@ void ck_init(void) {
   ck_list_init();
   ck_folder_init();
 
-  peripherals_t *peripherals = get_peripherals();
-  postmaster_init(&peripherals->hcan);  // Set up the postmaster
+  postmaster_init(
+      &peripherals->common_peripherals->hcan);  // Set up the postmaster
 
   default_letter_timer = xTimerCreateStatic(
       "default letter timer", pdMS_TO_TICKS(200),
@@ -224,7 +218,8 @@ void ck_init(void) {
   };
 
   if (ck_mayor_init(&mayor) != CK_OK) {
-    print(&peripherals->huart1, "Error setting up mayor.\r\n");
+    print(&peripherals->common_peripherals->huart1,
+          "Error setting up mayor.\r\n");
     error();
   }
 }
@@ -325,13 +320,13 @@ void update_pages(battery_state_t *battery_state) {
 
 void send_docs(void) {
   if (ck_send_document(cell_folder->folder_no) != CK_OK) {
-    print(&peripherals->huart1, "failed to send doc.\r\n");
+    print(&peripherals->common_peripherals->huart1, "failed to send doc.\r\n");
   }
   if (ck_send_document(reg_out_current_folder->folder_no) != CK_OK) {
-    print(&peripherals->huart1, "failed to send doc.\r\n");
+    print(&peripherals->common_peripherals->huart1, "failed to send doc.\r\n");
   }
   if (ck_send_document(vbat_out_current_folder->folder_no) != CK_OK) {
-    print(&peripherals->huart1, "failed to send doc.\r\n");
+    print(&peripherals->common_peripherals->huart1, "failed to send doc.\r\n");
   }
 }
 
@@ -365,14 +360,15 @@ void dispatch_letter(ck_letter_t *letter) {
   // Check for default letter
   if (ck_is_default_letter(letter) == CK_OK) {
     if (ck_default_letter_received() != CK_OK) {
-      print(&peripherals->huart1,
+      print(&peripherals->common_peripherals->huart1,
             "CAN Kingdom error in ck_default_letter_received().\r\n");
     }
   }
   // Check for king's letter
   if (ck_is_kings_envelope(&letter->envelope) == CK_OK) {
     if (ck_process_kings_letter(letter) != CK_OK) {
-      print(&peripherals->huart1, "failed to process king's letter.\r\n");
+      print(&peripherals->common_peripherals->huart1,
+            "failed to process king's letter.\r\n");
     }
   }
   // TODO: implement other letters
@@ -382,7 +378,7 @@ void default_letter_timer_callback(TimerHandle_t timer) {
   (void)timer;
 
   if (ck_default_letter_timeout() != CK_OK) {
-    print(&peripherals->huart1,
+    print(&peripherals->common_peripherals->huart1,
           "CAN Kingdom error in ck_default_letter_timeout().\r\n");
   }
 }
@@ -399,18 +395,19 @@ void proc_letter(void *unused) {
   ck_letter_t letter;
 
   for (;;) {
-    if (HAL_CAN_ActivateNotification(&peripherals->hcan,
+    if (HAL_CAN_ActivateNotification(&peripherals->common_peripherals->hcan,
                                      CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) {
-      print(&peripherals->huart1, "Error activating interrupt.\r\n");
+      print(&peripherals->common_peripherals->huart1,
+            "Error activating interrupt.\r\n");
       error();
     }
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     // Process all messages
-    while (HAL_CAN_GetRxMessage(&peripherals->hcan, CAN_RX_FIFO0, &header,
-                                data) == HAL_OK) {
+    while (HAL_CAN_GetRxMessage(&peripherals->common_peripherals->hcan,
+                                CAN_RX_FIFO0, &header, data) == HAL_OK) {
       if (ck_correct_letter_received() != CK_OK) {
-        print(&peripherals->huart1,
+        print(&peripherals->common_peripherals->huart1,
               "CAN Kingdom error in ck_correct_letter_received().\r\n");
       }
       letter = frame_to_letter(&header, data);

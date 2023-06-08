@@ -41,24 +41,8 @@ extern "C" {
 #define I_PWR_A_MEASURE_GPIO_Port GPIOA
 #define VBAT_I_MEASURE_Pin GPIO_PIN_5
 #define VBAT_I_MEASURE_GPIO_Port GPIOC
-#define CAN_FD_INT_Pin GPIO_PIN_7
-#define CAN_FD_INT_GPIO_Port GPIOC
-#define CAN_FD_SOF_Pin GPIO_PIN_8
-#define CAN_FD_SOF_GPIO_Port GPIOC
-#define CAN_FD_INT1_Pin GPIO_PIN_11
-#define CAN_FD_INT1_GPIO_Port GPIOA
-#define CAN_FD_INT0_Pin GPIO_PIN_12
-#define CAN_FD_INT0_GPIO_Port GPIOA
-#define CAN_FD_SPI_CS_Pin GPIO_PIN_15
-#define CAN_FD_SPI_CS_GPIO_Port GPIOA
 #define REG_PWR_ON_Pin GPIO_PIN_2
 #define REG_PWR_ON_GPIO_Port GPIOD
-#define CAN_FD_SPI_SCK_Pin GPIO_PIN_3
-#define CAN_FD_SPI_SCK_GPIO_Port GPIOB
-#define CAN_FD_SPI_MISO_Pin GPIO_PIN_4
-#define CAN_FD_SPI_MISO_GPIO_Port GPIOB
-#define CAN_FD_SPI_MOSI_Pin GPIO_PIN_5
-#define CAN_FD_SPI_MOSI_GPIO_Port GPIOB
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,5 @@
 radio_node_inc = include_directories('include')
 radio_node_src = files(
-  'src' / 'interrupts.c',
   'src' / 'main.c',
   'src' / 'peripherals.c',
 )

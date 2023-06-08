@@ -10,19 +10,17 @@
 extern "C" {
 #endif
 
+#include "common-peripherals.h"
 #include "stm32f3xx_hal.h"
 
 typedef struct {
-  CAN_HandleTypeDef hcan;
-  SPI_HandleTypeDef hspi1;
-  UART_HandleTypeDef huart1;
+  // Provided by CPU board
+  common_peripherals_t *common_peripherals;
 } peripherals_t;
 
 peripherals_t *get_peripherals(void);
-void can_init(void);
-void spi1_init(void);
-void uart1_init(void);
-void gpio_init(void);
+
+void peripherals_init(void);
 
 #ifdef __cplusplus
 }

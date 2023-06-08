@@ -1,5 +1,6 @@
 #include "common-interrupts.h"
 
+#include "common-peripherals.h"
 #include "stm32f3xx_hal.h"
 
 // FreeRTOS includes
@@ -49,4 +50,14 @@ void SysTick_Handler(void) {
 #if (INCLUDE_xTaskGetSchedulerState == 1)
   }
 #endif /* INCLUDE_xTaskGetSchedulerState */
+}
+
+void USART1_IRQHandler(void) {
+  common_peripherals_t *common_peripherals = get_common_peripherals();
+  HAL_UART_IRQHandler(&common_peripherals->huart1);
+}
+
+void USB_LP_CAN_RX0_IRQHandler(void) {
+  common_peripherals_t *common_peripherals = get_common_peripherals();
+  HAL_CAN_IRQHandler(&common_peripherals->hcan);
 }
