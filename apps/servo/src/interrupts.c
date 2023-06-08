@@ -1,5 +1,3 @@
-#include "interrupts.h"
-
 #include "peripherals.h"
 
 void DMA1_Channel1_IRQHandler(void) {
