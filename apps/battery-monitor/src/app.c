@@ -94,6 +94,9 @@ uint16_t adc_to_cell_voltage(const uint16_t adc_value) {
   const uint32_t numerator = v_out * (1000 + 2000);
   const uint32_t denominator = 2000;
   uint16_t v_cell = (uint16_t)(numerator / denominator);
+  if (v_cell < BATTERY_CELL_DETECTION_THRESHOLD) {
+    v_cell = 0;
+  }
   return v_cell;
 }
 
