@@ -42,6 +42,12 @@ typedef enum {
 
 void set_jumper_config(jumper_config_t jumper_config);
 
+// Values in mA.
+typedef enum {
+  FUSE_50_AMPERE = 50000,
+  FUSE_100_AMPERE = 100000,
+} fuse_config_t;
+
 typedef enum {
   NONE = 0,
   RED,

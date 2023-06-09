@@ -275,6 +275,18 @@ void battery_monitor(void *unused) {
   battery_charge_t battery_charge = CHARGE_100_PERCENT;
   uint8_t low_power_report_count = 0;
 
+  // TODO: implement set_fuse_config() to configure HW fuses,
+  // use it to set over_current_threshold.
+  //
+  // TODO: calculate the maximum measured reg_out_current based on the jumper
+  // config, use it to set a better over_current_threshold that considers the
+  // reg_out_current separately from the vbat_out_current.
+  //
+  // We might detect false positives if the jumper config is set to detect low
+  // currents but the actual currents are much higher. Nevertheless, the largest
+  // part of the total current is the vbat_out_current.
+  const uint32_t over_current_threshold = 49500;
+
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
 
@@ -290,7 +302,9 @@ void battery_monitor(void *unused) {
 
     // Check if over current or low voltage protection has triggered.
     if (low_power_report_count > LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD ||
-        over_current_fault != 0) {
+        over_current_fault != 0 ||
+        battery_state.reg_out_current + battery_state.vbat_out_current >
+            over_current_threshold) {
       // Turn off the power outputs to reduce the battery power drain.
       HAL_GPIO_WritePin(REG_PWR_ON_GPIO_PORT, REG_PWR_ON_PIN, GPIO_PIN_SET);
       HAL_GPIO_WritePin(POWER_OFF_GPIO_PORT, POWER_OFF_PIN, GPIO_PIN_RESET);
