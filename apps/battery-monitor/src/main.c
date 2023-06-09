@@ -20,13 +20,19 @@
 static peripherals_t *peripherals;
 
 // FreeRTOS
-#define BATTERY_MONITOR_TASK_PERIOD 100
+#define BATTERY_MONITOR_TASK_PERIOD_MS 20
+#define BATTERY_REPORT_TASK_PERIOD_MS 200
 #define LOWEST_TASK_PRIORITY 24
 
 static TaskHandle_t battery_monitor_task;
 static StaticTask_t battery_monitor_buf;
 static StackType_t battery_monitor_stack[configMINIMAL_STACK_SIZE];
 void battery_monitor(void *unused);
+
+static TaskHandle_t battery_report_task;
+static StaticTask_t battery_report_buf;
+static StackType_t battery_report_stack[configMINIMAL_STACK_SIZE];
+void battery_report(void *unused);
 
 // CAN Kingdom process received letters task
 static TaskHandle_t process_letter_task;
@@ -227,11 +233,15 @@ void ck_init(void) {
 void task_init(void) {
   battery_monitor_task = xTaskCreateStatic(
       battery_monitor, "battery monitor", configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY, battery_monitor_stack, &battery_monitor_buf);
+      LOWEST_TASK_PRIORITY + 1, battery_monitor_stack, &battery_monitor_buf);
+
+  battery_report_task = xTaskCreateStatic(
+      battery_report, "battery report", configMINIMAL_STACK_SIZE, NULL,
+      LOWEST_TASK_PRIORITY, battery_report_stack, &battery_report_buf);
 
   process_letter_task = xTaskCreateStatic(
       proc_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY + 1, proc_letter_stack, &proc_letter_buf);
+      LOWEST_TASK_PRIORITY + 2, proc_letter_stack, &proc_letter_buf);
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
@@ -263,7 +273,7 @@ void battery_monitor(void *unused) {
 
   StaticTimer_t timer_buf;
   TimerHandle_t timer = xTimerCreateStatic(
-      "battery monitor timer", pdMS_TO_TICKS(BATTERY_MONITOR_TASK_PERIOD),
+      "battery monitor timer", pdMS_TO_TICKS(BATTERY_MONITOR_TASK_PERIOD_MS),
       pdTRUE,  // Auto reload timer
       NULL,    // Timer ID, unused
       battery_monitor_timer, &timer_buf);
@@ -316,7 +326,6 @@ void battery_monitor(void *unused) {
     }
 
     update_pages(&battery_state);
-    send_docs();
   }
 }
 
@@ -427,5 +436,28 @@ void proc_letter(void *unused) {
       letter = frame_to_letter(&header, data);
       dispatch_letter(&letter);
     }
+  }
+}
+
+void battery_report_timer(TimerHandle_t timer) {
+  (void)timer;
+  xTaskNotifyGive(battery_report_task);
+}
+
+void battery_report(void *unused) {
+  (void)unused;
+
+  StaticTimer_t timer_buf;
+  TimerHandle_t timer = xTimerCreateStatic(
+      "battery report timer", pdMS_TO_TICKS(BATTERY_REPORT_TASK_PERIOD_MS),
+      pdTRUE,  // Auto reload timer
+      NULL,    // Timer ID, unused
+      battery_report_timer, &timer_buf);
+
+  xTimerStart(timer, portMAX_DELAY);
+
+  for (;;) {
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
+    send_docs();
   }
 }
