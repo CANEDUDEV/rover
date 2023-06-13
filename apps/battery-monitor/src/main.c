@@ -5,6 +5,7 @@
 #include "clock.h"
 #include "error.h"
 #include "flash.h"
+#include "led.h"
 #include "mayor.h"
 #include "peripherals.h"
 #include "ports.h"
