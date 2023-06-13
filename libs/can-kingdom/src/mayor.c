@@ -65,6 +65,8 @@ static bool in_group(uint8_t group_no);
 static int find_folder(uint8_t folder_no);
 static int find_envelope(const ck_folder_t *folder,
                          const ck_envelope_t *envelope);
+static ck_err_t is_envelope_in_folder(const ck_envelope_t *envelope,
+                                      uint8_t folder_no);
 
 // Returns pointer to list if found, NULL otherwise.
 static ck_list_t *find_list(ck_list_type_t list_type, ck_direction_t direction,
@@ -282,17 +284,25 @@ ck_err_t ck_send_mayors_page(uint8_t page_no) {
   return CK_OK;
 }
 
-ck_err_t ck_is_kings_envelope(ck_envelope_t *envelope) {
+ck_err_t ck_is_kings_envelope(const ck_envelope_t *envelope) {
+  return is_envelope_in_folder(envelope, CK_KINGS_FOLDER_NO);
+}
+
+ck_err_t ck_get_envelopes_folder(const ck_envelope_t *envelope,
+                                 ck_folder_t **folder) {
   // Check if mayor has been initialized
   if (mayor.user_data.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
-  ck_folder_t *folder = &mayor.user_data.folders[CK_KINGS_FOLDER_NO];
-  if (find_envelope(folder, envelope) < 0) {
-    return CK_ERR_FALSE;
-  }
 
-  return CK_OK;
+  for (int i = 0; i < mayor.user_data.folder_count; i++) {
+    if (is_envelope_in_folder(envelope, mayor.user_data.folders[i].folder_no) ==
+        CK_OK) {
+      *folder = &mayor.user_data.folders[i];
+      return CK_OK;
+    }
+  }
+  return CK_ERR_FALSE;
 }
 
 ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
@@ -888,6 +898,16 @@ static int find_envelope(const ck_folder_t *folder,
     }
   }
   return -1;
+}
+
+static ck_err_t is_envelope_in_folder(const ck_envelope_t *envelope,
+                                      uint8_t folder_no) {
+  ck_folder_t *folder = &mayor.user_data.folders[folder_no];
+  if (find_envelope(folder, envelope) < 0) {
+    return CK_ERR_FALSE;
+  }
+
+  return CK_OK;
 }
 
 static ck_err_t assign_envelope(uint8_t folder_no,

@@ -49,6 +49,7 @@ static test_err_t test_add_mayors_page(void);
 static test_err_t test_send_document(void);
 static test_err_t test_send_mayors_page(void);
 static test_err_t test_is_kings_envelope(void);
+static test_err_t test_get_envelopes_folder(void);
 static test_err_t test_set_comm_mode(void);
 static test_err_t test_set_base_number(void);
 static test_err_t test_is_default_letter(void);
@@ -111,6 +112,11 @@ int main(void) {
   }
 
   ret = test_is_kings_envelope();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+
+  ret = test_get_envelopes_folder();
   if (ret != TEST_PASS) {
     return ret;
   }
@@ -366,6 +372,56 @@ static test_err_t test_is_kings_envelope(void) {
   return TEST_PASS;
 }
 
+// First, check if envelope 200 is assigned to folder 2. Then, assign it, and
+// test again.
+static test_err_t test_get_envelopes_folder(void) {
+  test_err_t err = setup_test();
+  if (err != TEST_PASS) {
+    return err;
+  }
+  ck_envelope_t envelope = {.envelope_no = 200};  // NOLINT
+
+  ck_folder_t *folder = NULL;
+
+  if (ck_get_envelopes_folder(&envelope, &folder) != CK_ERR_FALSE) {
+    printf(
+        "get_envelopes_folder: checking for non-existent envelope did not "
+        "return false.\n");
+    return TEST_FAIL;
+  }
+
+  ck_kp2_args_t args = {
+      .folder_no = 2,
+      .envelope = envelope,
+      .envelope_action = CK_ENVELOPE_ASSIGN,
+  };
+  ck_letter_t letter;
+
+  ck_create_kings_page_2(&args, &letter.page);
+
+  if (ck_process_kings_letter(&letter) != CK_OK) {
+    printf("get_envelopes_folder: failed to assign envelope.\n");
+    return TEST_FAIL;
+  }
+
+  if (ck_get_envelopes_folder(&envelope, &folder) != CK_OK) {
+    printf(
+        "get_envelopes_folder: checking for existent envelope did not "
+        "return OK.\n");
+    return TEST_FAIL;
+  }
+
+  if (folder != &data.folders[2] ||
+      folder->folder_no != data.folders[2].folder_no) {
+    printf(
+        "get_envelopes_folder: returned wrong folder, expected: %u, got: %u\n",
+        data.folders[2].folder_no, folder->folder_no);
+    return TEST_FAIL;
+  }
+
+  return TEST_PASS;
+}
+
 static test_err_t test_set_comm_mode(void) {
   test_err_t ret = setup_test();
   if (ret != TEST_PASS) {
@@ -488,11 +544,14 @@ static test_err_t test_process_kp0(void) {
 }
 
 static test_err_t test_process_kp1(void) {
+  ck_kp1_args_t args = {
+      .address = test_city_address,
+      .base_no = test_base_no,
+      .mayor_response_no = CK_NO_RESPONSE_REQUESTED,
+  };
   ck_letter_t letter;
-  letter.page.lines[0] = test_city_address;
-  letter.page.lines[1] = CK_KP1;
-  letter.page.lines[2] = CK_NO_RESPONSE_REQUESTED;
-  memcpy(&letter.page.lines[4], &test_base_no, sizeof(uint32_t));
+  ck_create_kings_page_1(&args, &letter.page);
+
   if (ck_process_kings_letter(&letter) != CK_OK) {
     printf("process_kp1: failed to process page.\n");
     return TEST_FAIL;
@@ -500,7 +559,9 @@ static test_err_t test_process_kp1(void) {
 
   // Invalid base no. (base no + city address will be too big)
   uint32_t invalid_base_no = illegal_can_std_id - 1;
-  memcpy(&letter.page.lines[4], &invalid_base_no, sizeof(invalid_base_no));
+  args.base_no = invalid_base_no;
+  ck_create_kings_page_1(&args, &letter.page);
+
   if (ck_process_kings_letter(&letter) == CK_OK) {
     printf("process_kp1: invalid base no page returned OK.\n");
     return TEST_FAIL;
@@ -508,15 +569,22 @@ static test_err_t test_process_kp1(void) {
 
   // Invalid base no (extended ID)
   invalid_base_no = illegal_can_ext_id - 1;
-  memcpy(&letter.page.lines[4], &invalid_base_no, sizeof(invalid_base_no));
-  letter.page.lines[7] |= 0x80;  // Extended ID flag  // NOLINT(*-magic-numbers)
+  args.base_no = invalid_base_no;
+  args.has_extended_id = true;
+  ck_create_kings_page_1(&args, &letter.page);
+
   if (ck_process_kings_letter(&letter) == CK_OK) {
     printf("process_kp1: invalid ext base no page returned OK.\n");
     return TEST_FAIL;
   }
 
   // Invalid mayor response page
-  letter.page.lines[2] = 3;
+  args.base_no = test_base_no;
+  args.mayor_response_no = 3;
+  ck_create_kings_page_1(&args, &letter.page);
+
+  ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE);
+
   if (ck_process_kings_letter(&letter) == CK_OK) {
     printf("process_kp1: invalid mayor's response page returned OK.\n");
     return TEST_FAIL;
@@ -533,19 +601,16 @@ static test_err_t test_process_kp2(void) {
     return err;
   }
 
-  // Assign envelope no 2 to folder no 2.
+  // Assign envelope no 200 to folder no 2.
+  ck_kp2_args_t args = {
+      .address = 0,
+      .folder_no = 2,
+      .envelope.envelope_no = 200,  // NOLINT
+      .envelope_action = CK_ENVELOPE_ASSIGN,
+  };
   ck_letter_t letter;
-  letter.page.lines[0] = test_city_address;
-  letter.page.lines[1] = CK_KP2;
 
-  const uint32_t envelope2 = 200;
-  const uint32_t folder2 = 2;
-
-  memcpy(&letter.page.lines[2], &envelope2, sizeof(envelope2));
-  // NOLINTBEGIN(*-magic-numbers)
-  letter.page.lines[6] = folder2;
-  letter.page.lines[7] = CK_ENVELOPE_ASSIGN << 1;
-  // NOLINTEND(*-magic-numbers)
+  ck_create_kings_page_2(&args, &letter.page);
 
   if (ck_process_kings_letter(&letter) != CK_OK) {
     printf("process_kp2: assign: failed to process page.\n");
@@ -553,9 +618,9 @@ static test_err_t test_process_kp2(void) {
   }
 
   uint32_t got_envelope_no = data.folders[2].envelopes[0].envelope_no;
-  if (got_envelope_no != envelope2) {
+  if (got_envelope_no != args.envelope.envelope_no) {
     printf("process_kp2: assign: wrong envelope no, expected: %u, got: %u.\n",
-           envelope2, got_envelope_no);
+           args.envelope.envelope_no, got_envelope_no);
     return TEST_FAIL;
   }
 
@@ -567,18 +632,20 @@ static test_err_t test_process_kp2(void) {
     return TEST_FAIL;
   }
 
-  // Assign envelope no 3 to folder no 2.
-  const uint32_t envelope3 = 300;
-  memcpy(&letter.page.lines[2], &envelope3, sizeof(envelope3));
+  // Assign envelope no 300 to folder no 2.
+  args.folder_no = 2;
+  args.envelope.envelope_no = 300;  // NOLINT
+  ck_create_kings_page_2(&args, &letter.page);
+
   if (ck_process_kings_letter(&letter) != CK_OK) {
     printf("process_kp2: assign: failed to process page.\n");
     return TEST_FAIL;
   }
 
   got_envelope_no = data.folders[2].envelopes[1].envelope_no;
-  if (got_envelope_no != envelope3) {
+  if (got_envelope_no != args.envelope.envelope_no) {
     printf("process_kp2: assign: wrong envelope no, expected: %u, got: %u.\n",
-           envelope3, got_envelope_no);
+           args.envelope.envelope_no, got_envelope_no);
     return TEST_FAIL;
   }
 
@@ -590,21 +657,21 @@ static test_err_t test_process_kp2(void) {
     return TEST_FAIL;
   }
 
-  // Transfer envelope no 3 to folder no 3.
-  uint32_t folder3 = 3;
-  memcpy(&letter.page.lines[2], &envelope3, sizeof(envelope3));
-  // NOLINTBEGIN(*-magic-numbers)
-  letter.page.lines[6] = folder3;
-  letter.page.lines[7] = CK_ENVELOPE_TRANSFER << 1 | 1;  // Transfer and enable
-  // NOLINTEND(*-magic-numbers)
+  // Transfer envelope no 300 to folder no 3, and enable it.
+  args.folder_no = 3;
+  args.envelope_action = CK_ENVELOPE_TRANSFER;
+  args.envelope.envelope_no = 300;  // NOLINT
+  args.envelope.enable = true;
+  ck_create_kings_page_2(&args, &letter.page);
+
   if (ck_process_kings_letter(&letter) != CK_OK) {
     printf("process_kp2: transfer: failed to process page.\n");
     return TEST_FAIL;
   }
   got_envelope_no = data.folders[3].envelopes[0].envelope_no;
-  if (got_envelope_no != envelope3) {
+  if (got_envelope_no != args.envelope.envelope_no) {
     printf("process_kp2: transfer: wrong envelope no, expected: %u, got: %u.\n",
-           envelope3, got_envelope_no);
+           args.envelope.envelope_no, got_envelope_no);
     return TEST_FAIL;
   }
   if (data.folders[2].envelope_count != 1) {
@@ -623,16 +690,16 @@ static test_err_t test_process_kp2(void) {
     return TEST_FAIL;
   }
   if (!data.folders[3].envelopes[0].enable) {
-    printf("process_kp2: transfer: envelope 3 not enabled.\n");
+    printf("process_kp2: transfer: envelope 300 not enabled.\n");
     return TEST_FAIL;
   }
 
-  // Expel envelope no 2.
-  memcpy(&letter.page.lines[2], &envelope2, sizeof(envelope2));
-  // NOLINTBEGIN(*-magic-numbers)
-  letter.page.lines[6] = 0;  // Ignored
-  letter.page.lines[7] = CK_ENVELOPE_EXPEL << 1;
-  // NOLINTEND(*-magic-numbers)
+  // Expel envelope no 200.
+  args.envelope.envelope_no = 200;  // NOLINT
+  args.envelope_action = CK_ENVELOPE_EXPEL;
+  args.envelope.enable = false;
+  ck_create_kings_page_2(&args, &letter.page);
+
   if (ck_process_kings_letter(&letter) != CK_OK) {
     printf("process_kp2: expel: failed to process page.\n");
     return TEST_FAIL;
