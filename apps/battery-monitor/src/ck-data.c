@@ -75,31 +75,44 @@ void list_init(void) {
 }
 
 void folder_init(void) {
+  // NOLINTBEGIN(*-magic-numbers)
   ck_data.cell_folder = &ck_data.folders[2];
   ck_data.reg_out_current_folder = &ck_data.folders[3];
   ck_data.vbat_out_current_folder = &ck_data.folders[4];
+  ck_data.jumper_and_fuse_conf_folder = &ck_data.folders[5];
+  ck_data.reg_out_voltage_folder = &ck_data.folders[6];
+  ck_data.output_on_off_folder = &ck_data.folders[7];
+  ck_data.report_freq_folder = &ck_data.folders[8];
+  ck_data.low_voltage_cutoff_folder = &ck_data.folders[9];
 
-  // Set up the folders
-  ck_data.cell_folder->direction = CK_DIRECTION_TRANSMIT;
-  ck_data.cell_folder->doc_list_no = 0;
-  ck_data.cell_folder->doc_no = 1;  // 0 reserved by mayor's doc
-  ck_data.cell_folder->enable = true;
-  ck_data.cell_folder->folder_no = 2;
+  // Set up the transmit folders
+  for (int i = 2; i < 5; i++) {
+    ck_data.folders[i].folder_no = i;
+    ck_data.folders[i].direction = CK_DIRECTION_TRANSMIT;
+    ck_data.folders[i].doc_list_no = 0;
+    ck_data.folders[i].doc_no = i - 1;  // 0 reserved by mayor's doc
+    ck_data.folders[i].enable = true;
+  }
 
   // 3 cells per page + 1 byte for pagination.
   ck_data.cell_folder->dlc = 3 * sizeof(uint16_t) + 1;
-
-  ck_data.reg_out_current_folder->direction = CK_DIRECTION_TRANSMIT;
-  ck_data.reg_out_current_folder->doc_list_no = 0;
-  ck_data.reg_out_current_folder->doc_no = 2;
-  ck_data.reg_out_current_folder->enable = true;
-  ck_data.reg_out_current_folder->folder_no = 3;
   ck_data.reg_out_current_folder->dlc = sizeof(uint16_t);
-
-  ck_data.vbat_out_current_folder->direction = CK_DIRECTION_TRANSMIT;
-  ck_data.vbat_out_current_folder->doc_list_no = 0;
-  ck_data.vbat_out_current_folder->doc_no = 3;
-  ck_data.vbat_out_current_folder->enable = true;
-  ck_data.vbat_out_current_folder->folder_no = 4;
   ck_data.vbat_out_current_folder->dlc = sizeof(uint32_t);
+
+  // Set up the receive folders
+  for (int i = 5; i < CK_DATA_FOLDER_COUNT; i++) {
+    ck_data.folders[i].folder_no = i;
+    ck_data.folders[i].direction = CK_DIRECTION_RECEIVE;
+    ck_data.folders[i].doc_list_no = 1;
+    ck_data.folders[i].doc_no = i - 5;
+    ck_data.folders[i].enable = true;
+  }
+
+  ck_data.jumper_and_fuse_conf_folder->dlc =
+      2 * sizeof(uint8_t) + sizeof(uint32_t);
+  ck_data.reg_out_voltage_folder->dlc = sizeof(uint16_t);
+  ck_data.output_on_off_folder->dlc = 2 * sizeof(uint8_t);
+  ck_data.report_freq_folder->dlc = sizeof(uint32_t);
+  ck_data.low_voltage_cutoff_folder->dlc = sizeof(uint16_t);
+  // NOLINTEND(*-magic-numbers)
 }
