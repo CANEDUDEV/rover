@@ -13,10 +13,8 @@ extern "C" {
 
 #include <stdint.h>
 
+#include "adc.h"
 #include "stm32f3xx_hal.h"
-
-#define ADC1_NUM_CHANNELS 4
-#define ADC2_NUM_CHANNELS 4
 
 #define BATTERY_CELLS_MAX 6  // Max number of battery cells supported
 
@@ -24,34 +22,11 @@ extern "C" {
 
 void config_voltage_regulator(I2C_HandleTypeDef *hi2c, uint8_t pot_value);
 
-/*
- * X11 and X12 jumper configuration
- * | X11 | X12 | Rout      |
- * |-----|-----|-----------|
- * | OFF | OFF | 10.2 kOhm |
- * | ON  | OFF | 5.1 kOhm  |
- * | OFF | ON  | 3.4 kOhm  |
- * | ON  | ON  | 2.55 kOhm |
- */
-typedef enum {
-  ALL_OFF,
-  X11_ON,
-  X12_ON,
-  ALL_ON,
-} jumper_config_t;
-
-void set_jumper_config(jumper_config_t jumper_config);
-
 // Values in mA.
 typedef enum {
   FUSE_50_AMPERE = 50000,
   FUSE_100_AMPERE = 100000,
 } fuse_config_t;
-
-typedef struct {
-  uint16_t adc1_buf[ADC1_NUM_CHANNELS];
-  uint16_t adc2_buf[ADC2_NUM_CHANNELS];
-} adc_reading_t;
 
 typedef struct {
   uint16_t cells[BATTERY_CELLS_MAX];

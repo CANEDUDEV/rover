@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "adc.h"
 #include "app.h"
 #include "clock.h"
 #include "error.h"
