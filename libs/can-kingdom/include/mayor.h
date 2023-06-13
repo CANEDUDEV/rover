@@ -207,7 +207,20 @@ ck_err_t ck_send_mayors_page(uint8_t page_no);
  * @return #CK_ERR_FALSE if it's not assigned.
  * @return #CK_OK if it's assigned.
  ******************************************************************************/
-ck_err_t ck_is_kings_envelope(ck_envelope_t *envelope);
+ck_err_t ck_is_kings_envelope(const ck_envelope_t *envelope);
+
+/*******************************************************************************
+ * Tries to find the folder that the given envelope is assigned to.
+ *
+ * @param envelope envelope to check.
+ * @param folder to which the envelope is assigned, if found.
+ *
+ * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
+ * @return #CK_ERR_FALSE if the envelope is not assigned to any folder.
+ * @return #CK_OK if it's assigned.
+ ******************************************************************************/
+ck_err_t ck_get_envelopes_folder(const ck_envelope_t *envelope,
+                                 ck_folder_t **folder);
 
 /*******************************************************************************
  * Set the communication mode.
