@@ -18,10 +18,6 @@ extern "C" {
 
 #define BATTERY_CELLS_MAX 6  // Max number of battery cells supported
 
-#define POT_IVRA_DEFAULT 40  // Default potentiometer value
-
-void config_voltage_regulator(I2C_HandleTypeDef *hi2c, uint8_t pot_value);
-
 // Values in mA.
 typedef enum {
   FUSE_50_AMPERE = 50000,

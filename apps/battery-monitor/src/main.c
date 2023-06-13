@@ -12,6 +12,7 @@
 #include "ports.h"
 #include "postmaster-hal.h"
 #include "postmaster.h"
+#include "potentiometer.h"
 #include "print.h"
 
 // FreeRTOS
@@ -269,7 +270,7 @@ void battery_monitor(void *unused) {
   (void)unused;
 
   set_jumper_config(ALL_ON);
-  config_voltage_regulator(&peripherals->hi2c1, POT_IVRA_DEFAULT);
+  configure_potentiometer(&peripherals->hi2c1, POTENTIOMETER_IVRA_DEFAULT);
   HAL_GPIO_WritePin(REG_PWR_ON_GPIO_PORT, REG_PWR_ON_PIN, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(POWER_OFF_GPIO_PORT, POWER_OFF_PIN, GPIO_PIN_SET);
 
