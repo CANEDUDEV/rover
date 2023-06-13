@@ -3,6 +3,7 @@
 
 #include "adc.h"
 #include "battery.h"
+#include "ck-data.h"
 #include "clock.h"
 #include "error.h"
 #include "flash.h"
@@ -21,6 +22,9 @@
 
 // Hardware
 static peripherals_t *peripherals;
+
+// CK data
+ck_data_t *ck_data;
 
 // FreeRTOS
 #define BATTERY_MONITOR_TASK_PERIOD_MS 20
@@ -45,40 +49,12 @@ void proc_letter(void *unused);
 
 void task_init(void);
 
-// CAN Kingdom data
-#define PAGE_COUNT 4
-#define DOC_COUNT 3
-#define LIST_COUNT 2
-#define FOLDER_COUNT 5
-static ck_page_t pages[PAGE_COUNT];
-static ck_document_t docs[DOC_COUNT];
-static ck_list_t lists[LIST_COUNT];
-static ck_folder_t folders[FOLDER_COUNT];
-
-// Convenience pointers
-static ck_list_t *tx_list = &lists[0];
-static ck_list_t *rx_list = &lists[1];
-
-static ck_page_t *cell_page0 = &pages[0];
-static ck_page_t *cell_page1 = &pages[1];
-static ck_page_t *reg_out_current_page = &pages[2];
-static ck_page_t *vbat_out_current_page = &pages[3];
-
-static ck_document_t *cell_doc = &docs[0];
-static ck_document_t *reg_out_current_doc = &docs[1];
-static ck_document_t *vbat_out_current_doc = &docs[2];
-
-static ck_folder_t *cell_folder = &folders[2];
-static ck_folder_t *reg_out_current_folder = &folders[3];
-static ck_folder_t *vbat_out_current_folder = &folders[4];
-
 // For the CK startup sequence timer
 StaticTimer_t default_letter_timer_buf;
 TimerHandle_t default_letter_timer;
 void default_letter_timer_callback(TimerHandle_t timer);
 void start_default_letter_timer(void);
 
-void ck_init(void);
 void update_pages(battery_state_t *battery_state);
 void send_docs(void);
 
@@ -88,6 +64,10 @@ void send_docs(void);
 
 // Set to 1 by GPIO external interrupt on the OVER_CURRENT pin.
 static uint8_t over_current_fault = 0;
+
+void mayor_init(void);
+ck_err_t set_action_mode(ck_action_mode_t mode);
+ck_err_t set_city_mode(ck_city_mode_t mode);
 
 /**
  * @brief  The application entry point.
@@ -104,7 +84,7 @@ int main(void) {
   peripherals = get_peripherals();
 
   task_init();
-  ck_init();
+  mayor_init();
 
   print(&peripherals->common_peripherals->huart1,
         "Starting application...\r\n");
@@ -117,92 +97,23 @@ int main(void) {
   }
 }
 
-ck_err_t set_action_mode(ck_action_mode_t mode) {
-  (void)mode;
-  return CK_OK;
+void task_init(void) {
+  battery_monitor_task = xTaskCreateStatic(
+      battery_monitor, "battery monitor", configMINIMAL_STACK_SIZE, NULL,
+      LOWEST_TASK_PRIORITY + 1, battery_monitor_stack, &battery_monitor_buf);
+
+  battery_report_task = xTaskCreateStatic(
+      battery_report, "battery report", configMINIMAL_STACK_SIZE, NULL,
+      LOWEST_TASK_PRIORITY, battery_report_stack, &battery_report_buf);
+
+  process_letter_task = xTaskCreateStatic(
+      proc_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
+      LOWEST_TASK_PRIORITY + 2, proc_letter_stack, &proc_letter_buf);
 }
 
-ck_err_t set_city_mode(ck_city_mode_t mode) {
-  (void)mode;
-  return CK_OK;
-}
-
-void ck_page_init(void) {
-  // Set up the pages
-  // NOLINTBEGIN(*-magic-numbers)
-  cell_page0->line_count = 7;
-  cell_page0->lines[0] = 0;
-  // Pagination
-  cell_page1->line_count = 7;
-  cell_page1->lines[0] = 1;
-  reg_out_current_page->line_count = 2;
-  vbat_out_current_page->line_count = 4;
-  // NOLINTEND(*-magic-numbers)
-}
-
-void ck_doc_init(void) {
-  // Set up the documents
-  cell_doc->direction = CK_DIRECTION_TRANSMIT;
-  cell_doc->page_count = 2;
-  cell_doc->pages[0] = cell_page0;
-  cell_doc->pages[1] = cell_page1;
-
-  reg_out_current_doc->direction = CK_DIRECTION_TRANSMIT;
-  reg_out_current_doc->page_count = 1;
-  reg_out_current_doc->pages[0] = reg_out_current_page;
-
-  vbat_out_current_doc->direction = CK_DIRECTION_TRANSMIT;
-  vbat_out_current_doc->page_count = 1;
-  vbat_out_current_doc->pages[0] = vbat_out_current_page;
-}
-
-void ck_list_init(void) {
-  // Set up the doc lists
-  rx_list->type = CK_LIST_DOCUMENT;
-  rx_list->direction = CK_DIRECTION_RECEIVE;
-  rx_list->list_no = 0;
-  rx_list->record_count = 1;  // Only 1 slot, for the king's doc.
-
-  tx_list->type = CK_LIST_DOCUMENT;
-  tx_list->direction = CK_DIRECTION_TRANSMIT;
-  tx_list->list_no = 0;
-  // We have 3 documents, and CK needs 1 slot for the mayor's doc.
-  tx_list->record_count = 4;
-  tx_list->records[1] = cell_doc;
-  tx_list->records[2] = reg_out_current_doc;
-  tx_list->records[3] = vbat_out_current_doc;
-}
-
-void ck_folder_init(void) {
-  // Set up the folders
-  cell_folder->direction = CK_DIRECTION_TRANSMIT;
-  cell_folder->doc_list_no = 0;
-  cell_folder->doc_no = 1;  // 0 reserved by mayor's doc
-  cell_folder->enable = true;
-  cell_folder->folder_no = 2;
-  // 3 cells per page + 1 byte for pagination.
-  cell_folder->dlc = 3 * sizeof(uint16_t) + 1;
-
-  reg_out_current_folder->direction = CK_DIRECTION_TRANSMIT;
-  reg_out_current_folder->doc_list_no = 0;
-  reg_out_current_folder->doc_no = 2;
-  reg_out_current_folder->enable = true;
-  reg_out_current_folder->folder_no = 3;
-  reg_out_current_folder->dlc = sizeof(uint16_t);
-
-  vbat_out_current_folder->direction = CK_DIRECTION_TRANSMIT;
-  vbat_out_current_folder->doc_list_no = 0;
-  vbat_out_current_folder->doc_no = 3;
-  vbat_out_current_folder->enable = true;
-  vbat_out_current_folder->folder_no = 4;
-  vbat_out_current_folder->dlc = sizeof(uint32_t);
-}
-
-void ck_init(void) {
-  ck_page_init();
-  ck_doc_init();
-  ck_list_init();
-  ck_folder_init();
+void mayor_init(void) {
+  ck_data_init();
+  ck_data = get_ck_data();
 
   postmaster_init(
       &peripherals->common_peripherals->hcan);  // Set up the postmaster
@@ -220,10 +131,10 @@ void ck_init(void) {
       .set_action_mode = set_action_mode,
       .set_city_mode = set_city_mode,
       .start_200ms_timer = start_default_letter_timer,
-      .folder_count = FOLDER_COUNT,
-      .folders = folders,
-      .list_count = LIST_COUNT,
-      .lists = lists,
+      .folder_count = CK_DATA_FOLDER_COUNT,
+      .folders = ck_data->folders,
+      .list_count = CK_DATA_LIST_COUNT,
+      .lists = ck_data->lists,
   };
 
   if (ck_mayor_init(&mayor) != CK_OK) {
@@ -231,20 +142,6 @@ void ck_init(void) {
           "Error setting up mayor.\r\n");
     error();
   }
-}
-
-void task_init(void) {
-  battery_monitor_task = xTaskCreateStatic(
-      battery_monitor, "battery monitor", configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY + 1, battery_monitor_stack, &battery_monitor_buf);
-
-  battery_report_task = xTaskCreateStatic(
-      battery_report, "battery report", configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY, battery_report_stack, &battery_report_buf);
-
-  process_letter_task = xTaskCreateStatic(
-      proc_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY + 2, proc_letter_stack, &proc_letter_buf);
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
@@ -334,24 +231,27 @@ void battery_monitor(void *unused) {
 
 void update_pages(battery_state_t *battery_state) {
   // Copy cells 0,1,2 to page 0 of cell doc, cells 3,4,5 to page 1.
-  memcpy(&cell_page0->lines[1], &battery_state->cells[0], cell_folder->dlc);
-  memcpy(&cell_page1->lines[1], &battery_state->cells[3], cell_folder->dlc);
+  memcpy(&ck_data->cell_page0->lines[1], &battery_state->cells[0],
+         ck_data->cell_folder->dlc);
+  memcpy(&ck_data->cell_page1->lines[1], &battery_state->cells[3],
+         ck_data->cell_folder->dlc);
 
-  memcpy(reg_out_current_page->lines, &battery_state->reg_out_current,
-         reg_out_current_folder->dlc);
+  memcpy(ck_data->reg_out_current_page->lines, &battery_state->reg_out_current,
+         ck_data->reg_out_current_folder->dlc);
 
-  memcpy(vbat_out_current_page->lines, &battery_state->vbat_out_current,
-         vbat_out_current_folder->dlc);
+  memcpy(ck_data->vbat_out_current_page->lines,
+         &battery_state->vbat_out_current,
+         ck_data->vbat_out_current_folder->dlc);
 }
 
 void send_docs(void) {
-  if (ck_send_document(cell_folder->folder_no) != CK_OK) {
+  if (ck_send_document(ck_data->cell_folder->folder_no) != CK_OK) {
     print(&peripherals->common_peripherals->huart1, "failed to send doc.\r\n");
   }
-  if (ck_send_document(reg_out_current_folder->folder_no) != CK_OK) {
+  if (ck_send_document(ck_data->reg_out_current_folder->folder_no) != CK_OK) {
     print(&peripherals->common_peripherals->huart1, "failed to send doc.\r\n");
   }
-  if (ck_send_document(vbat_out_current_folder->folder_no) != CK_OK) {
+  if (ck_send_document(ck_data->vbat_out_current_folder->folder_no) != CK_OK) {
     print(&peripherals->common_peripherals->huart1, "failed to send doc.\r\n");
   }
 }
@@ -463,4 +363,14 @@ void battery_report(void *unused) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
     send_docs();
   }
+}
+
+ck_err_t set_action_mode(ck_action_mode_t mode) {
+  (void)mode;
+  return CK_OK;
+}
+
+ck_err_t set_city_mode(ck_city_mode_t mode) {
+  (void)mode;
+  return CK_OK;
 }
