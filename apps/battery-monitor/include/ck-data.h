@@ -8,10 +8,11 @@ extern "C" {
 
 #include "types.h"
 
+// Don't need to add receive documents, only receive folders.
 #define CK_DATA_PAGE_COUNT 4
 #define CK_DATA_DOC_COUNT 3
 #define CK_DATA_LIST_COUNT 2
-#define CK_DATA_FOLDER_COUNT 5
+#define CK_DATA_FOLDER_COUNT 10
 
 typedef struct {
   ck_page_t pages[CK_DATA_PAGE_COUNT];
@@ -32,9 +33,17 @@ typedef struct {
   ck_document_t *reg_out_current_doc;
   ck_document_t *vbat_out_current_doc;
 
+  // Transmit
   ck_folder_t *cell_folder;
   ck_folder_t *reg_out_current_folder;
   ck_folder_t *vbat_out_current_folder;
+
+  // Receive
+  ck_folder_t *jumper_and_fuse_conf_folder;
+  ck_folder_t *reg_out_voltage_folder;
+  ck_folder_t *output_on_off_folder;
+  ck_folder_t *report_freq_folder;
+  ck_folder_t *low_voltage_cutoff_folder;
 
 } ck_data_t;
 
