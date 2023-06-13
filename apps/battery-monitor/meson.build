@@ -1,7 +1,7 @@
 battery_monitor_inc = include_directories('include')
 battery_monitor_src = files(
   'src' / 'adc.c',
-  'src' / 'app.c',
+  'src' / 'battery.c',
   'src' / 'interrupts.c',
   'src' / 'led.c',
   'src' / 'main.c',

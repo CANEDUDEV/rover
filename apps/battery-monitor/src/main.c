@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "adc.h"
-#include "app.h"
+#include "battery.h"
 #include "clock.h"
 #include "error.h"
 #include "flash.h"
@@ -311,7 +311,7 @@ void battery_monitor(void *unused) {
 
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for DMA
 
-    parse_adc_values(&adc_reading, &battery_state);
+    update_battery_state(&adc_reading, &battery_state);
 
     // Check if over current or low voltage protection has triggered.
     if (low_power_report_count > LOW_VOLTAGE_CUTOFF_REPORT_THRESHOLD ||
@@ -325,7 +325,7 @@ void battery_monitor(void *unused) {
       blink_leds_red();
     } else {  // Only update the charge state if no fault has occured.
       battery_charge = read_battery_charge(&battery_state);
-      low_power_report_count += set_charge_state_led(&battery_charge);
+      low_power_report_count += update_battery_leds(&battery_charge);
     }
 
     update_pages(&battery_state);
