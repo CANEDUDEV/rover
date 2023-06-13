@@ -48,22 +48,6 @@ typedef enum {
   FUSE_100_AMPERE = 100000,
 } fuse_config_t;
 
-typedef enum {
-  NONE = 0,
-  RED,
-  GREEN,
-  ORANGE,
-} led_color_t;
-
-// Naming based on power board schematic
-typedef enum {
-  LED6 = 0,
-  LED7,
-} led_t;
-
-void set_led_color(led_t led, led_color_t color);
-void blink_leds_red(void);
-
 typedef struct {
   uint16_t adc1_buf[ADC1_NUM_CHANNELS];
   uint16_t adc2_buf[ADC2_NUM_CHANNELS];

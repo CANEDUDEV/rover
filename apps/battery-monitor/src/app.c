@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "led.h"
 #include "ports.h"
 
 #define ADC_REF_VOLTAGE 3300  // in mV
@@ -30,52 +31,6 @@ void set_jumper_config(jumper_config_t jumper_config) {
     case ALL_ON:
       vbat_sense_r_out = 2550;  // NOLINT
       break;
-  }
-}
-
-void set_led_color(led_t led, led_color_t color) {
-  GPIO_TypeDef *red_led_port = LED1_GPIO_PORT;
-  GPIO_TypeDef *green_led_port = LED2_GPIO_PORT;
-  uint16_t red_led = LED1_PIN;
-  uint16_t green_led = LED2_PIN;
-
-  if (led == LED7) {
-    red_led_port = LED3_GPIO_PORT;
-    green_led_port = LED4_GPIO_PORT;
-    red_led = LED3_PIN;
-    green_led = LED4_PIN;
-  }
-
-  switch (color) {
-    case NONE:
-      HAL_GPIO_WritePin(red_led_port, red_led, GPIO_PIN_RESET);
-      HAL_GPIO_WritePin(green_led_port, green_led, GPIO_PIN_RESET);
-      break;
-    case RED:
-      HAL_GPIO_WritePin(red_led_port, red_led, GPIO_PIN_SET);
-      HAL_GPIO_WritePin(green_led_port, green_led, GPIO_PIN_RESET);
-      break;
-    case GREEN:
-      HAL_GPIO_WritePin(red_led_port, red_led, GPIO_PIN_RESET);
-      HAL_GPIO_WritePin(green_led_port, green_led, GPIO_PIN_SET);
-      break;
-    case ORANGE:
-      HAL_GPIO_WritePin(red_led_port, red_led, GPIO_PIN_SET);
-      HAL_GPIO_WritePin(green_led_port, green_led, GPIO_PIN_SET);
-      break;
-  }
-}
-
-void blink_leds_red(void) {
-  static uint8_t blink = 0;
-  if (blink > 0) {
-    blink = 0;
-    set_led_color(LED6, RED);
-    set_led_color(LED7, RED);
-  } else {
-    blink = 1;
-    set_led_color(LED6, NONE);
-    set_led_color(LED7, NONE);
   }
 }
 
@@ -146,7 +101,7 @@ uint32_t adc_to_vbat_out_current(const uint16_t adc_value) {
   return i_sense;
 }
 
-// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
+// NOLINTBEGIN(*-magic-numbers)
 void parse_adc_values(const adc_reading_t *adc_reading,
                       battery_state_t *battery_state) {
   for (int i = 0; i < 4; i++) {
@@ -159,7 +114,7 @@ void parse_adc_values(const adc_reading_t *adc_reading,
   battery_state->vbat_out_current =
       adc_to_vbat_out_current(adc_reading->adc2_buf[3]);
 }
-// NOLINTEND(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers)
+// NOLINTEND(*-magic-numbers)
 
 battery_charge_t lowest_cell(const battery_charge_t *cell_charge) {
   battery_charge_t lowest = CHARGE_100_PERCENT;
