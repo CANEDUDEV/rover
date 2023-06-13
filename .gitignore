@@ -4,3 +4,4 @@
 .vscode/
 build/
 compile_commands.json
+*Zone.Identifier
