@@ -7,15 +7,6 @@
 #include "led.h"
 #include "ports.h"
 
-#define POT_ADDR (0x53 << 1)  // Shift left to match STM32 specification
-#define POT_IVRA_ADDR 0x0
-
-void config_voltage_regulator(I2C_HandleTypeDef *hi2c, uint8_t pot_value) {
-  uint8_t ivra_write[2] = {POT_IVRA_ADDR, pot_value};
-  HAL_I2C_Master_Transmit(hi2c, POT_ADDR, ivra_write, sizeof(ivra_write),
-                          HAL_MAX_DELAY);
-}
-
 // NOLINTBEGIN(*-magic-numbers)
 void parse_adc_values(const adc_reading_t *adc_reading,
                       battery_state_t *battery_state) {
