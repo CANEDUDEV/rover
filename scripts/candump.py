@@ -6,6 +6,8 @@ with canlib.openChannel(channel=0, flags=canlib.Open.NO_INIT_ACCESS) as ch:
     while True:
         try:
             frame = ch.read(timeout=1000)
-            print(f'{frame.timestamp} id: {frame.id}, DLC: {frame.dlc}, Data: {hexlify(frame.data, " ")}')
+            print(
+                f'{frame.timestamp} id: {frame.id}, DLC: {frame.dlc}, Data: {hexlify(frame.data, " ")}'
+            )
         except canlib.CanNoMsg:
             pass
