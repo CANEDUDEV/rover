@@ -82,5 +82,7 @@ void set_jumper_config(jumper_config_t jumper_config) {
     case ALL_ON:
       vbat_sense_r_out = 2550;  // NOLINT
       break;
+    default:  // Ignore any other value
+      break;
   }
 }

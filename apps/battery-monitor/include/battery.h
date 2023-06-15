@@ -33,6 +33,10 @@ typedef struct {
   charge_t charge;
   bool over_current_fault;  // Set to true by GPIO external interrupt on the
                             // OVER_CURRENT pin.
+
+  uint32_t over_current_threshold;  // At what value the over_current_fault will
+                                    // trigger from software. Defaults to fuse
+                                    // config - 500mA.
 } battery_state_t;
 
 // Values in mA.
@@ -43,6 +47,8 @@ typedef enum {
 
 void battery_state_init(void);
 battery_state_t *get_battery_state(void);
+void set_fuse_config(fuse_config_t fuse_config);
+void set_over_current_threshold(uint32_t threshold);
 // Parses an adc reading and uses it to update the battery state.
 void update_battery_state(const adc_reading_t *adc_reading);
 

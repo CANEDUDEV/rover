@@ -3,6 +3,7 @@
 #include "adc.h"
 #include "battery.h"
 #include "ck-data.h"
+#include "ck-rx-letters.h"
 #include "led.h"
 #include "peripherals.h"
 #include "ports.h"
@@ -46,6 +47,7 @@ void update_pages(void);
 void send_docs(void);
 ck_letter_t frame_to_letter(CAN_RxHeaderTypeDef *header, uint8_t *data);
 void dispatch_letter(ck_letter_t *letter);
+int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
 
 void task_init(void) {
   battery_monitor_task = xTaskCreateStatic(
@@ -68,10 +70,12 @@ void battery_monitor(void *unused) {
 
   set_jumper_config(ALL_ON);
   configure_potentiometer(&peripherals->hi2c1, POTENTIOMETER_IVRA_DEFAULT);
-  HAL_GPIO_WritePin(REG_PWR_ON_GPIO_PORT, REG_PWR_ON_PIN, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(POWER_OFF_GPIO_PORT, POWER_OFF_PIN, GPIO_PIN_SET);
 
   battery_state_init();
+  set_fuse_config(FUSE_50_AMPERE);
+
+  HAL_GPIO_WritePin(REG_PWR_ON_GPIO_PORT, REG_PWR_ON_PIN, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(POWER_OFF_GPIO_PORT, POWER_OFF_PIN, GPIO_PIN_SET);
 
   StaticTimer_t timer_buf;
   TimerHandle_t timer = xTimerCreateStatic(
@@ -82,20 +86,7 @@ void battery_monitor(void *unused) {
 
   xTimerStart(timer, portMAX_DELAY);
 
-  battery_state_t *battery_state = get_battery_state();
   adc_reading_t adc_reading;
-
-  // TODO: implement set_fuse_config() to configure HW fuses,
-  // use it to set over_current_threshold.
-  //
-  // TODO: calculate the maximum measured reg_out_current based on the jumper
-  // config, use it to set a better over_current_threshold that considers the
-  // reg_out_current separately from the vbat_out_current.
-  //
-  // We might detect false positives if the jumper config is set to detect low
-  // currents but the actual currents are much higher. Nevertheless, the largest
-  // part of the total current is the vbat_out_current.
-  const uint32_t over_current_threshold = 49500;
 
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
@@ -109,18 +100,6 @@ void battery_monitor(void *unused) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for DMA
 
     update_battery_state(&adc_reading);
-
-    // Check if over current or low voltage protection has triggered.
-    if (battery_state->charge == LOW_VOLTAGE_CUTOFF ||
-        battery_state->over_current_fault ||
-        battery_state->reg_out_current + battery_state->vbat_out_current >
-            over_current_threshold) {
-      // Turn off the power outputs to reduce the battery power drain.
-      HAL_GPIO_WritePin(REG_PWR_ON_GPIO_PORT, REG_PWR_ON_PIN, GPIO_PIN_SET);
-      HAL_GPIO_WritePin(POWER_OFF_GPIO_PORT, POWER_OFF_PIN, GPIO_PIN_RESET);
-      // Blink LEDs red to show user something is wrong.
-      blink_leds_red();
-    }
 
     update_pages();
   }
@@ -232,7 +211,8 @@ ck_letter_t frame_to_letter(CAN_RxHeaderTypeDef *header, uint8_t *data) {
 }
 
 void dispatch_letter(ck_letter_t *letter) {
-  peripherals_t *peripherals = get_peripherals();
+  ck_folder_t *folder = NULL;
+
   // Check for default letter
   if (ck_is_default_letter(letter) == CK_OK) {
     if (ck_default_letter_received() != CK_OK) {
@@ -240,12 +220,38 @@ void dispatch_letter(ck_letter_t *letter) {
     }
   }
   // Check for king's letter
-  if (ck_is_kings_envelope(&letter->envelope) == CK_OK) {
+  else if (ck_is_kings_envelope(&letter->envelope) == CK_OK) {
     if (ck_process_kings_letter(letter) != CK_OK) {
       print("failed to process king's letter.\r\n");
     }
   }
-  // TODO: implement other letters
+  // Check for any other letter
+  else if (ck_get_envelopes_folder(&letter->envelope, &folder) == CK_OK) {
+    if (handle_letter(folder, letter) != APP_OK) {
+      print("failed to process page.\r\n");
+    }
+  }
+}
+
+int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
+  ck_data_t *ck_data = get_ck_data();
+
+  if (folder->folder_no == ck_data->jumper_and_fuse_conf_folder->folder_no) {
+    return process_jumper_and_fuse_conf_letter(letter);
+  }
+  if (folder->folder_no == ck_data->reg_out_voltage_folder->folder_no) {
+    return process_reg_out_voltage_letter(letter);
+  }
+  if (folder->folder_no == ck_data->output_on_off_folder->folder_no) {
+    return process_output_on_off_letter(letter);
+  }
+  if (folder->folder_no == ck_data->report_freq_folder->folder_no) {
+    return process_report_freq_letter(letter);
+  }
+  if (folder->folder_no == ck_data->low_voltage_cutoff_folder->folder_no) {
+    return process_low_voltage_cutoff_letter(letter);
+  }
+  return APP_OK;
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
