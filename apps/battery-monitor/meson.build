@@ -3,6 +3,7 @@ battery_monitor_src = files(
   'src' / 'adc.c',
   'src' / 'battery.c',
   'src' / 'ck-data.c',
+  'src' / 'ck-rx-letters.c',
   'src' / 'freertos-tasks.c',
   'src' / 'interrupts.c',
   'src' / 'led.c',
