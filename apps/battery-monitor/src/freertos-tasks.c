@@ -156,8 +156,7 @@ void process_letter(void *unused) {
   for (;;) {
     if (HAL_CAN_ActivateNotification(&peripherals->common_peripherals->hcan,
                                      CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) {
-      print(&peripherals->common_peripherals->huart1,
-            "Error activating interrupt.\r\n");
+      print("Error activating interrupt.\r\n");
       error();
     }
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -166,8 +165,7 @@ void process_letter(void *unused) {
     while (HAL_CAN_GetRxMessage(&peripherals->common_peripherals->hcan,
                                 CAN_RX_FIFO0, &header, data) == HAL_OK) {
       if (ck_correct_letter_received() != CK_OK) {
-        print(&peripherals->common_peripherals->huart1,
-              "CAN Kingdom error in ck_correct_letter_received().\r\n");
+        print("CAN Kingdom error in ck_correct_letter_received().\r\n");
       }
       letter = frame_to_letter(&header, data);
       dispatch_letter(&letter);
@@ -205,16 +203,15 @@ void update_pages(void) {
 
 void send_docs(void) {
   ck_data_t *ck_data = get_ck_data();
-  peripherals_t *peripherals = get_peripherals();
 
   if (ck_send_document(ck_data->cell_folder->folder_no) != CK_OK) {
-    print(&peripherals->common_peripherals->huart1, "failed to send doc.\r\n");
+    print("failed to send doc.\r\n");
   }
   if (ck_send_document(ck_data->reg_out_current_folder->folder_no) != CK_OK) {
-    print(&peripherals->common_peripherals->huart1, "failed to send doc.\r\n");
+    print("failed to send doc.\r\n");
   }
   if (ck_send_document(ck_data->vbat_out_current_folder->folder_no) != CK_OK) {
-    print(&peripherals->common_peripherals->huart1, "failed to send doc.\r\n");
+    print("failed to send doc.\r\n");
   }
 }
 
@@ -239,15 +236,13 @@ void dispatch_letter(ck_letter_t *letter) {
   // Check for default letter
   if (ck_is_default_letter(letter) == CK_OK) {
     if (ck_default_letter_received() != CK_OK) {
-      print(&peripherals->common_peripherals->huart1,
-            "CAN Kingdom error in ck_default_letter_received().\r\n");
+      print("CAN Kingdom error in ck_default_letter_received().\r\n");
     }
   }
   // Check for king's letter
   if (ck_is_kings_envelope(&letter->envelope) == CK_OK) {
     if (ck_process_kings_letter(letter) != CK_OK) {
-      print(&peripherals->common_peripherals->huart1,
-            "failed to process king's letter.\r\n");
+      print("failed to process king's letter.\r\n");
     }
   }
   // TODO: implement other letters

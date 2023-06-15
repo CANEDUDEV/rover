@@ -59,8 +59,7 @@ int main(void) {
       xTaskCreateStatic(sbus_read, "sbus read", configMINIMAL_STACK_SIZE, NULL,
                         TASK_PRIORITY, sbus_read_stack, &sbus_read_buffer);
 
-  print(&peripherals->common_peripherals->huart1,
-        "Starting application...\r\n");
+  print("Starting application...\r\n");
 
   // Start scheduler
   vTaskStartScheduler();

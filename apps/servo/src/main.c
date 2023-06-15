@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <string.h>
 
 #include "app.h"
@@ -64,8 +63,7 @@ int main(void) {
 
   can_message_queue = xQueueCreate(CAN_MESSAGE_QUEUE_LENGTH, sizeof(CANFrame));
 
-  print(&peripherals->common_peripherals->huart1,
-        "Starting application...\r\n");
+  print("Starting application...\r\n");
 
   // Start scheduler
   vTaskStartScheduler();
