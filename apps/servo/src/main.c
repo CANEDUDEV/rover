@@ -9,7 +9,6 @@
 
 // FreeRTOS
 #include "FreeRTOS.h"
-#include "queue.h"
 #include "task.h"
 #include "timers.h"
 
@@ -21,17 +20,9 @@ static peripherals_t *peripherals;
 #define POWER_MEASURE_TASK_PERIOD_MS 100
 #define TASK_PRIORITY 24
 
-#define CAN_MESSAGE_QUEUE_LENGTH 10
-
-QueueHandle_t can_message_queue;
-
 static TaskHandle_t pwm_task;
 static StaticTask_t pwm_buffer;
 static StackType_t pwm_stack[configMINIMAL_STACK_SIZE];
-
-static TaskHandle_t can_tx_task;
-static StaticTask_t can_tx_buffer;
-static StackType_t can_tx_stack[configMINIMAL_STACK_SIZE];
 
 static TaskHandle_t power_measure_task;
 static StaticTask_t power_measure_buffer;
@@ -61,8 +52,6 @@ int main(void) {
 
   task_init();
 
-  can_message_queue = xQueueCreate(CAN_MESSAGE_QUEUE_LENGTH, sizeof(CANFrame));
-
   print("Starting application...\r\n");
 
   // Start scheduler
@@ -77,13 +66,9 @@ void task_init(void) {
   pwm_task = xTaskCreateStatic(pwm, "pwm", configMINIMAL_STACK_SIZE, NULL,
                                TASK_PRIORITY, pwm_stack, &pwm_buffer);
 
-  can_tx_task =
-      xTaskCreateStatic(can_tx, "can tx", configMINIMAL_STACK_SIZE, NULL,
-                        TASK_PRIORITY, can_tx_stack, &can_tx_buffer);
-
   power_measure_task = xTaskCreateStatic(
       power_measure, "power measure", configMINIMAL_STACK_SIZE, NULL,
-      TASK_PRIORITY, power_measure_stack, &power_measure_buffer);
+      TASK_PRIORITY - 1, power_measure_stack, &power_measure_buffer);
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
@@ -107,57 +92,6 @@ void power_measure_timer(TimerHandle_t xTimer) {
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void mailbox_free_callback(CAN_HandleTypeDef *_hcan) {
-  // Only notify when going from 0 free mailboxes to 1 free
-  if (HAL_CAN_GetTxMailboxesFreeLevel(_hcan) <= 1) {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    vTaskNotifyGiveFromISR(can_tx_task, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-  }
-}
-
-void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *_hcan) {
-  mailbox_free_callback(_hcan);
-}
-
-void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *_hcan) {
-  mailbox_free_callback(_hcan);
-}
-
-void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *_hcan) {
-  mailbox_free_callback(_hcan);
-}
-
-void can_tx(void *argument) {
-  UNUSED(argument);
-
-  HAL_CAN_ActivateNotification(&peripherals->common_peripherals->hcan,
-                               CAN_IT_TX_MAILBOX_EMPTY);
-  HAL_CAN_Start(&peripherals->common_peripherals->hcan);
-
-  uint32_t mailbox = 0;
-
-  for (;;) {
-    if (HAL_CAN_GetTxMailboxesFreeLevel(
-            &peripherals->common_peripherals->hcan) == 0) {
-      // Wait for mailbox to become available
-      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    }
-
-    CANFrame frame;
-    // Wait for queue to receive message
-    xQueueReceive(can_message_queue, &frame, portMAX_DELAY);
-
-    CAN_TxHeaderTypeDef header = {
-        .StdId = frame.id,
-        .DLC = frame.dlc,
-    };
-
-    HAL_CAN_AddTxMessage(&peripherals->common_peripherals->hcan, &header,
-                         frame.data, &mailbox);
-  }
-}
-
 void power_measure(void *argument) {
   UNUSED(argument);
 
@@ -172,11 +106,23 @@ void power_measure(void *argument) {
   uint16_t adc1Buf[4];
   uint16_t adc2Buf[4];
 
+  uint32_t mailbox = 0;
+
+  CAN_TxHeaderTypeDef can_headers[5];  // NOLINT
+
+  for (uint8_t i = 0; i < 5; i++) {  // NOLINT
+    can_headers[i].IDE = CAN_ID_STD;
+    can_headers[i].RTR = CAN_RTR_DATA;
+  }
+
   CANFrame sensorPowerMessage;
   CANFrame servoCurrentMessage;
   CANFrame batteryVoltageMessage;
   CANFrame vccServoVoltageMessage;
   CANFrame hBridgeWindingCurrentMessage;
+
+  CAN_HandleTypeDef *hcan = &peripherals->common_peripherals->hcan;
+  HAL_CAN_Start(hcan);
 
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
@@ -197,11 +143,38 @@ void power_measure(void *argument) {
     ADCToHBridgeWindingCurrentMessage(adc2Buf[1],
                                       &hBridgeWindingCurrentMessage);
 
-    xQueueSendToBack(can_message_queue, &sensorPowerMessage, 0);
-    xQueueSendToBack(can_message_queue, &servoCurrentMessage, 0);
-    xQueueSendToBack(can_message_queue, &batteryVoltageMessage, 0);
-    xQueueSendToBack(can_message_queue, &vccServoVoltageMessage, 0);
-    xQueueSendToBack(can_message_queue, &hBridgeWindingCurrentMessage, 0);
+    can_headers[0].DLC = sensorPowerMessage.dlc;
+    can_headers[0].StdId = sensorPowerMessage.id;
+
+    can_headers[1].DLC = servoCurrentMessage.dlc;
+    can_headers[1].StdId = servoCurrentMessage.id;
+
+    can_headers[2].DLC = batteryVoltageMessage.dlc;
+    can_headers[2].StdId = batteryVoltageMessage.id;
+
+    can_headers[3].DLC = vccServoVoltageMessage.dlc;
+    can_headers[3].StdId = vccServoVoltageMessage.id;
+
+    can_headers[4].DLC = hBridgeWindingCurrentMessage.dlc;
+    can_headers[4].StdId = hBridgeWindingCurrentMessage.id;
+
+    while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) < 3) {
+      // Busy loop, wait until ready to send 3 messages
+    }
+    HAL_CAN_AddTxMessage(hcan, &can_headers[0], sensorPowerMessage.data,
+                         &mailbox);
+    HAL_CAN_AddTxMessage(hcan, &can_headers[1], servoCurrentMessage.data,
+                         &mailbox);
+    HAL_CAN_AddTxMessage(hcan, &can_headers[2], batteryVoltageMessage.data,
+                         &mailbox);
+
+    while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) < 2) {
+      // Busy loop, wait until ready to send another 2 messages
+    }
+    HAL_CAN_AddTxMessage(hcan, &can_headers[3], vccServoVoltageMessage.data,
+                         &mailbox);
+    HAL_CAN_AddTxMessage(hcan, &can_headers[4],
+                         hBridgeWindingCurrentMessage.data, &mailbox);
   }
 }
 
