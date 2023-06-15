@@ -48,3 +48,6 @@ freertos_src = files(
   'FreeRTOS' / 'Source' / 'portable/MemMang/heap_4.c',
   'FreeRTOS' / 'Source' / 'portable/GCC/ARM_CM4F/port.c',
 )
+
+printf_inc = include_directories('printf')
+printf_src = files('printf' / 'printf.c')
