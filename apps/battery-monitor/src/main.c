@@ -49,8 +49,7 @@ int main(void) {
   task_init();
   mayor_init();
 
-  print(&peripherals->common_peripherals->huart1,
-        "Starting application...\r\n");
+  print("Starting application...\r\n");
 
   // Start scheduler
   vTaskStartScheduler();
@@ -87,8 +86,7 @@ void mayor_init(void) {
   };
 
   if (ck_mayor_init(&mayor) != CK_OK) {
-    print(&peripherals->common_peripherals->huart1,
-          "Error setting up mayor.\r\n");
+    print("Error setting up mayor.\r\n");
     error();
   }
 }
@@ -97,8 +95,7 @@ void default_letter_timer_callback(TimerHandle_t timer) {
   (void)timer;
 
   if (ck_default_letter_timeout() != CK_OK) {
-    print(&peripherals->common_peripherals->huart1,
-          "CAN Kingdom error in ck_default_letter_timeout().\r\n");
+    print("CAN Kingdom error in ck_default_letter_timeout().\r\n");
   }
 }
 

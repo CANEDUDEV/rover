@@ -2,6 +2,10 @@
 
 #include <string.h>
 
-void print(UART_HandleTypeDef *huart, char *str) {
-  HAL_UART_Transmit_IT(huart, (uint8_t *)str, strlen(str));
+#include "common-peripherals.h"
+
+void print(char *str) {
+  common_peripherals_t *common_peripherals = get_common_peripherals();
+  HAL_UART_Transmit(&common_peripherals->huart1, (uint8_t *)str, strlen(str),
+                    HAL_MAX_DELAY);
 }

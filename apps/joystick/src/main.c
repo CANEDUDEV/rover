@@ -43,7 +43,7 @@ int main(void) {
 
   task_init();
 
-  print(&peripherals->common_peripherals->huart1, "Starting application...\n");
+  print("Starting application...\n");
 
   // Start scheduler
   vTaskStartScheduler();
