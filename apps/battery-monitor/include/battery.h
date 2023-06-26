@@ -18,7 +18,7 @@ extern "C" {
 // Define some charge states in mV. Based on LiPo batteries. Assumes maximum
 // cell voltage of 4200 mV and a low voltage cutoff at 3200 mV.
 typedef enum {
-  LOW_VOLTAGE_CUTOFF = 3200,
+  CHARGE_0_PERCENT = 3200,
   CHARGE_20_PERCENT = 3400,
   CHARGE_40_PERCENT = 3600,
   CHARGE_60_PERCENT = 3800,
@@ -33,10 +33,13 @@ typedef struct {
   charge_t charge;
   bool over_current_fault;  // Set to true by GPIO external interrupt on the
                             // OVER_CURRENT pin.
+  bool low_voltage_fault;
 
   uint32_t over_current_threshold;  // At what value the over_current_fault will
                                     // trigger from software. Defaults to fuse
                                     // config - 500mA.
+
+  uint16_t low_voltage_cutoff;  // In mV.
 } battery_state_t;
 
 // Values in mA.
@@ -46,6 +49,7 @@ typedef enum {
 } fuse_config_t;
 
 void battery_state_init(void);
+void battery_state_reset(void);
 battery_state_t *get_battery_state(void);
 void set_fuse_config(fuse_config_t fuse_config);
 void set_over_current_threshold(uint32_t threshold);

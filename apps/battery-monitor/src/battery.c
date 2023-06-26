@@ -9,9 +9,6 @@
 #include "ports.h"
 #include "potentiometer.h"
 
-// STM32 Common
-#include "print.h"
-
 // CK
 #include "mayor.h"
 
@@ -25,17 +22,24 @@ static battery_state_t battery_state;
 void update_battery_charge(void);
 void update_battery_leds(void);
 void send_docs(void);
-charge_t lowest_cell(const charge_t *cell_charge);
+bool is_low_voltage(void);
+uint16_t *get_lowest_cell(void);
 
 void battery_state_init(void) {
+  battery_state_reset();
+  battery_state.low_voltage_cutoff = CHARGE_0_PERCENT;
+  set_fuse_config(FUSE_100_AMPERE);
+}
+
+void battery_state_reset(void) {
   for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
-    battery_state.cells[i] = 0;
+    battery_state.cells[i] = CHARGE_100_PERCENT;
   }
   battery_state.reg_out_current = 0;
   battery_state.vbat_out_current = 0;
   battery_state.charge = CHARGE_100_PERCENT;
   battery_state.over_current_fault = false;
-  set_fuse_config(FUSE_100_AMPERE);
+  battery_state.low_voltage_fault = false;
 }
 
 battery_state_t *get_battery_state(void) { return &battery_state; }
@@ -67,30 +71,41 @@ void set_over_current_threshold(uint32_t threshold) {
 }
 
 void update_battery_state(const adc_reading_t *adc_reading) {
-  for (int i = 0; i < 4; i++) {
-    battery_state.cells[i] = adc_to_cell_voltage(adc_reading->adc1_buf[i]);
+  GPIO_PinState power_on = HAL_GPIO_ReadPin(POWER_ON_GPIO_PORT, POWER_ON_PIN);
+
+  // Measurement depends on power on state. Measuring during power off state
+  // will give wrong readings.
+  if (power_on == GPIO_PIN_SET) {
+    for (int i = 0; i < 4; i++) {
+      battery_state.cells[i] = adc_to_cell_voltage(adc_reading->adc1_buf[i]);
+    }
+    // NOLINTBEGIN(*-magic-numbers)
+    battery_state.cells[4] = adc_to_cell_voltage(adc_reading->adc2_buf[0]);
+    battery_state.cells[5] = adc_to_cell_voltage(adc_reading->adc2_buf[1]);
+    // NOLINTEND(*-magic-numbers)
+    battery_state.reg_out_current =
+        adc_to_reg_out_current(adc_reading->adc2_buf[2]);
+    battery_state.vbat_out_current =
+        adc_to_vbat_out_current(adc_reading->adc2_buf[3]);
+
+    update_battery_charge();
+    update_battery_leds();
+
+    if (is_low_voltage()) {
+      battery_state.low_voltage_fault = true;
+    }
+
+    // Check if over current threshold
+    if (battery_state.reg_out_current + battery_state.vbat_out_current >
+        battery_state.over_current_threshold) {
+      battery_state.over_current_fault = true;
+    }
   }
-  // NOLINTBEGIN(*-magic-numbers)
-  battery_state.cells[4] = adc_to_cell_voltage(adc_reading->adc2_buf[0]);
-  battery_state.cells[5] = adc_to_cell_voltage(adc_reading->adc2_buf[1]);
-  // NOLINTEND(*-magic-numbers)
-  battery_state.reg_out_current =
-      adc_to_reg_out_current(adc_reading->adc2_buf[2]);
-  battery_state.vbat_out_current =
-      adc_to_vbat_out_current(adc_reading->adc2_buf[3]);
 
-  update_battery_charge();
-  update_battery_leds();
-
-  // Check if over current or low voltage protection has triggered.
-  uint32_t current =
-      battery_state.reg_out_current + battery_state.vbat_out_current;
-  if (battery_state.charge == LOW_VOLTAGE_CUTOFF ||
-      battery_state.over_current_fault ||
-      current > battery_state.over_current_threshold) {
-    // Turn off the power outputs to reduce the battery power drain.
-    HAL_GPIO_WritePin(REG_PWR_ON_GPIO_PORT, REG_PWR_ON_PIN, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(POWER_OFF_GPIO_PORT, POWER_OFF_PIN, GPIO_PIN_RESET);
+  // Turn off main power on faults.
+  if (battery_state.low_voltage_fault || battery_state.over_current_fault) {
+    // Turn off the power outputs
+    HAL_GPIO_WritePin(POWER_ON_GPIO_PORT, POWER_ON_PIN, GPIO_PIN_RESET);
     // Blink LEDs red to show user something is wrong.
     blink_leds_red();
   }
@@ -98,53 +113,48 @@ void update_battery_state(const adc_reading_t *adc_reading) {
 
 // Always report lowest detected charge to detect the most discharged cell.
 void update_battery_charge(void) {
-  charge_t cell_charges[BATTERY_CELLS_MAX];
-  for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
-    // If cell is not connected, we report it as fully charged to not use its
-    // values in the low voltage detection logic.
-    if (battery_state.cells[i] < BATTERY_CELL_DETECTION_THRESHOLD) {
-      cell_charges[i] = CHARGE_100_PERCENT;
-      continue;
-    }
+  uint16_t *lowest_cell = get_lowest_cell();
 
-    if (battery_state.cells[i] <= LOW_VOLTAGE_CUTOFF) {
-      cell_charges[i] = LOW_VOLTAGE_CUTOFF;
-    } else if (battery_state.cells[i] <= CHARGE_20_PERCENT) {
-      cell_charges[i] = CHARGE_20_PERCENT;
-    } else if (battery_state.cells[i] <= CHARGE_40_PERCENT) {
-      cell_charges[i] = CHARGE_40_PERCENT;
-    } else if (battery_state.cells[i] <= CHARGE_60_PERCENT) {
-      cell_charges[i] = CHARGE_60_PERCENT;
-    } else if (battery_state.cells[i] <= CHARGE_80_PERCENT) {
-      cell_charges[i] = CHARGE_80_PERCENT;
-    } else {
-      cell_charges[i] = CHARGE_100_PERCENT;
-    }
+  // If no cells are connected for some reason
+  if (!lowest_cell) {
+    return;
   }
 
-  // Only update state if lower than previous, to avoid blinking leds when
-  // somewhere in-between charge states.
-  charge_t lowest = lowest_cell(cell_charges);
+  charge_t lowest = CHARGE_100_PERCENT;
+
+  if (*lowest_cell <= CHARGE_0_PERCENT) {
+    lowest = CHARGE_0_PERCENT;
+  } else if (*lowest_cell <= CHARGE_20_PERCENT) {
+    lowest = CHARGE_20_PERCENT;
+  } else if (*lowest_cell <= CHARGE_40_PERCENT) {
+    lowest = CHARGE_40_PERCENT;
+  } else if (*lowest_cell <= CHARGE_60_PERCENT) {
+    lowest = CHARGE_60_PERCENT;
+  } else if (*lowest_cell <= CHARGE_80_PERCENT) {
+    lowest = CHARGE_80_PERCENT;
+  }
+
+  // Charge state update logic
+  const uint8_t report_limit = 10;
+  static uint8_t report_count = 0;
+
+  // Don't update charge state until we're sure it's a charge difference and not
+  // an outlier.
   if (lowest < battery_state.charge) {
+    report_count++;
+  }
+
+  if (report_count >= report_limit) {
+    report_count = 0;
     battery_state.charge = lowest;
   }
 }
 
 void update_battery_leds(void) {
   switch (battery_state.charge) {
-    case CHARGE_100_PERCENT:
-      set_led_color(LED6, GREEN);
-      set_led_color(LED7, GREEN);
-      break;
-
-    case CHARGE_80_PERCENT:
-      set_led_color(LED6, GREEN);
+    case CHARGE_0_PERCENT:
+      set_led_color(LED6, RED);
       set_led_color(LED7, NONE);
-      break;
-
-    case CHARGE_60_PERCENT:
-      set_led_color(LED6, ORANGE);
-      set_led_color(LED7, ORANGE);
       break;
 
     case CHARGE_40_PERCENT:
@@ -157,21 +167,58 @@ void update_battery_leds(void) {
       set_led_color(LED7, RED);
       break;
 
-    case LOW_VOLTAGE_CUTOFF:  // Ignore, LED should be handled elsewhere
+    case CHARGE_60_PERCENT:
+      set_led_color(LED6, ORANGE);
+      set_led_color(LED7, ORANGE);
+      break;
+
+    case CHARGE_80_PERCENT:
+      set_led_color(LED6, GREEN);
+      set_led_color(LED7, NONE);
+      break;
+
+    case CHARGE_100_PERCENT:
+      set_led_color(LED6, GREEN);
+      set_led_color(LED7, GREEN);
+      break;
+
     default:
       break;
   }
 }
 
-charge_t lowest_cell(const charge_t *cell_charge) {
-  charge_t lowest = CHARGE_100_PERCENT;
-  for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
-    // Comparison based on enum ordering
-    if (cell_charge[i] < lowest) {
-      lowest = cell_charge[i];
+bool is_low_voltage(void) {
+  uint16_t *lowest_cell = get_lowest_cell();
+  if (!lowest_cell) {
+    return false;
+  }
+  const uint8_t report_limit = 10;
+  static uint8_t report_count = 0;
+  if (*lowest_cell < battery_state.low_voltage_cutoff) {
+    report_count++;
+  }
+  if (report_count >= report_limit) {
+    report_count = 0;
+    return true;
+  }
+  return false;
+}
+
+uint16_t *get_lowest_cell(void) {
+  uint16_t lowest_charge = CHARGE_100_PERCENT;
+  uint16_t *lowest_cell = NULL;
+  for (uint8_t i = 0; i < BATTERY_CELLS_MAX; i++) {
+    // If cell is not connected, do not use its values in the low voltage
+    // detection logic.
+    if (battery_state.cells[i] < BATTERY_CELL_DETECTION_THRESHOLD) {
+      continue;
+    }
+    if (battery_state.cells[i] < lowest_charge) {
+      lowest_charge = battery_state.cells[i];
+      lowest_cell = &battery_state.cells[i];
     }
   }
-  return lowest;
+  return lowest_cell;
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_PIN) {

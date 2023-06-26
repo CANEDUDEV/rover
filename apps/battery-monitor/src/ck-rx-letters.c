@@ -6,7 +6,7 @@
 #include "battery.h"
 #include "error.h"
 #include "peripherals.h"
-#include "print.h"
+#include "ports.h"
 
 // 7 bytes in page
 //
@@ -60,9 +60,38 @@ int process_reg_out_voltage_letter(const ck_letter_t *letter) {
   return APP_OK;
 }
 
+// 2 bytes in page
+//
+// byte 0: reg out on/off, set to 0 for OFF, 1 for ON, all other values are
+// ignored byte 1: power on/off, set to 0 for OFF, 1 for ON, all other values
+// are ignored
 int process_output_on_off_letter(const ck_letter_t *letter) {
   if (letter->page.line_count != 2) {
     return APP_NOT_OK;
+  }
+  uint8_t reg_out = letter->page.lines[0];
+  uint8_t power_out = letter->page.lines[1];
+
+  switch (reg_out) {
+    case 0:
+      HAL_GPIO_WritePin(REG_POWER_OFF_GPIO_PORT, REG_POWER_OFF_PIN,
+                        GPIO_PIN_SET);
+      break;
+
+    case 1:
+      HAL_GPIO_WritePin(REG_POWER_OFF_GPIO_PORT, REG_POWER_OFF_PIN,
+                        GPIO_PIN_RESET);
+      break;
+  }
+  switch (power_out) {
+    case 0:
+      HAL_GPIO_WritePin(POWER_ON_GPIO_PORT, POWER_ON_PIN, GPIO_PIN_RESET);
+      break;
+
+    case 1:
+      battery_state_reset();
+      HAL_GPIO_WritePin(POWER_ON_GPIO_PORT, POWER_ON_PIN, GPIO_PIN_SET);
+      break;
   }
   return APP_OK;
 }
@@ -74,9 +103,19 @@ int process_report_freq_letter(const ck_letter_t *letter) {
   return APP_OK;
 }
 
+// 2 bytes in page
+//
+// bytes 0-1: low voltage cutoff value in mV. 16-bit number where byte 0 is MSB
+// and byte 1 is LSB.
 int process_low_voltage_cutoff_letter(const ck_letter_t *letter) {
   if (letter->page.line_count != 2) {
     return APP_NOT_OK;
   }
+
+  battery_state_t *battery_state = get_battery_state();
+
+  memcpy(&battery_state->low_voltage_cutoff, letter->page.lines,
+         sizeof(battery_state->low_voltage_cutoff));
+
   return APP_OK;
 }
