@@ -1,7 +1,12 @@
 from binascii import hexlify
 from canlib import canlib
+import sys
 
-with canlib.openChannel(channel=0, flags=canlib.Open.NO_INIT_ACCESS) as ch:
+flags = canlib.Open.NO_INIT_ACCESS
+if len(sys.argv) > 1 and sys.argv[1] == "set-bitrate":
+    flags = canlib.Open.REQUIRE_INIT_ACCESS
+
+with canlib.openChannel(channel=0, flags=flags, bitrate=canlib.canBITRATE_125K) as ch:
     ch.busOn()
     while True:
         try:
