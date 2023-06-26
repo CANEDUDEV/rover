@@ -74,8 +74,8 @@ void battery_monitor(void *unused) {
   battery_state_init();
   set_fuse_config(FUSE_50_AMPERE);
 
-  HAL_GPIO_WritePin(REG_PWR_ON_GPIO_PORT, REG_PWR_ON_PIN, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(POWER_OFF_GPIO_PORT, POWER_OFF_PIN, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(REG_POWER_OFF_GPIO_PORT, REG_POWER_OFF_PIN, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(POWER_ON_GPIO_PORT, POWER_ON_PIN, GPIO_PIN_SET);
 
   StaticTimer_t timer_buf;
   TimerHandle_t timer = xTimerCreateStatic(
