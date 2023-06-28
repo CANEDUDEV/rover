@@ -5,6 +5,7 @@
 #include "adc.h"
 #include "battery.h"
 #include "error.h"
+#include "freertos-tasks.h"
 #include "peripherals.h"
 #include "ports.h"
 
@@ -96,10 +97,26 @@ int process_output_on_off_letter(const ck_letter_t *letter) {
   return APP_OK;
 }
 
+// 4 bytes in page
+//
+// bytes 0-1: battery monitoring period in ms, i.e. how often to measure voltage
+// and current. This affects how often low voltage/over current is checked.
+// bytes 2-3: battery reporting period in ms, i.e. how often to send
+// measurements over CAN.
 int process_report_freq_letter(const ck_letter_t *letter) {
   if (letter->page.line_count != 4) {
     return APP_NOT_OK;
   }
+  task_periods_t periods;
+
+  memcpy(&periods.battery_monitor_period_ms, letter->page.lines,
+         sizeof(periods.battery_monitor_period_ms));
+
+  memcpy(&periods.battery_report_period_ms, &letter->page.lines[2],
+         sizeof(periods.battery_report_period_ms));
+
+  set_task_periods(&periods);
+
   return APP_OK;
 }
 

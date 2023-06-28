@@ -18,6 +18,7 @@ with canlib.openChannel(
     ch.writeWait(battery.assign_folder4, -1)
     ch.writeWait(battery.assign_folder5, -1)
     ch.writeWait(battery.assign_folder7, -1)
+    ch.writeWait(battery.assign_folder8, -1)
     ch.writeWait(battery.assign_folder9, -1)
     ch.writeWait(ck.communicate, -1)
 
@@ -45,3 +46,8 @@ with canlib.openChannel(
     ch.writeWait(battery.set_3200mv_cutoff, -1)
     ch.writeWait(battery.set_pwr_on, -1)
     sleep(2)
+
+    # This will cause two reports in a row to have the same measurements.
+    ch.writeWait(battery.set_monitor_freq_500ms, -1)
+    sleep(2)
+    ch.writeWait(battery.set_report_freq_1000ms, -1)
