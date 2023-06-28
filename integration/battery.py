@@ -14,6 +14,9 @@ assign_folder4 = Frame(id_=0, dlc=8, data=[0, 2, 2, 1, 0, 0, 4, 0x3])
 # Assign envelope 0x103 to folder 5
 assign_folder5 = Frame(id_=0, dlc=8, data=[0, 2, 3, 1, 0, 0, 5, 0x3])
 
+# Assign envelope 0x104 to folder 6
+assign_folder6 = Frame(id_=0, dlc=8, data=[0, 2, 4, 1, 0, 0, 6, 0x3])
+
 # Assign envelope 0x105 to folder 7
 assign_folder7 = Frame(id_=0, dlc=8, data=[0, 2, 5, 1, 0, 0, 7, 0x3])
 

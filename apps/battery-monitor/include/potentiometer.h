@@ -7,8 +7,9 @@ extern "C" {
 
 #include "stm32f3xx_hal.h"
 
-#define POTENTIOMETER_ADDRESS \
-  (0x53 << 1)  // Shift left to match STM32 specification
+// Shift left to match STM32 specification
+#define POTENTIOMETER_ADDRESS (0x53 << 1)
+// Potentiometer terminal A i2c address
 #define POTENTIOMETER_IVRA_ADDRESS 0x0
 #define POTENTIOMETER_IVRA_DEFAULT 40  // Default potentiometer value
 

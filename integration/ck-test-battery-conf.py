@@ -17,6 +17,7 @@ with canlib.openChannel(
     ch.writeWait(battery.assign_folder3, -1)
     ch.writeWait(battery.assign_folder4, -1)
     ch.writeWait(battery.assign_folder5, -1)
+    ch.writeWait(battery.assign_folder6, -1)
     ch.writeWait(battery.assign_folder7, -1)
     ch.writeWait(battery.assign_folder8, -1)
     ch.writeWait(battery.assign_folder9, -1)

@@ -8,6 +8,7 @@
 #include "freertos-tasks.h"
 #include "peripherals.h"
 #include "ports.h"
+#include "potentiometer.h"
 
 // 7 bytes in page
 //
@@ -49,15 +50,21 @@ int process_jumper_and_fuse_conf_letter(const ck_letter_t *letter) {
   return APP_OK;
 }
 
-// 2 bytes in page
+// 1 bytes in page
 //
-// bytes 0-1: Desired voltage for the regulated out voltage port in mV. 16-bit
-// number where byte 0 is MSB and byte 1 is LSB. Voltage will be regulated as
-// close as possible to desired voltage.
+// byte 0: potentiometer value. Higher value gives a lower output voltage.
+//
+// Potentiometer = 0xFF => 3270 mV
+// For 2 cell battery: potentiometer = 0 => 7610 mV
+// For 4 cell battery: potentiometer = 0 => 12510 mV
 int process_reg_out_voltage_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 2) {
+  if (letter->page.line_count != 1) {
     return APP_NOT_OK;
   }
+
+  peripherals_t *peripherals = get_peripherals();
+  configure_potentiometer(&peripherals->hi2c1, letter->page.lines[0]);
+
   return APP_OK;
 }
 
