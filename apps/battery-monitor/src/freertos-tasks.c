@@ -1,3 +1,5 @@
+#include "freertos-tasks.h"
+
 #include <string.h>
 
 #include "adc.h"
@@ -21,9 +23,14 @@
 #include "task.h"
 #include "timers.h"
 
-#define BATTERY_MONITOR_TASK_PERIOD_MS 20
-#define BATTERY_REPORT_TASK_PERIOD_MS 200
+#define BATTERY_MONITOR_DEFAULT_PERIOD_MS 20
+#define BATTERY_REPORT_DEFAULT_PERIOD_MS 200
 #define LOWEST_TASK_PRIORITY 24
+
+static task_periods_t task_periods = {
+    .battery_monitor_period_ms = BATTERY_MONITOR_DEFAULT_PERIOD_MS,
+    .battery_report_period_ms = BATTERY_REPORT_DEFAULT_PERIOD_MS,
+};
 
 static TaskHandle_t battery_monitor_task;
 static StaticTask_t battery_monitor_buf;
@@ -63,6 +70,15 @@ void task_init(void) {
       LOWEST_TASK_PRIORITY + 2, process_letter_stack, &process_letter_buf);
 }
 
+void set_task_periods(task_periods_t *periods) {
+  if (periods->battery_monitor_period_ms != 0) {
+    task_periods.battery_monitor_period_ms = periods->battery_monitor_period_ms;
+  }
+  if (periods->battery_report_period_ms != 0) {
+    task_periods.battery_report_period_ms = periods->battery_report_period_ms;
+  }
+}
+
 void battery_monitor(void *unused) {
   (void)unused;
 
@@ -78,17 +94,20 @@ void battery_monitor(void *unused) {
   HAL_GPIO_WritePin(POWER_ON_GPIO_PORT, POWER_ON_PIN, GPIO_PIN_SET);
 
   StaticTimer_t timer_buf;
-  TimerHandle_t timer = xTimerCreateStatic(
-      "battery monitor timer", pdMS_TO_TICKS(BATTERY_MONITOR_TASK_PERIOD_MS),
-      pdTRUE,  // Auto reload timer
-      NULL,    // Timer ID, unused
-      battery_monitor_timer, &timer_buf);
-
-  xTimerStart(timer, portMAX_DELAY);
+  TimerHandle_t timer =
+      xTimerCreateStatic("battery monitor timer",
+                         pdMS_TO_TICKS(task_periods.battery_monitor_period_ms),
+                         pdFALSE,  // Don't auto reload timer
+                         NULL,     // Timer ID, unused
+                         battery_monitor_timer, &timer_buf);
 
   adc_reading_t adc_reading;
 
   for (;;) {
+    // This starts the timer with the set period
+    xTimerChangePeriod(timer,
+                       pdMS_TO_TICKS(task_periods.battery_monitor_period_ms),
+                       portMAX_DELAY);
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
 
     // Start both ADCs
@@ -109,15 +128,18 @@ void battery_report(void *unused) {
   (void)unused;
 
   StaticTimer_t timer_buf;
-  TimerHandle_t timer = xTimerCreateStatic(
-      "battery report timer", pdMS_TO_TICKS(BATTERY_REPORT_TASK_PERIOD_MS),
-      pdTRUE,  // Auto reload timer
-      NULL,    // Timer ID, unused
-      battery_report_timer, &timer_buf);
-
-  xTimerStart(timer, portMAX_DELAY);
+  TimerHandle_t timer =
+      xTimerCreateStatic("battery report timer",
+                         pdMS_TO_TICKS(task_periods.battery_report_period_ms),
+                         pdFALSE,  // Don't auto reload timer
+                         NULL,     // Timer ID, unused
+                         battery_report_timer, &timer_buf);
 
   for (;;) {
+    // This starts the timer with the set period
+    xTimerChangePeriod(timer,
+                       pdMS_TO_TICKS(task_periods.battery_report_period_ms),
+                       portMAX_DELAY);
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
     send_docs();
   }
