@@ -75,7 +75,7 @@ void ADCToBatteryVoltageMessage(uint16_t adcValue, CANFrame *frame) {
   const uint32_t numerator = Vout * (47000 + 6200);
   const uint32_t denominator = 6200;
   uint16_t Vbat = (uint16_t)(numerator / denominator);
-  memcpy(frame->data, &Vbat, sizeof(adcValue));
+  memcpy(frame->data, &Vbat, sizeof(Vbat));
 }
 
 /* Voltage divider with R1 = 39kOhm and R2 = 15kOhm
@@ -89,7 +89,7 @@ void ADCToVCCServoVoltageMessage(uint16_t adcValue, CANFrame *frame) {
   const uint32_t numerator = Vout * (39000 + 15000);
   const uint32_t denominator = 15000;
   uint16_t Vbat = (uint16_t)(numerator / denominator);  // Vbat in mV
-  memcpy(frame->data, &Vbat, sizeof(adcValue));
+  memcpy(frame->data, &Vbat, sizeof(Vbat));
 }
 
 /* DRV8801 datasheet specifies the max output current as 2.8A.

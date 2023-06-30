@@ -73,9 +73,12 @@ void task_init(void) {
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
   UNUSED(hadc);
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(power_measure_task, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  // Only notify when the second ADC has finished
+  if (hadc->Instance == ADC2) {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(power_measure_task, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  }
 }
 
 void pwm_timer(TimerHandle_t xTimer) {
@@ -103,8 +106,8 @@ void power_measure(void *argument) {
 
   xTimerStart(xTimer, portMAX_DELAY);
 
-  uint16_t adc1Buf[4];
-  uint16_t adc2Buf[4];
+  uint16_t adc1Buf[3];
+  uint16_t adc2Buf[2];
 
   uint32_t mailbox = 0;
 
@@ -137,8 +140,8 @@ void power_measure(void *argument) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     ADCToSensorPowerMessage(adc1Buf[0], &sensorPowerMessage);
-    ADCToServoCurrentMessage(adc1Buf[2], &servoCurrentMessage);
-    ADCToBatteryVoltageMessage(adc1Buf[3], &batteryVoltageMessage);
+    ADCToServoCurrentMessage(adc1Buf[1], &servoCurrentMessage);
+    ADCToBatteryVoltageMessage(adc1Buf[2], &batteryVoltageMessage);
     ADCToVCCServoVoltageMessage(adc2Buf[0], &vccServoVoltageMessage);
     ADCToHBridgeWindingCurrentMessage(adc2Buf[1],
                                       &hBridgeWindingCurrentMessage);
