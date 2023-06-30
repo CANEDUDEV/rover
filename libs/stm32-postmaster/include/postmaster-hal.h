@@ -11,6 +11,9 @@ extern "C" {
 void postmaster_init(CAN_HandleTypeDef *hcan);
 CAN_HandleTypeDef *get_can_handle(void);
 
+// Convert HAL CAN frame to ck_letter_t.
+ck_letter_t frame_to_letter(CAN_RxHeaderTypeDef *header, uint8_t *data);
+
 #ifdef __cplusplus
 }
 #endif

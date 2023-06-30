@@ -13,6 +13,7 @@
 
 // STM32Common
 #include "error.h"
+#include "postmaster-hal.h"
 #include "print.h"
 
 // CK
@@ -52,7 +53,6 @@ void battery_monitor_timer(TimerHandle_t timer);
 void battery_report_timer(TimerHandle_t timer);
 void update_pages(void);
 void send_docs(void);
-ck_letter_t frame_to_letter(CAN_RxHeaderTypeDef *header, uint8_t *data);
 void dispatch_letter(ck_letter_t *letter);
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
 
@@ -214,22 +214,6 @@ void send_docs(void) {
   if (ck_send_document(ck_data->vbat_out_current_folder->folder_no) != CK_OK) {
     print("failed to send doc.\r\n");
   }
-}
-
-// Convert HAL CAN frame to ck_letter_t.
-ck_letter_t frame_to_letter(CAN_RxHeaderTypeDef *header, uint8_t *data) {
-  ck_letter_t letter;
-  letter.envelope.is_remote = header->RTR;
-  letter.envelope.has_extended_id = header->IDE;
-  if (letter.envelope.has_extended_id) {
-    letter.envelope.envelope_no = header->ExtId;
-  } else {
-    letter.envelope.envelope_no = header->StdId;
-  }
-  letter.envelope.is_compressed = false;
-  letter.page.line_count = header->DLC;
-  memcpy(letter.page.lines, data, header->DLC);
-  return letter;
 }
 
 void dispatch_letter(ck_letter_t *letter) {
