@@ -66,9 +66,14 @@ void folder_init(void) {
   ck_data.battery_voltage_folder = &ck_data.folders[4];
   ck_data.servo_voltage_folder = &ck_data.folders[5];
   ck_data.h_bridge_current_folder = &ck_data.folders[6];
+  ck_data.set_servo_voltage_folder = &ck_data.folders[7];
+  ck_data.pwm_conf_folder = &ck_data.folders[8];
+  ck_data.steering_folder = &ck_data.folders[9];
+  ck_data.report_freq_folder = &ck_data.folders[10];
+  // NOLINTEND(*-magic-numbers)
 
   // Set up the transmit folders
-  for (int i = 2; i < 2 + 5; i++) {  // 5 transmit folders
+  for (int i = 2; i < 2 + CK_DATA_TX_FOLDER_COUNT; i++) {
     ck_data.folders[i].folder_no = i;
     ck_data.folders[i].direction = CK_DIRECTION_TRANSMIT;
     ck_data.folders[i].doc_list_no = 0;
@@ -76,5 +81,20 @@ void folder_init(void) {
     ck_data.folders[i].enable = true;
     ck_data.folders[i].dlc = 2;
   }
+
+  // Set up the receive folders
+  for (int i = 2 + CK_DATA_TX_FOLDER_COUNT; i < CK_DATA_FOLDER_COUNT; i++) {
+    ck_data.folders[i].folder_no = i;
+    ck_data.folders[i].direction = CK_DIRECTION_RECEIVE;
+    ck_data.folders[i].doc_list_no = 0;
+    ck_data.folders[i].enable = true;
+    ck_data.folders[i].doc_no = i - (2 + CK_DATA_TX_FOLDER_COUNT);
+  }
+
+  // NOLINTBEGIN(*-magic-numbers)
+  ck_data.set_servo_voltage_folder->dlc = 2;
+  ck_data.pwm_conf_folder->dlc = 6;
+  ck_data.steering_folder->dlc = 3;
+  ck_data.report_freq_folder->dlc = 4;
   // NOLINTEND(*-magic-numbers)
 }

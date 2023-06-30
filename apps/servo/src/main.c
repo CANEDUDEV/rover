@@ -1,13 +1,13 @@
 #include "ck-data.h"
 #include "freertos-tasks.h"
 #include "peripherals.h"
+#include "potentiometer.h"
 
 // CK
 #include "mayor.h"
 #include "postmaster-hal.h"
 
-// STM32COmmon
-#include "app.h"
+// STM32Common
 #include "clock.h"
 #include "error.h"
 #include "print.h"
@@ -35,6 +35,13 @@ int main(void) {
 
   // Initialize all configured peripherals
   peripherals_init();
+
+  // Configure potentiometers
+  configure_servo_potentiometer(POT_SERVO_DEFAULT);
+  configure_sensor_potentiometer(POT_SENSOR_DEFAULT);
+
+  peripherals_t *peripherals = get_peripherals();
+  HAL_TIM_PWM_Start(&peripherals->htim1, TIM_CHANNEL_4);
 
   task_init();
   mayor_init();

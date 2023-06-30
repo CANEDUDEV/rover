@@ -10,11 +10,6 @@
 extern "C" {
 #endif
 
-// Some definitions for PWM
-#define PWM_PSC_1MHZ (72 - 1)
-#define PWM_PERIOD_50HZ (20000 - 1)
-#define PWM_MID_POS_PULSE ((PWM_PERIOD_50HZ / 10 + PWM_PERIOD_50HZ / 20) / 2)
-
 #include "common-peripherals.h"
 #include "stm32f3xx_hal.h"
 

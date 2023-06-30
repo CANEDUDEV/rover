@@ -1,4 +1,3 @@
-
 #ifndef CK_RX_LETTERS_H
 #define CK_RX_LETTERS_H
 
