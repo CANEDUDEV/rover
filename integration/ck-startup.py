@@ -38,6 +38,10 @@ with canlib.openChannel(
         ch.writeWait(servo.assign_folder4, -1)
         ch.writeWait(servo.assign_folder5, -1)
         ch.writeWait(servo.assign_folder6, -1)
+        ch.writeWait(servo.assign_folder7, -1)
+        ch.writeWait(servo.assign_folder8, -1)
+        ch.writeWait(servo.assign_folder9, -1)
+        ch.writeWait(servo.assign_folder10, -1)
 
     ch.writeWait(ck.communicate, -1)
     ch.busOff()

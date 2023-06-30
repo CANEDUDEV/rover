@@ -3,8 +3,8 @@
 #include <string.h>
 
 #include "adc.h"
-#include "app.h"
 #include "ck-data.h"
+#include "ck-rx-letters.h"
 #include "peripherals.h"
 #include "potentiometer.h"
 
@@ -23,69 +23,71 @@
 #include "task.h"
 #include "timers.h"
 
-#define PWM_TASK_PERIOD_MS 20
-#define POWER_MEASURE_TASK_PERIOD_MS 100
-#define TASK_PRIORITY 24
+#define MEASURE_DEFAULT_PERIOD_MS 20
+#define REPORT_DEFAULT_PERIOD_MS 100
+#define LOWEST_TASK_PRIORITY 24
 
-static TaskHandle_t pwm_task;
-static StaticTask_t pwm_buffer;
-static StackType_t pwm_stack[configMINIMAL_STACK_SIZE];
+task_periods_t task_periods = {
+    .measure_period_ms = MEASURE_DEFAULT_PERIOD_MS,
+    .report_period_ms = REPORT_DEFAULT_PERIOD_MS,
+};
 
-static TaskHandle_t power_measure_task;
-static StaticTask_t power_measure_buffer;
-static StackType_t power_measure_stack[configMINIMAL_STACK_SIZE];
+static TaskHandle_t measure_task;
+static StaticTask_t measure_buffer;
+static StackType_t measure_stack[configMINIMAL_STACK_SIZE];
+
+static TaskHandle_t report_task;
+static StaticTask_t report_buffer;
+static StackType_t report_stack[configMINIMAL_STACK_SIZE];
 
 // CAN Kingdom process received letters task
 static TaskHandle_t process_letter_task;
 static StaticTask_t process_letter_buf;
 static StackType_t process_letter_stack[configMINIMAL_STACK_SIZE];
 
+void measure(void *unused);
+void report(void *unused);
 void process_letter(void *unused);
-void pwm(void *unused);
-void power_measure(void *unused);
+void measure_timer(TimerHandle_t timer);
+void report_timer(TimerHandle_t timer);
 
 void send_docs(void);
 void dispatch_letter(ck_letter_t *letter);
+int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
 
 void task_init(void) {
-  pwm_task = xTaskCreateStatic(pwm, "pwm", configMINIMAL_STACK_SIZE, NULL,
-                               TASK_PRIORITY + 1, pwm_stack, &pwm_buffer);
+  measure_task = xTaskCreateStatic(measure, "measure", configMINIMAL_STACK_SIZE,
+                                   NULL, LOWEST_TASK_PRIORITY + 1,
+                                   measure_stack, &measure_buffer);
 
-  power_measure_task = xTaskCreateStatic(
-      power_measure, "power measure", configMINIMAL_STACK_SIZE, NULL,
-      TASK_PRIORITY, power_measure_stack, &power_measure_buffer);
+  report_task =
+      xTaskCreateStatic(report, "report", configMINIMAL_STACK_SIZE, NULL,
+                        LOWEST_TASK_PRIORITY, report_stack, &report_buffer);
 
   process_letter_task = xTaskCreateStatic(
       process_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
-      TASK_PRIORITY + 2, process_letter_stack, &process_letter_buf);
+      LOWEST_TASK_PRIORITY + 2, process_letter_stack, &process_letter_buf);
 }
 
-void pwm_timer(TimerHandle_t xTimer) {
-  UNUSED(xTimer);
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(pwm_task, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+void set_task_periods(task_periods_t *periods) {
+  if (periods->measure_period_ms != 0) {
+    task_periods.measure_period_ms = periods->measure_period_ms;
+  }
+  if (periods->report_period_ms != 0) {
+    task_periods.report_period_ms = periods->report_period_ms;
+  }
 }
 
-void power_measure_timer(TimerHandle_t xTimer) {
-  UNUSED(xTimer);
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(power_measure_task, &xHigherPriorityTaskWoken);
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
-void power_measure(void *unused) {
-  UNUSED(unused);
+void measure(void *unused) {
+  (void)unused;
 
   peripherals_t *peripherals = get_peripherals();
 
-  TimerHandle_t xTimer = xTimerCreate(
-      "power measure timer", pdMS_TO_TICKS(POWER_MEASURE_TASK_PERIOD_MS),
-      pdTRUE,  // Auto reload timer
-      NULL,    // Timer ID, unused
-      power_measure_timer);
-
-  xTimerStart(xTimer, portMAX_DELAY);
+  TimerHandle_t timer = xTimerCreate(
+      "measure timer", pdMS_TO_TICKS(task_periods.measure_period_ms),
+      pdFALSE,  // Don't auto reload timer
+      NULL,     // Timer ID, unused
+      measure_timer);
 
   uint16_t adc1Buf[3];
   uint16_t adc2Buf[2];
@@ -98,6 +100,7 @@ void power_measure(void *unused) {
   uint16_t h_bridge_current = 0;
 
   for (;;) {
+    xTimerChangePeriod(timer, task_periods.measure_period_ms, portMAX_DELAY);
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
 
     // Start both ADCs
@@ -124,33 +127,22 @@ void power_measure(void *unused) {
            sizeof(servo_voltage));
     memcpy(ck_data->h_bridge_current_page->lines, &h_bridge_current,
            sizeof(h_bridge_current));
-
-    send_docs();
   }
 }
 
-void pwm(void *unused) {
-  UNUSED(unused);
+void report(void *unused) {
+  (void)unused;
 
-  peripherals_t *peripherals = get_peripherals();
-
-  configure_servo_potentiometer(POT_SERVO_DEFAULT);
-
-  TimerHandle_t xTimer =
-      xTimerCreate("pwm timer", pdMS_TO_TICKS(PWM_TASK_PERIOD_MS),
-                   pdTRUE,  // Auto reload timer
-                   NULL,    // Timer ID, unused
-                   pwm_timer);
-
-  xTimerStart(xTimer, portMAX_DELAY);
-  HAL_TIM_PWM_Start(&peripherals->htim1, TIM_CHANNEL_4);
-
-  uint32_t pulse = PWM_MID_POS_PULSE;
-  STEERING_DIRECTION direction = LEFT;
+  TimerHandle_t timer =
+      xTimerCreate("report timer", pdMS_TO_TICKS(task_periods.report_period_ms),
+                   pdFALSE,  // Don't auto reload timer
+                   NULL,     // Timer ID, unused
+                   report_timer);
 
   for (;;) {
+    xTimerChangePeriod(timer, task_periods.report_period_ms, portMAX_DELAY);
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
-    UpdatePWMDutyCycle(&pulse, &direction);
+    send_docs();
   }
 }
 
@@ -183,6 +175,16 @@ void process_letter(void *unused) {
   }
 }
 
+void measure_timer(TimerHandle_t timer) {
+  (void)timer;
+  xTaskNotifyGive(measure_task);
+}
+
+void report_timer(TimerHandle_t timer) {
+  (void)timer;
+  xTaskNotifyGive(report_task);
+}
+
 void send_docs(void) {
   ck_data_t *ck_data = get_ck_data();
 
@@ -204,7 +206,7 @@ void send_docs(void) {
 }
 
 void dispatch_letter(ck_letter_t *letter) {
-  // ck_folder_t *folder = NULL;
+  ck_folder_t *folder = NULL;
 
   // Check for default letter
   if (ck_is_default_letter(letter) == CK_OK) {
@@ -219,15 +221,37 @@ void dispatch_letter(ck_letter_t *letter) {
     }
   }
   // Check for any other letter
-  // TODO
+  else if (ck_get_envelopes_folder(&letter->envelope, &folder) == CK_OK) {
+    if (handle_letter(folder, letter) != APP_OK) {
+      print("failed to process page.\r\n");
+    }
+  }
+}
+
+int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
+  ck_data_t *ck_data = get_ck_data();
+
+  if (folder->folder_no == ck_data->set_servo_voltage_folder->folder_no) {
+    return process_set_servo_voltage_letter(letter);
+  }
+  if (folder->folder_no == ck_data->pwm_conf_folder->folder_no) {
+    return process_pwm_conf_letter(letter);
+  }
+  if (folder->folder_no == ck_data->steering_folder->folder_no) {
+    return process_steering_letter(letter);
+  }
+  if (folder->folder_no == ck_data->report_freq_folder->folder_no) {
+    return process_report_freq_letter(letter);
+  }
+  return APP_OK;
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-  UNUSED(hadc);
+  (void)hadc;
   // Only notify when the second ADC has finished
   if (hadc->Instance == ADC2) {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    vTaskNotifyGiveFromISR(power_measure_task, &xHigherPriorityTaskWoken);
+    vTaskNotifyGiveFromISR(measure_task, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   }
 }

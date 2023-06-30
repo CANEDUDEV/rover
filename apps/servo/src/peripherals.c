@@ -6,6 +6,11 @@
 #define DMA1_Channel1_IRQ_PRIORITY 5
 #define DMA2_Channel1_IRQ_PRIORITY 5
 
+// Some definitions for PWM
+#define PWM_PSC_1MHZ (72 - 1)
+#define PWM_PERIOD_50HZ (20000 - 1)
+#define PWM_MID_POS_PULSE ((PWM_PERIOD_50HZ / 10 + PWM_PERIOD_50HZ / 20) / 2)
+
 static peripherals_t peripherals;
 
 static uint32_t HAL_RCC_ADC12_CLK_ENABLED = 0;
