@@ -85,7 +85,7 @@ void battery_monitor(void *unused) {
   peripherals_t *peripherals = get_peripherals();
 
   set_jumper_config(ALL_ON);
-  configure_potentiometer(&peripherals->hi2c1, POTENTIOMETER_IVRA_DEFAULT);
+  configure_potentiometer(POTENTIOMETER_IVRA_DEFAULT);
 
   battery_state_init();
   set_fuse_config(FUSE_50_AMPERE);

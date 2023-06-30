@@ -6,6 +6,7 @@
 #include "app.h"
 #include "ck-data.h"
 #include "peripherals.h"
+#include "potentiometer.h"
 
 // STM32Common
 #include "error.h"
@@ -132,6 +133,8 @@ void pwm(void *unused) {
   UNUSED(unused);
 
   peripherals_t *peripherals = get_peripherals();
+
+  configure_servo_potentiometer(POT_SERVO_DEFAULT);
 
   TimerHandle_t xTimer =
       xTimerCreate("pwm timer", pdMS_TO_TICKS(PWM_TASK_PERIOD_MS),
