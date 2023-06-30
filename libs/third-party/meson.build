@@ -49,5 +49,9 @@ freertos_src = files(
   'FreeRTOS' / 'Source' / 'portable/GCC/ARM_CM4F/port.c',
 )
 
-printf_inc = include_directories('printf')
+printf_inc = include_directories(
+  'printf',
+  is_system: true,
+)
+
 printf_src = files('printf' / 'printf.c')
