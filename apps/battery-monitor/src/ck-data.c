@@ -61,14 +61,15 @@ void list_init(void) {
   ck_data.rx_list->type = CK_LIST_DOCUMENT;
   ck_data.rx_list->direction = CK_DIRECTION_RECEIVE;
   ck_data.rx_list->list_no = 0;
-  ck_data.rx_list->record_count = 1;  // Only 1 slot, for the king's doc.
+  ck_data.rx_list->record_count =
+      CK_DATA_RX_DOC_COUNT + 1;  // 1 slot reserved for the king's doc.
 
   ck_data.tx_list->type = CK_LIST_DOCUMENT;
   ck_data.tx_list->direction = CK_DIRECTION_TRANSMIT;
   ck_data.tx_list->list_no = 0;
 
-  // We have 3 documents, and CK needs 1 slot for the mayor's doc.
-  ck_data.tx_list->record_count = 4;
+  // CK needs 1 slot for the mayor's doc.
+  ck_data.tx_list->record_count = CK_DATA_TX_DOC_COUNT + 1;
   ck_data.tx_list->records[1] = ck_data.cell_doc;
   ck_data.tx_list->records[2] = ck_data.reg_out_current_doc;
   ck_data.tx_list->records[3] = ck_data.vbat_out_current_doc;
@@ -84,9 +85,10 @@ void folder_init(void) {
   ck_data.output_on_off_folder = &ck_data.folders[7];
   ck_data.report_freq_folder = &ck_data.folders[8];
   ck_data.low_voltage_cutoff_folder = &ck_data.folders[9];
+  // NOLINTEND(*-magic-numbers)
 
   // Set up the transmit folders
-  for (int i = 2; i < 5; i++) {
+  for (int i = 2; i < 2 + CK_DATA_TX_FOLDER_COUNT; i++) {
     ck_data.folders[i].folder_no = i;
     ck_data.folders[i].direction = CK_DIRECTION_TRANSMIT;
     ck_data.folders[i].doc_list_no = 0;
@@ -100,12 +102,15 @@ void folder_init(void) {
   ck_data.vbat_out_current_folder->dlc = sizeof(uint32_t);
 
   // Set up the receive folders
-  for (int i = 5; i < CK_DATA_FOLDER_COUNT; i++) {
+  uint8_t rx_doc_no = 0;  // Start counting from 0
+  for (int i = 2 + CK_DATA_TX_FOLDER_COUNT; i < CK_DATA_FOLDER_COUNT; i++) {
     ck_data.folders[i].folder_no = i;
     ck_data.folders[i].direction = CK_DIRECTION_RECEIVE;
     ck_data.folders[i].doc_list_no = 1;
-    ck_data.folders[i].doc_no = i - 5;
+    ck_data.folders[i].doc_no = rx_doc_no;
     ck_data.folders[i].enable = true;
+
+    rx_doc_no++;
   }
 
   ck_data.jumper_and_fuse_conf_folder->dlc =
@@ -114,5 +119,4 @@ void folder_init(void) {
   ck_data.output_on_off_folder->dlc = 2 * sizeof(uint8_t);
   ck_data.report_freq_folder->dlc = sizeof(uint32_t);
   ck_data.low_voltage_cutoff_folder->dlc = sizeof(uint16_t);
-  // NOLINTEND(*-magic-numbers)
 }

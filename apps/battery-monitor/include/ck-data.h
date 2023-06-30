@@ -8,15 +8,19 @@ extern "C" {
 
 #include "types.h"
 
-// Don't need to add receive documents, only receive folders.
-#define CK_DATA_PAGE_COUNT 4
-#define CK_DATA_DOC_COUNT 3
+#define CK_DATA_TX_PAGE_COUNT 4
+#define CK_DATA_TX_DOC_COUNT 3
+#define CK_DATA_RX_DOC_COUNT 5
 #define CK_DATA_LIST_COUNT 2
-#define CK_DATA_FOLDER_COUNT 10
+#define CK_DATA_TX_FOLDER_COUNT CK_DATA_TX_DOC_COUNT
+#define CK_DATA_RX_FOLDER_COUNT CK_DATA_RX_DOC_COUNT
+#define CK_DATA_FOLDER_COUNT \
+  (2 + CK_DATA_TX_FOLDER_COUNT + CK_DATA_RX_FOLDER_COUNT)
 
 typedef struct {
-  ck_page_t pages[CK_DATA_PAGE_COUNT];
-  ck_document_t docs[CK_DATA_DOC_COUNT];
+  // Don't need to store receive docs and receive pages.
+  ck_page_t pages[CK_DATA_TX_PAGE_COUNT];
+  ck_document_t docs[CK_DATA_TX_DOC_COUNT];
   ck_list_t lists[CK_DATA_LIST_COUNT];
   ck_folder_t folders[CK_DATA_FOLDER_COUNT];
 

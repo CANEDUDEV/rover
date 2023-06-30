@@ -16,12 +16,6 @@
 #include "FreeRTOS.h"
 #include "timers.h"
 
-// Hardware
-static peripherals_t *peripherals;
-
-// CK data
-ck_data_t *ck_data;
-
 // For the CK startup sequence timer
 StaticTimer_t default_letter_timer_buf;
 TimerHandle_t default_letter_timer;
@@ -32,10 +26,6 @@ void mayor_init(void);
 ck_err_t set_action_mode(ck_action_mode_t mode);
 ck_err_t set_city_mode(ck_city_mode_t mode);
 
-/**
- * @brief  The application entry point.
- * @retval int
- */
 int main(void) {
   // Reset of all peripherals, Initializes the Flash interface and the Systick.
   HAL_Init();
@@ -44,7 +34,6 @@ int main(void) {
 
   // Initialize all configured peripherals
   peripherals_init();
-  peripherals = get_peripherals();
 
   task_init();
   mayor_init();
@@ -60,9 +49,7 @@ int main(void) {
 }
 
 void mayor_init(void) {
-  ck_data_init();
-  ck_data = get_ck_data();
-
+  peripherals_t *peripherals = get_peripherals();
   postmaster_init(
       &peripherals->common_peripherals->hcan);  // Set up the postmaster
 
@@ -71,6 +58,9 @@ void mayor_init(void) {
       pdFALSE,  // Auto reload timer
       NULL,     // Timer ID, unused
       default_letter_timer_callback, &default_letter_timer_buf);
+
+  ck_data_init();
+  ck_data_t *ck_data = get_ck_data();
 
   ck_mayor_t mayor = {
       .ean_no = 123,       // NOLINT(*-magic-numbers)
