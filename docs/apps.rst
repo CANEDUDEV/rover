@@ -36,7 +36,7 @@ The reference application takes CAN messages and converts them into PWM output.
 It also measures the servo voltage and the servo current draw, then reports
 them over CAN.
 
-.. doxygenfile:: apps/servo/include/app.h
+.. doxygenfile:: apps/servo/include/adc.h
    :project: Rover
 
 .. _sbus:

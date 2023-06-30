@@ -1,6 +1,8 @@
 servo_inc = include_directories('include')
 servo_src = files(
+  'src' / 'adc.c',
   'src' / 'app.c',
+  'src' / 'ck-data.c',
   'src' / 'interrupts.c',
   'src' / 'main.c',
   'src' / 'peripherals.c',
