@@ -62,9 +62,7 @@ int process_reg_out_voltage_letter(const ck_letter_t *letter) {
     return APP_NOT_OK;
   }
 
-  peripherals_t *peripherals = get_peripherals();
-  configure_potentiometer(&peripherals->hi2c1, letter->page.lines[0]);
-
+  configure_potentiometer(letter->page.lines[0]);
   return APP_OK;
 }
 

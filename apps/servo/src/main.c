@@ -36,8 +36,6 @@ int main(void) {
   // Initialize all configured peripherals
   peripherals_init();
 
-  InitPotentiometers();
-
   task_init();
   mayor_init();
 

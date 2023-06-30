@@ -7,6 +7,7 @@ servo_src = files(
   'src' / 'interrupts.c',
   'src' / 'main.c',
   'src' / 'peripherals.c',
+  'src' / 'potentiometer.c',
 )
 
 servo_elf = executable(

@@ -18,7 +18,6 @@ typedef enum {
   RIGHT,
 } STEERING_DIRECTION;
 
-void InitPotentiometers(void);
 void UpdatePWMDutyCycle(uint32_t *pulse, STEERING_DIRECTION *direction);
 
 #ifdef __cplusplus
