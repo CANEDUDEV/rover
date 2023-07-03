@@ -28,6 +28,17 @@ void gpio_init(void) {
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  HAL_GPIO_WritePin(VDD_IO_LEVEL_GPIO_PORT, VDD_IO_LEVEL_PIN, GPIO_PIN_RESET);
+
+  GPIO_InitTypeDef gpio_init_struct;
+  gpio_init_struct.Pin = VDD_IO_LEVEL_PIN;
+  gpio_init_struct.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio_init_struct.Pull = GPIO_NOPULL;
+  gpio_init_struct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(VDD_IO_LEVEL_GPIO_PORT, &gpio_init_struct);
+
+  HAL_GPIO_WritePin(VDD_IO_LEVEL_GPIO_PORT, VDD_IO_LEVEL_PIN, GPIO_PIN_SET);
 }
 
 void uart2_init(void) {
