@@ -89,8 +89,8 @@ void measure(void *unused) {
       NULL,     // Timer ID, unused
       measure_timer);
 
-  uint16_t adc1Buf[3];
-  uint16_t adc2Buf[2];
+  uint16_t adc1_buf[3];
+  uint16_t adc2_buf[2];
   ck_data_t *ck_data = get_ck_data();
 
   uint16_t sensor_power = 0;
@@ -104,19 +104,19 @@ void measure(void *unused) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
 
     // Start both ADCs
-    HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc1Buf,
-                      sizeof(adc1Buf) / sizeof(uint16_t));
-    HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc2Buf,
-                      sizeof(adc2Buf) / sizeof(uint16_t));
+    HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc1_buf,
+                      sizeof(adc1_buf) / sizeof(uint16_t));
+    HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc2_buf,
+                      sizeof(adc2_buf) / sizeof(uint16_t));
 
     // Wait for DMA
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    sensor_power = adc_to_sensor_power(adc1Buf[0]);
-    servo_current = adc_to_servo_current(adc1Buf[1]);
-    battery_voltage = adc_to_battery_voltage(adc1Buf[2]);
-    servo_voltage = adc_to_servo_voltage(adc2Buf[0]);
-    h_bridge_current = adc_to_h_bridge_current(adc2Buf[1]);
+    sensor_power = adc_to_sensor_power(adc1_buf[0]);
+    servo_current = adc_to_servo_current(adc1_buf[1]);
+    battery_voltage = adc_to_battery_voltage(adc1_buf[2]);
+    servo_voltage = adc_to_servo_voltage(adc2_buf[0]);
+    h_bridge_current = adc_to_h_bridge_current(adc2_buf[1]);
     memcpy(ck_data->sensor_power_page->lines, &sensor_power,
            sizeof(sensor_power));
     memcpy(ck_data->servo_current_page->lines, &servo_current,
