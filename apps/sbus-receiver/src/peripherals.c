@@ -107,7 +107,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart) {
     uart1_msp_init();
 
   } else if (huart->Instance == USART2) {
-    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitTypeDef gpio_init_struct;
     /* Peripheral clock enable */
     __HAL_RCC_USART2_CLK_ENABLE();
 
@@ -116,12 +116,12 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart) {
     PA2     ------> USART2_TX
     PA3     ------> USART2_RX
     */
-    GPIO_InitStruct.Pin = UART2_RX_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
-    HAL_GPIO_Init(UART2_GPIO_PORT, &GPIO_InitStruct);
+    gpio_init_struct.Pin = UART2_RX_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_AF_PP;
+    gpio_init_struct.Pull = GPIO_NOPULL;
+    gpio_init_struct.Speed = GPIO_SPEED_FREQ_HIGH;
+    gpio_init_struct.Alternate = GPIO_AF7_USART2;
+    HAL_GPIO_Init(UART2_GPIO_PORT, &gpio_init_struct);
 
     /* USART2 interrupt Init */
     HAL_NVIC_SetPriority(USART2_IRQn, USART2_IRQ_PRIORITY, 0);
