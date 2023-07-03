@@ -3,6 +3,7 @@ sbus_receiver_src = files(
   'src' / 'interrupts.c',
   'src' / 'main.c',
   'src' / 'peripherals.c',
+  'src' / 'sbus.c',
 )
 
 sbus_receiver_elf = executable(
