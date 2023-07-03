@@ -10,7 +10,7 @@
 
 static peripherals_t peripherals;
 
-static uint32_t HAL_RCC_ADC12_CLK_ENABLED = 0;
+static uint32_t hal_rcc_adc12_clk_enabled = 0;
 
 void adc1_init(void);
 void adc2_init(void);
@@ -324,8 +324,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
   GPIO_InitTypeDef gpio_init_struct;
   if (hadc->Instance == ADC1) {
     /* Peripheral clock enable */
-    HAL_RCC_ADC12_CLK_ENABLED++;
-    if (HAL_RCC_ADC12_CLK_ENABLED) {
+    hal_rcc_adc12_clk_enabled++;
+    if (hal_rcc_adc12_clk_enabled) {
       __HAL_RCC_ADC12_CLK_ENABLE();
     }
 
@@ -345,8 +345,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
 
   } else if (hadc->Instance == ADC2) {
     /* Peripheral clock enable */
-    HAL_RCC_ADC12_CLK_ENABLED++;
-    if (HAL_RCC_ADC12_CLK_ENABLED == 1) {
+    hal_rcc_adc12_clk_enabled++;
+    if (hal_rcc_adc12_clk_enabled == 1) {
       __HAL_RCC_ADC12_CLK_ENABLE();
     }
 
@@ -381,8 +381,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
 void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
   if (hadc->Instance == ADC1) {
     /* Peripheral clock disable */
-    HAL_RCC_ADC12_CLK_ENABLED--;
-    if (HAL_RCC_ADC12_CLK_ENABLED == 0) {
+    hal_rcc_adc12_clk_enabled--;
+    if (hal_rcc_adc12_clk_enabled == 0) {
       __HAL_RCC_ADC12_CLK_DISABLE();
     }
 
@@ -401,8 +401,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
 
   } else if (hadc->Instance == ADC2) {
     /* Peripheral clock disable */
-    HAL_RCC_ADC12_CLK_ENABLED--;
-    if (HAL_RCC_ADC12_CLK_ENABLED == 0) {
+    hal_rcc_adc12_clk_enabled--;
+    if (hal_rcc_adc12_clk_enabled == 0) {
       __HAL_RCC_ADC12_CLK_DISABLE();
     }
 
