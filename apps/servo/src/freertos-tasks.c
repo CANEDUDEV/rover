@@ -250,9 +250,9 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
   (void)hadc;
   // Only notify when the second ADC has finished
   if (hadc->Instance == ADC2) {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    vTaskNotifyGiveFromISR(measure_task, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    BaseType_t higher_priority_task_woken = pdFALSE;
+    vTaskNotifyGiveFromISR(measure_task, &higher_priority_task_woken);
+    portYIELD_FROM_ISR(higher_priority_task_woken);
   }
 }
 

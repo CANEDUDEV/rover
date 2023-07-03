@@ -9,11 +9,11 @@
 // Some definitions for PWM
 #define PWM_PSC_1MHZ (72 - 1)
 #define PWM_PERIOD_50HZ (20000 - 1)
-#define PWM_MID_POS_PULSE ((PWM_PERIOD_50HZ / 10 + PWM_PERIOD_50HZ / 20) / 2)
+#define PWM_MID_POS_PULSE 1500  // 1500 microseconds
 
 static peripherals_t peripherals;
 
-static uint32_t HAL_RCC_ADC12_CLK_ENABLED = 0;
+static uint32_t hal_rcc_adc12_clk_enabled = 0;
 
 void gpio_init(void);
 void dma_init(void);
@@ -45,7 +45,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim);
 void adc1_init(void) {
   ADC_HandleTypeDef* hadc1 = &peripherals.hadc1;
   ADC_MultiModeTypeDef multimode;
-  ADC_ChannelConfTypeDef sConfig;
+  ADC_ChannelConfTypeDef config;
 
   /** Common config
    */
@@ -76,29 +76,29 @@ void adc1_init(void) {
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_1;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.SamplingTime = ADC_SAMPLETIME_19CYCLES_5;
-  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-  sConfig.Offset = 0;
-  if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_1;
+  config.Rank = ADC_REGULAR_RANK_1;
+  config.SingleDiff = ADC_SINGLE_ENDED;
+  config.SamplingTime = ADC_SAMPLETIME_19CYCLES_5;
+  config.OffsetNumber = ADC_OFFSET_NONE;
+  config.Offset = 0;
+  if (HAL_ADC_ConfigChannel(hadc1, &config) != HAL_OK) {
     error();
   }
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_3;
-  sConfig.Rank = ADC_REGULAR_RANK_2;
-  if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_3;
+  config.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(hadc1, &config) != HAL_OK) {
     error();
   }
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_4;
-  sConfig.Rank = ADC_REGULAR_RANK_3;
-  if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_4;
+  config.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(hadc1, &config) != HAL_OK) {
     error();
   }
 
@@ -109,7 +109,7 @@ void adc1_init(void) {
 
 void adc2_init(void) {
   ADC_HandleTypeDef* hadc2 = &peripherals.hadc2;
-  ADC_ChannelConfTypeDef sConfig;
+  ADC_ChannelConfTypeDef config;
 
   /** Common config
    */
@@ -133,21 +133,21 @@ void adc2_init(void) {
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_1;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.SamplingTime = ADC_SAMPLETIME_19CYCLES_5;
-  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-  sConfig.Offset = 0;
-  if (HAL_ADC_ConfigChannel(hadc2, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_1;
+  config.Rank = ADC_REGULAR_RANK_1;
+  config.SingleDiff = ADC_SINGLE_ENDED;
+  config.SamplingTime = ADC_SAMPLETIME_19CYCLES_5;
+  config.OffsetNumber = ADC_OFFSET_NONE;
+  config.Offset = 0;
+  if (HAL_ADC_ConfigChannel(hadc2, &config) != HAL_OK) {
     error();
   }
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_2;
-  sConfig.Rank = ADC_REGULAR_RANK_2;
-  if (HAL_ADC_ConfigChannel(hadc2, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_2;
+  config.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(hadc2, &config) != HAL_OK) {
     error();
   }
 
@@ -235,10 +235,10 @@ void spi3_init(void) {
 
 void tim1_init(void) {
   TIM_HandleTypeDef* htim1 = &peripherals.htim1;
-  TIM_ClockConfigTypeDef sClockSourceConfig;
-  TIM_MasterConfigTypeDef sMasterConfig;
-  TIM_OC_InitTypeDef sConfigOC;
-  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
+  TIM_ClockConfigTypeDef clock_source_config;
+  TIM_MasterConfigTypeDef master_config;
+  TIM_OC_InitTypeDef config_oc;
+  TIM_BreakDeadTimeConfigTypeDef break_dead_time_config;
 
   htim1->Instance = TIM1;
   htim1->Init.Prescaler = PWM_PSC_1MHZ;
@@ -250,40 +250,40 @@ void tim1_init(void) {
   if (HAL_TIM_Base_Init(htim1) != HAL_OK) {
     error();
   }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(htim1, &sClockSourceConfig) != HAL_OK) {
+  clock_source_config.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(htim1, &clock_source_config) != HAL_OK) {
     error();
   }
   if (HAL_TIM_PWM_Init(htim1) != HAL_OK) {
     error();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(htim1, &sMasterConfig) != HAL_OK) {
+  master_config.MasterOutputTrigger = TIM_TRGO_RESET;
+  master_config.MasterOutputTrigger2 = TIM_TRGO2_RESET;
+  master_config.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(htim1, &master_config) != HAL_OK) {
     error();
   }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = PWM_MID_POS_PULSE;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
-  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  if (HAL_TIM_PWM_ConfigChannel(htim1, &sConfigOC, TIM_CHANNEL_4) != HAL_OK) {
+  config_oc.OCMode = TIM_OCMODE_PWM1;
+  config_oc.Pulse = PWM_MID_POS_PULSE;
+  config_oc.OCPolarity = TIM_OCPOLARITY_HIGH;
+  config_oc.OCFastMode = TIM_OCFAST_DISABLE;
+  config_oc.OCIdleState = TIM_OCIDLESTATE_RESET;
+  config_oc.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(htim1, &config_oc, TIM_CHANNEL_4) != HAL_OK) {
     error();
   }
-  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
-  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
-  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-  sBreakDeadTimeConfig.DeadTime = 0;
-  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
-  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-  sBreakDeadTimeConfig.BreakFilter = 0;
-  sBreakDeadTimeConfig.Break2State = TIM_BREAK2_DISABLE;
-  sBreakDeadTimeConfig.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
-  sBreakDeadTimeConfig.Break2Filter = 0;
-  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
-  if (HAL_TIMEx_ConfigBreakDeadTime(htim1, &sBreakDeadTimeConfig) != HAL_OK) {
+  break_dead_time_config.OffStateRunMode = TIM_OSSR_DISABLE;
+  break_dead_time_config.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  break_dead_time_config.LockLevel = TIM_LOCKLEVEL_OFF;
+  break_dead_time_config.DeadTime = 0;
+  break_dead_time_config.BreakState = TIM_BREAK_DISABLE;
+  break_dead_time_config.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  break_dead_time_config.BreakFilter = 0;
+  break_dead_time_config.Break2State = TIM_BREAK2_DISABLE;
+  break_dead_time_config.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
+  break_dead_time_config.Break2Filter = 0;
+  break_dead_time_config.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(htim1, &break_dead_time_config) != HAL_OK) {
     error();
   }
 
@@ -305,7 +305,7 @@ void dma_init(void) {
 }
 
 void gpio_init(void) {
-  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitTypeDef gpio_init_struct;
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOF_CLK_ENABLE();
@@ -332,39 +332,39 @@ void gpio_init(void) {
 
   /*Configure GPIO pins : DEBUG_LED_PIN H_BRIDGE_ENABLE_PIN H_BRIDGE_MODE1_PIN
    */
-  GPIO_InitStruct.Pin =
+  gpio_init_struct.Pin =
       DEBUG_LED_PIN | H_BRIDGE_ENABLE_PIN | H_BRIDGE_MODE1_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(DEBUG_LED_GPIO_PORT, &GPIO_InitStruct);
+  gpio_init_struct.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio_init_struct.Pull = GPIO_NOPULL;
+  gpio_init_struct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(DEBUG_LED_GPIO_PORT, &gpio_init_struct);
 
   /*Configure GPIO pins : H_BRIDDGE_MODE2_PIN H_BRIDGE_PHASE_PIN */
-  GPIO_InitStruct.Pin = H_BRIDDGE_MODE2_PIN | H_BRIDGE_PHASE_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(H_BRIDDGE_MODE2_GPIO_PORT, &GPIO_InitStruct);
+  gpio_init_struct.Pin = H_BRIDDGE_MODE2_PIN | H_BRIDGE_PHASE_PIN;
+  gpio_init_struct.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio_init_struct.Pull = GPIO_NOPULL;
+  gpio_init_struct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(H_BRIDDGE_MODE2_GPIO_PORT, &gpio_init_struct);
 
   /*Configure GPIO pin : H_BRIDGE_nSLEEP_PIN */
-  GPIO_InitStruct.Pin = H_BRIDGE_nSLEEP_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(H_BRIDGE_nSLEEP_GPIO_PORT, &GPIO_InitStruct);
+  gpio_init_struct.Pin = H_BRIDGE_nSLEEP_PIN;
+  gpio_init_struct.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio_init_struct.Pull = GPIO_NOPULL;
+  gpio_init_struct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(H_BRIDGE_nSLEEP_GPIO_PORT, &gpio_init_struct);
 
   /*Configure GPIO pin : H_BRIDGE_nFAULT_PIN */
-  GPIO_InitStruct.Pin = H_BRIDGE_nFAULT_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(H_BRIDGE_nFAULT_GPIO_PORT, &GPIO_InitStruct);
+  gpio_init_struct.Pin = H_BRIDGE_nFAULT_PIN;
+  gpio_init_struct.Mode = GPIO_MODE_INPUT;
+  gpio_init_struct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(H_BRIDGE_nFAULT_GPIO_PORT, &gpio_init_struct);
 
   /*Configure GPIO pin : SPI3_NSS_PIN */
-  GPIO_InitStruct.Pin = SPI3_NSS_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SPI3_NSS_GPIO_PORT, &GPIO_InitStruct);
+  gpio_init_struct.Pin = SPI3_NSS_PIN;
+  gpio_init_struct.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio_init_struct.Pull = GPIO_NOPULL;
+  gpio_init_struct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(SPI3_NSS_GPIO_PORT, &gpio_init_struct);
 }
 
 /* ADC1 DMA Init */
@@ -409,11 +409,11 @@ void adc2_dma_init(ADC_HandleTypeDef* hadc) {
  * @retval None
  */
 void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
-  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitTypeDef gpio_init_struct;
   if (hadc->Instance == ADC1) {
     /* Peripheral clock enable */
-    HAL_RCC_ADC12_CLK_ENABLED++;
-    if (HAL_RCC_ADC12_CLK_ENABLED == 1) {
+    hal_rcc_adc12_clk_enabled++;
+    if (hal_rcc_adc12_clk_enabled == 1) {
       __HAL_RCC_ADC12_CLK_ENABLE();
     }
 
@@ -423,17 +423,17 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     PA2     ------> ADC1_IN3
     PA3     ------> ADC1_IN4
     */
-    GPIO_InitStruct.Pin =
+    gpio_init_struct.Pin =
         SENSOR_POWER_PIN | SERVO_CURRENT_PIN | BAT_VOLTAGE_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(SENSOR_POWER_GPIO_PORT, &GPIO_InitStruct);
+    gpio_init_struct.Mode = GPIO_MODE_ANALOG;
+    gpio_init_struct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(SENSOR_POWER_GPIO_PORT, &gpio_init_struct);
     adc1_dma_init(hadc);
 
   } else if (hadc->Instance == ADC2) {
     /* Peripheral clock enable */
-    HAL_RCC_ADC12_CLK_ENABLED++;
-    if (HAL_RCC_ADC12_CLK_ENABLED == 1) {
+    hal_rcc_adc12_clk_enabled++;
+    if (hal_rcc_adc12_clk_enabled == 1) {
       __HAL_RCC_ADC12_CLK_ENABLE();
     }
 
@@ -442,10 +442,10 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     PA4     ------> ADC2_IN1
     PA5     ------> ADC2_IN2
     */
-    GPIO_InitStruct.Pin = VCC_SERVO_VOLTAGE_PIN | H_BRIDGE_VPROP_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(VCC_SERVO_VOLTAGE_GPIO_PORT, &GPIO_InitStruct);
+    gpio_init_struct.Pin = VCC_SERVO_VOLTAGE_PIN | H_BRIDGE_VPROP_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_ANALOG;
+    gpio_init_struct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(VCC_SERVO_VOLTAGE_GPIO_PORT, &gpio_init_struct);
     adc2_dma_init(hadc);
   }
 }
@@ -459,8 +459,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
 void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
   if (hadc->Instance == ADC1) {
     /* Peripheral clock disable */
-    HAL_RCC_ADC12_CLK_ENABLED--;
-    if (HAL_RCC_ADC12_CLK_ENABLED == 0) {
+    hal_rcc_adc12_clk_enabled--;
+    if (hal_rcc_adc12_clk_enabled == 0) {
       __HAL_RCC_ADC12_CLK_DISABLE();
     }
 
@@ -477,8 +477,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
 
   } else if (hadc->Instance == ADC2) {
     /* Peripheral clock disable */
-    HAL_RCC_ADC12_CLK_ENABLED--;
-    if (HAL_RCC_ADC12_CLK_ENABLED == 0) {
+    hal_rcc_adc12_clk_enabled--;
+    if (hal_rcc_adc12_clk_enabled == 0) {
       __HAL_RCC_ADC12_CLK_DISABLE();
     }
 
@@ -525,19 +525,19 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* hcan) {
  * @retval None
  */
 void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c) {
-  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitTypeDef gpio_init_struct;
   if (hi2c->Instance == I2C1) {
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**I2C1 GPIO Configuration
     PB6     ------> I2C1_SCL
     PB7     ------> I2C1_SDA
     */
-    GPIO_InitStruct.Pin = I2C1_SCL_PIN | I2C1_SDA_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
-    HAL_GPIO_Init(I2C1_SCL_GPIO_PORT, &GPIO_InitStruct);
+    gpio_init_struct.Pin = I2C1_SCL_PIN | I2C1_SDA_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_AF_OD;
+    gpio_init_struct.Pull = GPIO_NOPULL;
+    gpio_init_struct.Speed = GPIO_SPEED_FREQ_HIGH;
+    gpio_init_struct.Alternate = GPIO_AF4_I2C1;
+    HAL_GPIO_Init(I2C1_SCL_GPIO_PORT, &gpio_init_struct);
 
     /* Peripheral clock enable */
     __HAL_RCC_I2C1_CLK_ENABLE();
@@ -549,19 +549,19 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c) {
     PC9     ------> I2C3_SDA
     PA8     ------> I2C3_SCL
     */
-    GPIO_InitStruct.Pin = I2C3_SDA_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF3_I2C3;
-    HAL_GPIO_Init(I2C3_SDA_PORT, &GPIO_InitStruct);
+    gpio_init_struct.Pin = I2C3_SDA_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_AF_OD;
+    gpio_init_struct.Pull = GPIO_NOPULL;
+    gpio_init_struct.Speed = GPIO_SPEED_FREQ_HIGH;
+    gpio_init_struct.Alternate = GPIO_AF3_I2C3;
+    HAL_GPIO_Init(I2C3_SDA_PORT, &gpio_init_struct);
 
-    GPIO_InitStruct.Pin = I2C3_SCL_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF3_I2C3;
-    HAL_GPIO_Init(I2C3_SCL_PORT, &GPIO_InitStruct);
+    gpio_init_struct.Pin = I2C3_SCL_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_AF_OD;
+    gpio_init_struct.Pull = GPIO_NOPULL;
+    gpio_init_struct.Speed = GPIO_SPEED_FREQ_HIGH;
+    gpio_init_struct.Alternate = GPIO_AF3_I2C3;
+    HAL_GPIO_Init(I2C3_SCL_PORT, &gpio_init_struct);
 
     /* Peripheral clock enable */
     __HAL_RCC_I2C3_CLK_ENABLE();
@@ -606,7 +606,7 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c) {
  * @retval None
  */
 void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi) {
-  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitTypeDef gpio_init_struct;
   if (hspi->Instance == SPI1) {
     spi1_msp_init();
 
@@ -620,12 +620,12 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi) {
     PC11     ------> SPI3_MISO
     PC12     ------> SPI3_MOSI
     */
-    GPIO_InitStruct.Pin = SPI3_SCK_PIN | SPI3_MISO_PIN | SPI3_MOSI_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
-    HAL_GPIO_Init(SPI3_SCK_GPIO_PORT, &GPIO_InitStruct);
+    gpio_init_struct.Pin = SPI3_SCK_PIN | SPI3_MISO_PIN | SPI3_MOSI_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_AF_PP;
+    gpio_init_struct.Pull = GPIO_NOPULL;
+    gpio_init_struct.Speed = GPIO_SPEED_FREQ_HIGH;
+    gpio_init_struct.Alternate = GPIO_AF6_SPI3;
+    HAL_GPIO_Init(SPI3_SCK_GPIO_PORT, &gpio_init_struct);
   }
 }
 
@@ -667,18 +667,18 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base) {
 }
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim) {
-  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitTypeDef gpio_init_struct;
   if (htim->Instance == TIM1) {
     __HAL_RCC_GPIOC_CLK_ENABLE();
     /**TIM1 GPIO Configuration
     PC3     ------> TIM1_CH4
     */
-    GPIO_InitStruct.Pin = SERVO_PWM_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF2_TIM1;
-    HAL_GPIO_Init(SERVO_PWM_GPIO_PORT, &GPIO_InitStruct);
+    gpio_init_struct.Pin = SERVO_PWM_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_AF_PP;
+    gpio_init_struct.Pull = GPIO_NOPULL;
+    gpio_init_struct.Speed = GPIO_SPEED_FREQ_HIGH;
+    gpio_init_struct.Alternate = GPIO_AF2_TIM1;
+    HAL_GPIO_Init(SERVO_PWM_GPIO_PORT, &gpio_init_struct);
   }
 }
 /**
