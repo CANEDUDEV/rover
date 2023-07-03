@@ -9,14 +9,14 @@
 
 void configure_servo_potentiometer(uint8_t pot_value) {
   peripherals_t *peripherals = get_peripherals();
-  uint8_t ivraWrite[2] = {POT_IVRA_ADDR, pot_value};
-  HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivraWrite,
-                          sizeof(ivraWrite), HAL_MAX_DELAY);
+  uint8_t ivra_write[2] = {POT_IVRA_ADDR, pot_value};
+  HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivra_write,
+                          sizeof(ivra_write), HAL_MAX_DELAY);
 }
 
 void configure_sensor_potentiometer(uint8_t pot_value) {
   peripherals_t *peripherals = get_peripherals();
-  uint8_t ivrbWrite[2] = {POT_IVRB_ADDR, pot_value};
-  HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivrbWrite,
-                          sizeof(ivrbWrite), HAL_MAX_DELAY);
+  uint8_t ivrb_write[2] = {POT_IVRB_ADDR, pot_value};
+  HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivrb_write,
+                          sizeof(ivrb_write), HAL_MAX_DELAY);
 }

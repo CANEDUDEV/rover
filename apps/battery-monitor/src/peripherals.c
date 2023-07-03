@@ -38,7 +38,7 @@ void peripherals_init(void) {
  */
 void adc1_init(void) {
   ADC_MultiModeTypeDef multimode;
-  ADC_ChannelConfTypeDef sConfig;
+  ADC_ChannelConfTypeDef config;
   ADC_HandleTypeDef* hadc1 = &peripherals.hadc1;
 
   /** Common config
@@ -70,37 +70,37 @@ void adc1_init(void) {
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_1;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.SamplingTime = ADC_SAMPLETIME_19CYCLES_5;
-  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-  sConfig.Offset = 0;
-  if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_1;
+  config.Rank = ADC_REGULAR_RANK_1;
+  config.SingleDiff = ADC_SINGLE_ENDED;
+  config.SamplingTime = ADC_SAMPLETIME_19CYCLES_5;
+  config.OffsetNumber = ADC_OFFSET_NONE;
+  config.Offset = 0;
+  if (HAL_ADC_ConfigChannel(hadc1, &config) != HAL_OK) {
     error();
   }
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_2;
-  sConfig.Rank = ADC_REGULAR_RANK_2;
-  if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_2;
+  config.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(hadc1, &config) != HAL_OK) {
     error();
   }
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_3;
-  sConfig.Rank = ADC_REGULAR_RANK_3;
-  if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_3;
+  config.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(hadc1, &config) != HAL_OK) {
     error();
   }
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_4;
-  sConfig.Rank = ADC_REGULAR_RANK_4;
-  if (HAL_ADC_ConfigChannel(hadc1, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_4;
+  config.Rank = ADC_REGULAR_RANK_4;
+  if (HAL_ADC_ConfigChannel(hadc1, &config) != HAL_OK) {
     error();
   }
 
@@ -115,7 +115,7 @@ void adc1_init(void) {
  * @retval None
  */
 void adc2_init(void) {
-  ADC_ChannelConfTypeDef sConfig;
+  ADC_ChannelConfTypeDef config;
 
   ADC_HandleTypeDef* hadc2 = &peripherals.hadc2;
   /** Common config
@@ -140,37 +140,37 @@ void adc2_init(void) {
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_1;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.SamplingTime = ADC_SAMPLETIME_19CYCLES_5;
-  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-  sConfig.Offset = 0;
-  if (HAL_ADC_ConfigChannel(hadc2, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_1;
+  config.Rank = ADC_REGULAR_RANK_1;
+  config.SingleDiff = ADC_SINGLE_ENDED;
+  config.SamplingTime = ADC_SAMPLETIME_19CYCLES_5;
+  config.OffsetNumber = ADC_OFFSET_NONE;
+  config.Offset = 0;
+  if (HAL_ADC_ConfigChannel(hadc2, &config) != HAL_OK) {
     error();
   }
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_2;
-  sConfig.Rank = ADC_REGULAR_RANK_2;
-  if (HAL_ADC_ConfigChannel(hadc2, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_2;
+  config.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(hadc2, &config) != HAL_OK) {
     error();
   }
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_3;
-  sConfig.Rank = ADC_REGULAR_RANK_3;
-  if (HAL_ADC_ConfigChannel(hadc2, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_3;
+  config.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(hadc2, &config) != HAL_OK) {
     error();
   }
 
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_11;
-  sConfig.Rank = ADC_REGULAR_RANK_4;
-  if (HAL_ADC_ConfigChannel(hadc2, &sConfig) != HAL_OK) {
+  config.Channel = ADC_CHANNEL_11;
+  config.Rank = ADC_REGULAR_RANK_4;
+  if (HAL_ADC_ConfigChannel(hadc2, &config) != HAL_OK) {
     error();
   }
 
@@ -235,7 +235,7 @@ void dma_init(void) {
  * @retval None
  */
 void gpio_init(void) {
-  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitTypeDef gpio_init_struct;
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -253,26 +253,26 @@ void gpio_init(void) {
   HAL_GPIO_WritePin(REG_POWER_OFF_GPIO_PORT, REG_POWER_OFF_PIN, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : OVER_CURRENT_PIN */
-  GPIO_InitStruct.Pin = OVER_CURRENT_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(OVER_CURRENT_GPIO_PORT, &GPIO_InitStruct);
+  gpio_init_struct.Pin = OVER_CURRENT_PIN;
+  gpio_init_struct.Mode = GPIO_MODE_IT_FALLING;
+  gpio_init_struct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(OVER_CURRENT_GPIO_PORT, &gpio_init_struct);
 
   /*Configure GPIO pins : LED4_PIN LED3_PIN LED2_PIN LED1_PIN
                            POWER_OFF_PIN */
-  GPIO_InitStruct.Pin =
+  gpio_init_struct.Pin =
       LED4_PIN | LED3_PIN | LED2_PIN | LED1_PIN | POWER_ON_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LED4_GPIO_PORT, &GPIO_InitStruct);
+  gpio_init_struct.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio_init_struct.Pull = GPIO_NOPULL;
+  gpio_init_struct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LED4_GPIO_PORT, &gpio_init_struct);
 
   /*Configure GPIO pin : REG_POWER_OFF_PIN */
-  GPIO_InitStruct.Pin = REG_POWER_OFF_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(REG_POWER_OFF_GPIO_PORT, &GPIO_InitStruct);
+  gpio_init_struct.Pin = REG_POWER_OFF_PIN;
+  gpio_init_struct.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio_init_struct.Pull = GPIO_NOPULL;
+  gpio_init_struct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(REG_POWER_OFF_GPIO_PORT, &gpio_init_struct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, EXTI15_10_IRQ_PRIORITY, 0);
@@ -321,7 +321,7 @@ void adc2_dma_init(ADC_HandleTypeDef* hadc) {
  * @retval None
  */
 void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
-  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitTypeDef gpio_init_struct;
   if (hadc->Instance == ADC1) {
     /* Peripheral clock enable */
     HAL_RCC_ADC12_CLK_ENABLED++;
@@ -336,11 +336,11 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     PA2     ------> ADC1_IN3
     PA3     ------> ADC1_IN4
     */
-    GPIO_InitStruct.Pin = CELL1_MEASURE_PIN | CELL2_MEASURE_PIN |
-                          CELL3_MEASURE_PIN | CELL4_MEASURE_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(CELL1_MEASURE_GPIO_PORT, &GPIO_InitStruct);
+    gpio_init_struct.Pin = CELL1_MEASURE_PIN | CELL2_MEASURE_PIN |
+                           CELL3_MEASURE_PIN | CELL4_MEASURE_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_ANALOG;
+    gpio_init_struct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(CELL1_MEASURE_GPIO_PORT, &gpio_init_struct);
     adc1_dma_init(hadc);
 
   } else if (hadc->Instance == ADC2) {
@@ -358,16 +358,16 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     PA6     ------> ADC2_IN3
     PC5     ------> ADC2_IN11
     */
-    GPIO_InitStruct.Pin =
+    gpio_init_struct.Pin =
         CELL5_MEASURE_PIN | CELL6_MEASURE_PIN | I_PWR_A_MEASURE_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(CELL5_MEASURE_GPIO_PORT, &GPIO_InitStruct);
+    gpio_init_struct.Mode = GPIO_MODE_ANALOG;
+    gpio_init_struct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(CELL5_MEASURE_GPIO_PORT, &gpio_init_struct);
 
-    GPIO_InitStruct.Pin = VBAT_I_MEASURE_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(VBAT_I_MEASURE_GPIO_PORT, &GPIO_InitStruct);
+    gpio_init_struct.Pin = VBAT_I_MEASURE_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_ANALOG;
+    gpio_init_struct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(VBAT_I_MEASURE_GPIO_PORT, &gpio_init_struct);
     adc2_dma_init(hadc);
   }
 }
@@ -454,19 +454,19 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* hcan) {
  * @retval None
  */
 void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c) {
-  GPIO_InitTypeDef GPIO_InitStruct;
+  GPIO_InitTypeDef gpio_init_struct;
   if (hi2c->Instance == I2C1) {
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**I2C1 GPIO Configuration
     PB6     ------> I2C1_SCL
     PB7     ------> I2C1_SDA
     */
-    GPIO_InitStruct.Pin = I2C1_SCL_PIN | I2C1_SDA_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
-    HAL_GPIO_Init(I2C1_SCL_GPIO_PORT, &GPIO_InitStruct);
+    gpio_init_struct.Pin = I2C1_SCL_PIN | I2C1_SDA_PIN;
+    gpio_init_struct.Mode = GPIO_MODE_AF_OD;
+    gpio_init_struct.Pull = GPIO_NOPULL;
+    gpio_init_struct.Speed = GPIO_SPEED_FREQ_HIGH;
+    gpio_init_struct.Alternate = GPIO_AF4_I2C1;
+    HAL_GPIO_Init(I2C1_SCL_GPIO_PORT, &gpio_init_struct);
 
     /* Peripheral clock enable */
     __HAL_RCC_I2C1_CLK_ENABLE();
