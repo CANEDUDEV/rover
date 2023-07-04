@@ -31,12 +31,12 @@ void gpio_init(void) {
 
   HAL_GPIO_WritePin(VDD_IO_LEVEL_GPIO_PORT, VDD_IO_LEVEL_PIN, GPIO_PIN_RESET);
 
-  GPIO_InitTypeDef gpio_init_struct;
-  gpio_init_struct.Pin = VDD_IO_LEVEL_PIN;
-  gpio_init_struct.Mode = GPIO_MODE_OUTPUT_PP;
-  gpio_init_struct.Pull = GPIO_NOPULL;
-  gpio_init_struct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(VDD_IO_LEVEL_GPIO_PORT, &gpio_init_struct);
+  GPIO_InitTypeDef gpio_init;
+  gpio_init.Pin = VDD_IO_LEVEL_PIN;
+  gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio_init.Pull = GPIO_NOPULL;
+  gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(VDD_IO_LEVEL_GPIO_PORT, &gpio_init);
 
   HAL_GPIO_WritePin(VDD_IO_LEVEL_GPIO_PORT, VDD_IO_LEVEL_PIN, GPIO_PIN_SET);
 }
@@ -118,7 +118,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart) {
     uart1_msp_init();
 
   } else if (huart->Instance == USART2) {
-    GPIO_InitTypeDef gpio_init_struct;
+    GPIO_InitTypeDef gpio_init;
     /* Peripheral clock enable */
     __HAL_RCC_USART2_CLK_ENABLE();
 
@@ -127,12 +127,12 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart) {
     PA2     ------> USART2_TX
     PA3     ------> USART2_RX
     */
-    gpio_init_struct.Pin = UART2_RX_PIN;
-    gpio_init_struct.Mode = GPIO_MODE_AF_PP;
-    gpio_init_struct.Pull = GPIO_NOPULL;
-    gpio_init_struct.Speed = GPIO_SPEED_FREQ_HIGH;
-    gpio_init_struct.Alternate = GPIO_AF7_USART2;
-    HAL_GPIO_Init(UART2_GPIO_PORT, &gpio_init_struct);
+    gpio_init.Pin = UART2_RX_PIN;
+    gpio_init.Mode = GPIO_MODE_AF_PP;
+    gpio_init.Pull = GPIO_NOPULL;
+    gpio_init.Speed = GPIO_SPEED_FREQ_HIGH;
+    gpio_init.Alternate = GPIO_AF7_USART2;
+    HAL_GPIO_Init(UART2_GPIO_PORT, &gpio_init);
 
     /* USART2 interrupt Init */
     HAL_NVIC_SetPriority(USART2_IRQn, USART2_IRQ_PRIORITY, 0);
