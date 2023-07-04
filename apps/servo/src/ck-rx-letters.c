@@ -71,13 +71,13 @@ int process_steering_letter(const ck_letter_t *letter) {
       if (angle < -90 || angle > 90) {  // NOLINT
         return APP_NOT_OK;
       }
-      /* -90 deg => 1000 µs pulse
-       *  90 deg => 2000 µs pulse
+      /* -90 deg => 500 µs pulse
+       *  90 deg => 2500 µs pulse
        *  0  deg => 1500 µs pulse
        *
-       *  y = kx + m => m = 1500, k = 500/90
+       *  y = kx + m => m = 1500, k = 1000/90
        */
-      const float pulse_float = (float)angle * (500 / 90.0F) + 1500;
+      const float pulse_float = (float)angle * (1000 / 90.0F) + 1500;
 
       pulse = (uint32_t)(pulse_float + 0.5);  // NOLINT
       break;
