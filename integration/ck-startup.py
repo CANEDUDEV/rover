@@ -1,5 +1,6 @@
 import ck
 import battery
+import sbus
 import servo
 import sys
 
@@ -42,6 +43,12 @@ with canlib.openChannel(
         ch.writeWait(servo.assign_folder8, -1)
         ch.writeWait(servo.assign_folder9, -1)
         ch.writeWait(servo.assign_folder10, -1)
+
+    elif app == "sbus":
+        ch.writeWait(sbus.assign_folder2, -1)
+        ch.writeWait(sbus.assign_folder3, -1)
+        ch.writeWait(sbus.assign_folder4, -1)
+        ch.writeWait(sbus.assign_folder5, -1)
 
     ch.writeWait(ck.communicate, -1)
     ch.busOff()
