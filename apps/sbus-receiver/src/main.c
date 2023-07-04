@@ -1,5 +1,9 @@
 #include <string.h>
 
+#include "sbus.h"
+#include "steering.h"
+
+// STM32Common
 #include "clock.h"
 #include "common-interrupts.h"
 #include "error.h"
@@ -11,7 +15,6 @@
 // FreeRTOS
 #include "FreeRTOS.h"
 #include "queue.h"
-#include "sbus.h"
 #include "task.h"
 
 // Application
@@ -69,13 +72,14 @@ void sbus_read(void *unused) {
   CANFrame frames[4];
   for (int i = 0; i < 4; i++) {
     frames[i].id = CAN_BASE_ID + i;
-    frames[i].dlc = CAN_MAX_DLC;
+    frames[i].dlc = 2;
   }
 
   uint32_t mailbox = 0;
 
   uint8_t sbus_data[SBUS_PACKET_LENGTH];
   sbus_packet_t sbus_packet;
+  steering_command_t steering_command;
 
   HAL_CAN_Start(&peripherals->common_peripherals->hcan);
 
@@ -92,6 +96,7 @@ void sbus_read(void *unused) {
                         sizeof(sbus_data) - 1);
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     sbus_parse_data(sbus_data, &sbus_packet);
+    steering_command = sbus_packet_to_steering_command(&sbus_packet);
 
     // Failsafe usually triggers if many frames are lost in a row
     // Indicates connection loss (heavy)
@@ -104,8 +109,11 @@ void sbus_read(void *unused) {
       print("Frame lost\r\n");
     }
 
+    memcpy(frames[0].data, &steering_command.steering, 2);
+    memcpy(frames[1].data, &steering_command.steering_trim, 2);
+    memcpy(frames[2].data, &steering_command.throttle, 2);
+    memcpy(frames[3].data, &steering_command.throttle_trim, 2);
     for (int i = 0; i < 4; i++) {
-      memcpy(frames[i].data, &sbus_packet.channels[i * 4], CAN_MAX_DLC);
       while (HAL_CAN_GetTxMailboxesFreeLevel(
                  &peripherals->common_peripherals->hcan) < 1) {
       }
