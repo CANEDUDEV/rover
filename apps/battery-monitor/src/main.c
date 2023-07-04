@@ -1,6 +1,7 @@
 #include "ck-data.h"
 #include "freertos-tasks.h"
 #include "peripherals.h"
+#include "rover.h"
 
 // CK
 #include "mayor.h"
@@ -63,9 +64,9 @@ void mayor_init(void) {
   ck_data_t *ck_data = get_ck_data();
 
   ck_mayor_t mayor = {
-      .ean_no = 123,       // NOLINT(*-magic-numbers)
-      .serial_no = 456,    // NOLINT(*-magic-numbers)
-      .city_address = 13,  // NOLINT(*-magic-numbers)
+      .ean_no = 123,     // NOLINT(*-magic-numbers)
+      .serial_no = 456,  // NOLINT(*-magic-numbers)
+      .city_address = ROVER_BATTERY_MONITOR_ID,
       .set_action_mode = set_action_mode,
       .set_city_mode = set_city_mode,
       .start_200ms_timer = start_default_letter_timer,

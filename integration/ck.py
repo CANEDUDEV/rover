@@ -4,10 +4,14 @@ from canlib import Frame
 
 default_letter = Frame(id_=2031, data=[0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA])
 
-give_base_no = Frame(
-    id_=0, dlc=8, data=[0, 1, 0, 0, 0, 2, 0, 0]
-)  # Give base number and ask for response page 0
+# Give base number and ask for response page 0
+give_base_no = Frame(id_=0, dlc=8, data=[0, 1, 0, 0, 0, 2, 0, 0])
 
-communicate = Frame(
-    id_=0, dlc=8, data=[0, 0, 0, 0x3, 0, 0, 0, 0]
-)  # Set communication mode to COMMUNICATE
+# Set communication mode to COMMUNICATE
+communicate = Frame(id_=0, dlc=8, data=[0, 0, 0, 0x3, 0, 0, 0, 0])
+
+# City IDs
+battery_monitor_id = 1
+servo_id = 2
+motor_id = 3
+sbus_receiver_id = 4
