@@ -56,6 +56,7 @@ void sbus_read(void *unused) {
   uint8_t sbus_data[SBUS_PACKET_LENGTH];
   sbus_packet_t sbus_packet;
   steering_command_t steering_command;
+  uint32_t uart_error = 0;
 
   for (;;) {
     memset(sbus_data, 0, sizeof(sbus_data));
@@ -63,17 +64,33 @@ void sbus_read(void *unused) {
     // Wait until reception of one complete message, in case we power up in the
     // middle of a transmission
     while (sbus_data[0] != SBUS_HEADER) {
-      HAL_UART_Receive(&peripherals->huart2, sbus_data, 1, 3);
+      HAL_UART_StateTypeDef status = HAL_OK;
+      status = HAL_UART_Receive(&peripherals->huart2, sbus_data, 1, 3);
+      if (status != HAL_OK && status != HAL_TIMEOUT) {
+        print("UART error in SBUS header.\r\n");
+        sbus_data[0] = 0;
+      }
     }
 
     HAL_UART_Receive_IT(&peripherals->huart2, &sbus_data[1],
                         sizeof(sbus_data) - 1);
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    uart_error = HAL_UART_GetError(&peripherals->huart2);
+
+    if (uart_error != HAL_UART_ERROR_NONE) {
+      print("UART error in SBUS data.\r\n");
+      continue;
+    }
+
     sbus_parse_data(sbus_data, &sbus_packet);
     steering_command = sbus_packet_to_steering_command(&sbus_packet);
 
-    // Failsafe usually triggers if many frames are lost in a row
-    // Indicates connection loss (heavy)
+    // The radio receiver sends a neutral command when the failsafe is activated
+    // or a frame is lost, so we still want to send the data over CAN.
+
+    // Failsafe usually triggers if many frames are lost in a row Indicates
+    // connection loss (heavy)
     if (sbus_packet.failsafe_activated) {
       print("Failsafe activated\r\n");
     }
