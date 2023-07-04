@@ -1,4 +1,5 @@
 subdir('can-kingdom')
+subdir('rover')
 subdir('stm32-common')
 subdir('stm32-postmaster')
 subdir('third-party')
@@ -18,6 +19,7 @@ common_libs_src = [
 # Convenience include dir list
 common_libs_inc = [
   can_kingdom_inc,
+  rover_inc,
   stm32_common_inc,
   stm32_postmaster_inc,
 
