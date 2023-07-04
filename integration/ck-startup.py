@@ -39,6 +39,7 @@ with canlib.openChannel(
     ch.writeWait(sbus.assign_folder3, -1)
     ch.writeWait(sbus.assign_folder4, -1)
     ch.writeWait(sbus.assign_folder5, -1)
+    ch.writeWait(sbus.assign_steering, -1)
 
     ch.writeWait(ck.communicate, -1)
     ch.busOff()
