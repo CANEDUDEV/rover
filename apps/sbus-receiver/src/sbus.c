@@ -6,21 +6,6 @@
 #include "peripherals.h"
 #include "stm32f3xx_hal.h"
 
-void sbus_flush(void) {
-  peripherals_t *peripherals = get_peripherals();
-  uint8_t sbus_header = 0;
-  uint8_t sbus_data[SBUS_PACKET_LENGTH];
-
-  // Wait until reception of one complete message, in case we power up in the
-  // middle of a transmission
-  while (sbus_header != SBUS_HEADER) {
-    HAL_UART_Receive(&peripherals->huart2, &sbus_header, sizeof(sbus_header),
-                     HAL_MAX_DELAY);
-  }
-  HAL_UART_Receive(&peripherals->huart2, sbus_data, sizeof(sbus_data) - 1,
-                   HAL_MAX_DELAY);
-}
-
 /*
  * The SBUS packet is 25 bytes long consisting of:
  *
