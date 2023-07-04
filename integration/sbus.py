@@ -20,4 +20,4 @@ assign_folder4 = Frame(id_=0, dlc=8, data=[ck.sbus_receiver_id, 2, 2, 3, 0, 0, 4
 assign_folder5 = Frame(id_=0, dlc=8, data=[ck.sbus_receiver_id, 2, 3, 3, 0, 0, 5, 0x3])
 
 # Assign steering pulse width to servo's address
-assign_steering = Frame(id_=0, dlc=3, data=[ck.sbus_receiver_id, 2, 0, 3, 0, 0, 2, 0x3])
+assign_steering = Frame(id_=0, dlc=8, data=[ck.sbus_receiver_id, 2, 7, 2, 0, 0, 2, 0x3])
