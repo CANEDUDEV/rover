@@ -12,7 +12,7 @@ steering_command_t sbus_packet_to_steering_command(
   const int32_t max_trim_pulse = 250;
   const int32_t min_trim_pulse = -250;
   // Receiving this many messages in a row indicates there's been some trim.
-  const uint16_t counter_threshold = 50;
+  const uint16_t counter_threshold = 100;
 
   static int16_t steering_trim = 0;
   static int16_t throttle_trim = 0;
