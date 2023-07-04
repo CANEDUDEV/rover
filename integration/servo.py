@@ -35,11 +35,11 @@ set_potentiometer_35 = Frame(id_=0x205, dlc=2, data=[0x23, 0])
 # Set PWM frequency to 333 Hz
 set_pwm_conf_333hz = Frame(id_=0x206, dlc=2, data=[0x4D, 0x1])
 
-# Set steering PWM pulse to 1000 µs
-steer_pulse_1000 = Frame(id_=0x207, dlc=3, data=[0, 0xE8, 0x3])
+# Set steering PWM pulse to 500 µs
+steer_pulse_500 = Frame(id_=0x207, dlc=3, data=[0, 0xF4, 0x1])
 
-# Set steering PWM pulse to 2000 µs
-steer_pulse_2000 = Frame(id_=0x207, dlc=3, data=[0, 0xD0, 0x7])
+# Set steering PWM pulse to 2500 µs
+steer_pulse_2500 = Frame(id_=0x207, dlc=3, data=[0, 0xC4, 0x9])
 
 # Set steering angle to 90 degrees
 steer_angle_90 = Frame(id_=0x207, dlc=3, data=[1, 0x5A, 0])

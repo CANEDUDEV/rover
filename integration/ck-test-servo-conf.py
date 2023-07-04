@@ -27,9 +27,9 @@ with canlib.openChannel(
     ch.writeWait(servo.set_potentiometer_35, -1)
     ch.writeWait(servo.set_pwm_conf_333hz, -1)
 
-    ch.writeWait(servo.steer_pulse_2000, -1)
+    ch.writeWait(servo.steer_pulse_2500, -1)
     sleep(2)
-    ch.writeWait(servo.steer_pulse_1000, -1)
+    ch.writeWait(servo.steer_pulse_500, -1)
     sleep(2)
     ch.writeWait(servo.steer_angle_90, -1)
     sleep(2)
