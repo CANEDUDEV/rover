@@ -57,8 +57,6 @@ void sbus_read(void *unused) {
   sbus_packet_t sbus_packet;
   steering_command_t steering_command;
 
-  HAL_CAN_Start(&peripherals->common_peripherals->hcan);
-
   for (;;) {
     memset(sbus_data, 0, sizeof(sbus_data));
 
