@@ -1,12 +1,12 @@
 #include "FreeRTOS.h"
 
 /* Idle task control block and stack */
-static StaticTask_t Idle_TCB;
-static StackType_t Idle_Stack[configMINIMAL_STACK_SIZE];
+static StaticTask_t idle_tcb;
+static StackType_t idle_stack[configMINIMAL_STACK_SIZE];
 
 /* Timer task control block and stack */
-static StaticTask_t Timer_TCB;
-static StackType_t Timer_Stack[configTIMER_TASK_STACK_DEPTH];
+static StaticTask_t timer_tcb;
+static StackType_t timer_stack[configTIMER_TASK_STACK_DEPTH];
 
 /*
   vApplicationGetIdleTaskMemory gets called when configSUPPORT_STATIC_ALLOCATION
@@ -15,8 +15,8 @@ static StackType_t Timer_Stack[configTIMER_TASK_STACK_DEPTH];
 void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
                                    StackType_t **ppxIdleTaskStackBuffer,
                                    uint32_t *pulIdleTaskStackSize) {
-  *ppxIdleTaskTCBBuffer = &Idle_TCB;
-  *ppxIdleTaskStackBuffer = &Idle_Stack[0];
+  *ppxIdleTaskTCBBuffer = &idle_tcb;
+  *ppxIdleTaskStackBuffer = &idle_stack[0];
   *pulIdleTaskStackSize = (uint32_t)configMINIMAL_STACK_SIZE;
 }
 
@@ -28,7 +28,7 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
                                     StackType_t **ppxTimerTaskStackBuffer,
                                     uint32_t *pulTimerTaskStackSize) {
-  *ppxTimerTaskTCBBuffer = &Timer_TCB;
-  *ppxTimerTaskStackBuffer = &Timer_Stack[0];
+  *ppxTimerTaskTCBBuffer = &timer_tcb;
+  *ppxTimerTaskStackBuffer = &timer_stack[0];
   *pulTimerTaskStackSize = (uint32_t)configTIMER_TASK_STACK_DEPTH;
 }
