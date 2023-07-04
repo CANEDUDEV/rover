@@ -44,8 +44,8 @@ void gpio_init(void) {
 void uart2_init(void) {
   UART_HandleTypeDef* huart2 = &peripherals.huart2;
   huart2->Instance = USART2;
-  huart2->Init.BaudRate = 100000;  // NOLINT
-  huart2->Init.WordLength = UART_WORDLENGTH_8B;
+  huart2->Init.BaudRate = 100000;                // NOLINT
+  huart2->Init.WordLength = UART_WORDLENGTH_9B;  // 8 data bits, 1 parity bit
   huart2->Init.StopBits = UART_STOPBITS_2;
   huart2->Init.Parity = UART_PARITY_EVEN;
   huart2->Init.Mode = UART_MODE_RX;
