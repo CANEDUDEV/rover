@@ -18,7 +18,6 @@ typedef struct {
   bool failsafe_activated;
 } sbus_packet_t;
 
-void sbus_flush(void);
 void sbus_parse_data(const uint8_t *data, sbus_packet_t *sbus_packet);
 
 #ifdef __cplusplus
