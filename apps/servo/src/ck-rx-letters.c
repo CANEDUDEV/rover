@@ -1,5 +1,6 @@
 #include "ck-rx-letters.h"
 
+#include <math.h>
 #include <string.h>
 
 #include "adc.h"
@@ -20,12 +21,56 @@ static int16_t steering_pulse = (int16_t)m_angle_to_pulse;
 static int16_t steering_trim_pulse = 0;
 
 // 2 bytes in page
+// bytes 1-2: desired servo voltage in mV. Allowed range: 2740-10800 mV
 int process_set_servo_voltage_letter(const ck_letter_t *letter) {
   if (letter->page.line_count != 2) {
     return APP_NOT_OK;
   }
 
-  configure_servo_potentiometer(letter->page.lines[0]);
+  uint16_t target_voltage = 0;
+
+  memcpy(&target_voltage, letter->page.lines, sizeof(target_voltage));
+
+  const uint16_t min_voltage = 2740;
+  const uint16_t max_voltage = 10800;
+
+  if (target_voltage < min_voltage || target_voltage > max_voltage) {
+    return APP_NOT_OK;
+  }
+
+  // Values obtained by using VCC_SERVO measurements on the ADC for various
+  // potentiometer values, then fitted to a curve.
+  //
+  // The relationship between voltage and potentiometer roughly follows this
+  // equation:
+  //
+  // y = (a/x)^b + c,
+  //
+  // where x = votlage in V, y = potentiometer value, a = 187.32493879, b
+  // = 1.35, and c = -47.26858055.
+
+  // NOLINTBEGIN(readability-identifier-length)
+  const float a = 187.32493879F;
+  const float b = 1.35F;
+  const float c = -47.26858055F;
+  // NOLINTEND(readability-identifier-length)
+
+  const float voltage_f = (float)target_voltage / 1000;  // Convert from mV to V
+  float potentiometer_f = powf((a / voltage_f), b) + c;
+
+  float potentiometer_f_rounded = roundf(potentiometer_f);
+  uint8_t potentiometer = 0;
+  const uint8_t potentiometer_max = 0xFF;
+  if (potentiometer_f_rounded < 0) {
+    potentiometer = 0;
+  } else if (potentiometer_f_rounded > (float)potentiometer_max) {
+    potentiometer = potentiometer_max;
+  } else {
+    potentiometer = (uint8_t)potentiometer_f_rounded;
+  }
+
+  configure_servo_potentiometer(potentiometer);
+
   return APP_OK;
 }
 
@@ -84,8 +129,7 @@ int process_steering_letter(const ck_letter_t *letter) {
 
       float pulse_float = (float)angle * k_angle_to_pulse + m_angle_to_pulse;
 
-      // Round it
-      pulse = (uint16_t)(pulse_float + 0.5);  // NOLINT
+      pulse = (int16_t)roundf(pulse_float);
       break;
     }
 
@@ -134,12 +178,7 @@ int process_steering_trim_letter(const ck_letter_t *letter) {
       // Ignore m since we're calculating an offset
       const float trim_pulse_float = (float)angle * k_angle_to_pulse;
 
-      // Round it
-      if (trim_pulse < 0) {
-        trim_pulse = (int16_t)(trim_pulse_float - 0.5);  // NOLINT
-      } else {
-        trim_pulse = (int16_t)(trim_pulse_float + 0.5);  // NOLINT
-      }
+      trim_pulse = (int16_t)roundf(trim_pulse_float);
       break;
     }
 
