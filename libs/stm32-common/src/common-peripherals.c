@@ -39,9 +39,9 @@ void can_init(void) {
   hcan->Init.TimeTriggeredMode = DISABLE;
   hcan->Init.AutoBusOff = DISABLE;
   hcan->Init.AutoWakeUp = DISABLE;
-  hcan->Init.AutoRetransmission = DISABLE;
+  hcan->Init.AutoRetransmission = ENABLE;
   hcan->Init.ReceiveFifoLocked = DISABLE;
-  hcan->Init.TransmitFifoPriority = DISABLE;
+  hcan->Init.TransmitFifoPriority = ENABLE;
   if (HAL_CAN_Init(hcan) != HAL_OK) {
     error();
   }
