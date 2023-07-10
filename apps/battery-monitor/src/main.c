@@ -63,10 +63,12 @@ void mayor_init(void) {
   ck_data_init();
   ck_data_t *ck_data = get_ck_data();
 
+  uint32_t city_address = ROVER_BATTERY_MONITOR_ID;
+
   ck_mayor_t mayor = {
-      .ean_no = 123,     // NOLINT(*-magic-numbers)
-      .serial_no = 456,  // NOLINT(*-magic-numbers)
-      .city_address = ROVER_BATTERY_MONITOR_ID,
+      .ean_no = 100 + city_address,     // NOLINT(*-magic-numbers)
+      .serial_no = 200 + city_address,  // NOLINT(*-magic-numbers)
+      .city_address = city_address,
       .set_action_mode = set_action_mode,
       .set_city_mode = set_city_mode,
       .start_200ms_timer = start_default_letter_timer,
