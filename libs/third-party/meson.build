@@ -3,7 +3,6 @@ drivers_inc = include_directories(
   'STM32F3xx_HAL_Driver' / 'Inc' / 'Legacy',
   'CMSIS' / 'Device' / 'ST' / 'STM32F3xx' / 'Include',
   'CMSIS' / 'Include',
-  is_system: true,
 )
 
 drivers_src = files(
@@ -34,7 +33,6 @@ drivers_src = files(
 freertos_inc = include_directories(
   'FreeRTOS' / 'Source' / 'include',
   'FreeRTOS' / 'Source' / 'portable' / 'GCC' / 'ARM_CM4F',
-  is_system: true,
 )
 
 freertos_src = files(
@@ -49,9 +47,6 @@ freertos_src = files(
   'FreeRTOS' / 'Source' / 'portable/GCC/ARM_CM4F/port.c',
 )
 
-printf_inc = include_directories(
-  'printf',
-  is_system: true,
-)
+printf_inc = include_directories('printf')
 
 printf_src = files('printf' / 'printf.c')

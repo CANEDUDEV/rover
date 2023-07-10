@@ -8,6 +8,6 @@ Checks: |
   -cppcoreguidelines-avoid-non-const-global-variables,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
 WarningsAsErrors: '*'
-HeaderFilterRegex: '.*'
+HeaderFilterRegex: '.*, -libs/third-party'
 FormatStyle: file
 InheritParentConfig: true
