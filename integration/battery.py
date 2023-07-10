@@ -5,49 +5,49 @@ import ck
 
 # Assign envelope 0x100 to folder 2
 # Cell voltages transmit
-assign_folder2 = Frame(
+assign_cell_voltage_tx = Frame(
     id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 0, 1, 0, 0, 2, 0x3]
 )
 
 # Assign envelope 0x101 to folder 3
 # Regulated output current transmit
-assign_folder3 = Frame(
+assign_reg_out_current_tx = Frame(
     id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 1, 1, 0, 0, 3, 0x3]
 )
 
 # Assign envelope 0x102 to folder 4
 # Unregulated output current transmit
-assign_folder4 = Frame(
+assign_vbat_out_current_tx = Frame(
     id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 2, 1, 0, 0, 4, 0x3]
 )
 
 # Assign envelope 0x103 to folder 5
 # Jumper and fuse config, over-current threck.battery_monitor_idhold receive
-assign_folder5 = Frame(
+assign_jumper_and_fuse_conf_rx = Frame(
     id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 3, 1, 0, 0, 5, 0x3]
 )
 
 # Assign envelope 0x104 to folder 6
 # Regulated out voltage receive
-assign_folder6 = Frame(
+assign_reg_out_voltage_rx = Frame(
     id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 4, 1, 0, 0, 6, 0x3]
 )
 
 # Assign envelope 0x105 to folder 7
 # Output on/off receive
-assign_folder7 = Frame(
+assign_output_on_off_rx = Frame(
     id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 5, 1, 0, 0, 7, 0x3]
 )
 
 # Assign envelope 0x106 to folder 8
 # CAN report frequency receive
-assign_folder8 = Frame(
+assign_report_freq_rx = Frame(
     id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 6, 1, 0, 0, 8, 0x3]
 )
 
 # Assign envelope 0x107 to folder 9
 # Low voltage cutoff value receive
-assign_folder9 = Frame(
+assign_low_voltage_cutoff_rx = Frame(
     id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 7, 1, 0, 0, 9, 0x3]
 )
 

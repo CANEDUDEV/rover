@@ -22,9 +22,9 @@ with canlib.openChannel(
 
     ch.writeWait(ck.default_letter, -1)
     ch.writeWait(ck.give_base_no, -1)
-    ch.writeWait(battery.assign_folder2, -1)
-    ch.writeWait(battery.assign_folder3, -1)
-    ch.writeWait(battery.assign_folder4, -1)
+    ch.writeWait(battery.assign_cell_voltage_tx, -1)
+    ch.writeWait(battery.assign_reg_out_current_tx, -1)
+    ch.writeWait(battery.assign_vbat_out_current_tx, -1)
     ch.writeWait(ck.communicate, -1)
     sleep(0.5)  # give time for communication
     ch.writeWait(change_bitrate, -1)
