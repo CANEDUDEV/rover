@@ -34,6 +34,7 @@ with canlib.openChannel(
     ch.writeWait(servo.assign_folder8, -1)
     ch.writeWait(servo.assign_folder9, -1)
     ch.writeWait(servo.assign_folder10, -1)
+    ch.writeWait(servo.assign_folder11, -1)
 
     ch.writeWait(sbus.assign_folder2, -1)
     ch.writeWait(sbus.assign_folder3, -1)

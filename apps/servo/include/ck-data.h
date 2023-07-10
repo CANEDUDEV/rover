@@ -11,7 +11,7 @@ extern "C" {
 #define CK_DATA_TX_DOC_COUNT 5
 #define CK_DATA_LIST_COUNT 2
 #define CK_DATA_TX_FOLDER_COUNT 5
-#define CK_DATA_RX_FOLDER_COUNT 4
+#define CK_DATA_RX_FOLDER_COUNT 5
 #define CK_DATA_FOLDER_COUNT \
   (2 + CK_DATA_TX_FOLDER_COUNT + CK_DATA_RX_FOLDER_COUNT)
 
@@ -42,6 +42,7 @@ typedef struct {
   ck_folder_t *set_servo_voltage_folder;
   ck_folder_t *pwm_conf_folder;
   ck_folder_t *steering_folder;
+  ck_folder_t *steering_trim_folder;
   ck_folder_t *report_freq_folder;
 
 } ck_data_t;

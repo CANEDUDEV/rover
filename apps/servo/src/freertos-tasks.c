@@ -240,6 +240,9 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
   if (folder->folder_no == ck_data->steering_folder->folder_no) {
     return process_steering_letter(letter);
   }
+  if (folder->folder_no == ck_data->steering_trim_folder->folder_no) {
+    return process_steering_trim_letter(letter);
+  }
   if (folder->folder_no == ck_data->report_freq_folder->folder_no) {
     return process_report_freq_letter(letter);
   }

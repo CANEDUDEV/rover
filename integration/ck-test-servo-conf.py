@@ -22,18 +22,35 @@ with canlib.openChannel(
     ch.writeWait(servo.assign_folder8, -1)
     ch.writeWait(servo.assign_folder9, -1)
     ch.writeWait(servo.assign_folder10, -1)
+    ch.writeWait(servo.assign_folder11, -1)
     ch.writeWait(ck.communicate, -1)
 
     ch.writeWait(servo.set_potentiometer_35, -1)
     ch.writeWait(servo.set_pwm_conf_333hz, -1)
 
-    ch.writeWait(servo.steer_pulse_2500, -1)
+    ch.writeWait(servo.steer_trim_pulse_200, -1)
     sleep(2)
-    ch.writeWait(servo.steer_pulse_500, -1)
+    ch.writeWait(servo.steer_trim_pulse_minus_200, -1)
     sleep(2)
-    ch.writeWait(servo.steer_angle_90, -1)
+
+    ch.writeWait(servo.steer_trim_angle_15, -1)
     sleep(2)
-    ch.writeWait(servo.steer_angle_minus_90, -1)
+    ch.writeWait(servo.steer_trim_angle_minus_15, -1)
+    sleep(2)
+
+    # Reset trim
+    ch.writeWait(servo.steer_trim_pulse_0, -1)
+    sleep(2)
+
+    ch.writeWait(servo.steer_pulse_2000, -1)
+    sleep(2)
+    ch.writeWait(servo.steer_pulse_1000, -1)
+    sleep(2)
+
+    ch.writeWait(servo.steer_angle_45, -1)
+    sleep(2)
+    ch.writeWait(servo.steer_angle_minus_45, -1)
+    sleep(2)
 
     # This will cause two reports in a row to have the same measurements.
     ch.writeWait(servo.set_measure_freq_500ms, -1)
