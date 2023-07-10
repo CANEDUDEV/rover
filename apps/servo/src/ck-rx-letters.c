@@ -9,6 +9,16 @@
 #include "ports.h"
 #include "potentiometer.h"
 
+// y = kx + m. 500 µs pulse corresponds to 45 degree movement,
+// yielding k = 500/45.
+//
+// m is the neutral position, i.e. 1500 µs pulse.
+const float k_angle_to_pulse = 500 / 45.0F;
+const float m_angle_to_pulse = 1500;
+
+static int16_t steering_pulse = (int16_t)m_angle_to_pulse;
+static int16_t steering_trim_pulse = 0;
+
 // 2 bytes in page
 int process_set_servo_voltage_letter(const ck_letter_t *letter) {
   if (letter->page.line_count != 2) {
@@ -50,15 +60,15 @@ int process_pwm_conf_letter(const ck_letter_t *letter) {
 // bytes 1-2 as a signed value representing a steering angle, with a range of
 // -90 to 90 degrees.
 //
-// -90 degrees pulse width: 1000 microseconds.
-// +90 degrees pulse width: 2000 microseconds.
+// -90 degrees pulse width: 500 microseconds.
+// +90 degrees pulse width: 2500 microseconds.
 int process_steering_letter(const ck_letter_t *letter) {
   if (letter->page.line_count != 3) {
     return APP_NOT_OK;
   }
 
   peripherals_t *peripherals = get_peripherals();
-  uint32_t pulse = 0;
+  int16_t pulse = 0;
 
   switch (letter->page.lines[0]) {
     case 0:
@@ -71,15 +81,11 @@ int process_steering_letter(const ck_letter_t *letter) {
       if (angle < -90 || angle > 90) {  // NOLINT
         return APP_NOT_OK;
       }
-      /* -90 deg => 500 µs pulse
-       *  90 deg => 2500 µs pulse
-       *  0  deg => 1500 µs pulse
-       *
-       *  y = kx + m => m = 1500, k = 1000/90
-       */
-      const float pulse_float = (float)angle * (1000 / 90.0F) + 1500;
 
-      pulse = (uint32_t)(pulse_float + 0.5);  // NOLINT
+      float pulse_float = (float)angle * k_angle_to_pulse + m_angle_to_pulse;
+
+      // Round it
+      pulse = (uint16_t)(pulse_float + 0.5);  // NOLINT
       break;
     }
 
@@ -87,8 +93,65 @@ int process_steering_letter(const ck_letter_t *letter) {
       return APP_NOT_OK;
   }
 
+  steering_pulse = pulse;
   // Write new pulse to CCR register
-  __HAL_TIM_SET_COMPARE(&peripherals->htim1, TIM_CHANNEL_4, pulse);
+  __HAL_TIM_SET_COMPARE(&peripherals->htim1, TIM_CHANNEL_4,
+                        (uint32_t)(steering_pulse + steering_trim_pulse));
+
+  return APP_OK;
+}
+
+// 3 bytes in page
+// byte 0: can either be 0 or 1.
+//
+// bytes 1-2: a signed integer representing a steering trim either as a
+// pulse-width in microseconds or an angle in degrees. If byte 0 is 0, interpret
+// bytes 1-2 as a pulse-width. If byte 0 is 1, interpret bytes 1-2 as an angle
+// with a range of -45 to 45 degrees.
+//
+// -45 degrees pulse width: -500 microseconds.
+// +45 degrees pulse width: +500 microseconds.
+int process_steering_trim_letter(const ck_letter_t *letter) {
+  if (letter->page.line_count != 3) {
+    return APP_NOT_OK;
+  }
+
+  peripherals_t *peripherals = get_peripherals();
+  int16_t trim_pulse = 0;
+
+  switch (letter->page.lines[0]) {
+    case 0:
+      memcpy(&trim_pulse, &letter->page.lines[1], sizeof(trim_pulse));
+      break;
+
+    case 1: {
+      int16_t angle = 0;
+      memcpy(&angle, &letter->page.lines[1], sizeof(angle));
+      if (angle < -45 || angle > 45) {  // NOLINT
+        return APP_NOT_OK;
+      }
+
+      // Ignore m since we're calculating an offset
+      const float trim_pulse_float = (float)angle * k_angle_to_pulse;
+
+      // Round it
+      if (trim_pulse < 0) {
+        trim_pulse = (int16_t)(trim_pulse_float - 0.5);  // NOLINT
+      } else {
+        trim_pulse = (int16_t)(trim_pulse_float + 0.5);  // NOLINT
+      }
+      break;
+    }
+
+    default:
+      return APP_NOT_OK;
+  }
+
+  steering_trim_pulse = trim_pulse;
+
+  // Write new pulse to CCR register
+  __HAL_TIM_SET_COMPARE(&peripherals->htim1, TIM_CHANNEL_4,
+                        (uint32_t)(steering_pulse + steering_trim_pulse));
 
   return APP_OK;
 }

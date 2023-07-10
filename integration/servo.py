@@ -36,8 +36,12 @@ assign_folder8 = Frame(id_=0, dlc=8, data=[ck.servo_id, 2, 6, 2, 0, 0, 8, 0x3])
 assign_folder9 = Frame(id_=0, dlc=8, data=[ck.servo_id, 2, 7, 2, 0, 0, 9, 0x3])
 
 # Assign envelope 0x208 to folder 10
-# CAN report frequency receive
+# Steering trim signal receive (pulse)
 assign_folder10 = Frame(id_=0, dlc=8, data=[ck.servo_id, 2, 8, 2, 0, 0, 10, 0x3])
+
+# Assign envelope 0x209 to folder 11
+# CAN report frequency receive
+assign_folder11 = Frame(id_=0, dlc=8, data=[ck.servo_id, 2, 9, 2, 0, 0, 11, 0x3])
 
 # Set potentiometer value to 35
 set_potentiometer_35 = Frame(id_=0x205, dlc=2, data=[0x23, 0])
@@ -46,19 +50,34 @@ set_potentiometer_35 = Frame(id_=0x205, dlc=2, data=[0x23, 0])
 set_pwm_conf_333hz = Frame(id_=0x206, dlc=2, data=[0x4D, 0x1])
 
 # Set steering PWM pulse to 500 µs
-steer_pulse_500 = Frame(id_=0x207, dlc=3, data=[0, 0xF4, 0x1])
+steer_pulse_1000 = Frame(id_=0x207, dlc=3, data=[0, 0xE8, 0x3])
 
 # Set steering PWM pulse to 2500 µs
-steer_pulse_2500 = Frame(id_=0x207, dlc=3, data=[0, 0xC4, 0x9])
+steer_pulse_2000 = Frame(id_=0x207, dlc=3, data=[0, 0xD0, 0x7])
 
 # Set steering angle to 90 degrees
-steer_angle_90 = Frame(id_=0x207, dlc=3, data=[1, 0x5A, 0])
+steer_angle_45 = Frame(id_=0x207, dlc=3, data=[1, 0x2D, 0])
 
 # Set steering angle to -90 degrees
-steer_angle_minus_90 = Frame(id_=0x207, dlc=3, data=[1, 0xA6, 0xFF])
+steer_angle_minus_45 = Frame(id_=0x207, dlc=3, data=[1, 0xD3, 0xFF])
+
+# Set steering trim PWM pulse to 200 µs
+steer_trim_pulse_200 = Frame(id_=0x208, dlc=3, data=[0, 0xC8, 0x0])
+
+# Set steering trim PWM pulse to -200 µs
+steer_trim_pulse_minus_200 = Frame(id_=0x208, dlc=3, data=[0, 0x38, 0xFF])
+
+# Set steering trim PWM angle to 15 degrees
+steer_trim_angle_15 = Frame(id_=0x208, dlc=3, data=[1, 0x0F, 0x0])
+
+# Set steering trim PWM pulse to -15 degrees
+steer_trim_angle_minus_15 = Frame(id_=0x208, dlc=3, data=[1, 0xF1, 0xFF])
+
+# Set steering trim PWM pulse to 0
+steer_trim_pulse_0 = Frame(id_=0x208, dlc=3, data=[0, 0, 0])
 
 # Set measure frequency to 500 ms. Ignore report frequency.
-set_measure_freq_500ms = Frame(id_=0x208, dlc=4, data=[0xF4, 0x1, 0, 0])
+set_measure_freq_500ms = Frame(id_=0x209, dlc=4, data=[0xF4, 0x1, 0, 0])
 
 # Set report frequency to 1000 ms. Ignore measure frequency.
-set_report_freq_1000ms = Frame(id_=0x208, dlc=4, data=[0, 0, 0xE8, 0x3])
+set_report_freq_1000ms = Frame(id_=0x209, dlc=4, data=[0, 0, 0xE8, 0x3])
