@@ -40,7 +40,7 @@ To make a car running only on radio communication, the figure below shows a logi
 
 .. image:: https://drive.google.com/uc?id=13QfoT1vhVVftApaJ50B8O1bqxpXLPOYq&export=view
    :alt: Image not accessible.
-
+   
 
 
 Let us start by mounting the radio receiver to the car. Simply take the reciever and use dual lock bands to connectit to the car.
@@ -58,28 +58,31 @@ The ESC is responsible for controlling the motor and in the case of a system tha
 connected to the battery (for power), the Radio receiver (in order to get the PWM siganl that is needed by the ESC) and the motor that
 it controls. Start by simply mounting the battery in the battery holder (see video below).
 
-.. raw:: html
-
-   <iframe src="https://drive.google.com/file/d/1OoEJFQD-E1rio0Y6K7k7Fzl_vECRsWQB/preview" width="640" height="480"></iframe>
-
+.. video:: _assets/Battery_Mounting_FINAL.mp4
+   :width: 640
+   :height: 480
 
 Next, mount the ESC to the chasit with some dual lock band (see video below).
 
-.. raw:: html
-
-   <iframe src="https://drive.google.com/file/d/1-kZwi19dlswsiaRWRpn4yXJfAQw2N875/preview" width="640" height="480"></iframe>
+.. video:: _assets/ESC_montering_FINAL.mp4
+   :width: 640
+   :height: 480
 
 Finally, connect the radio receiver to the ESC and the battery as well as the three wires to the motor. make sure that the wires are connected in
 the proper order (if they are reversed, the motor will rotate in the opposite direction as intended). See video below for coupling instructions.
 
-.. raw:: html
-
-   <iframe src="https://drive.google.com/file/d/1aqgw_Y7-yVVJulVM0oCVaDbZCrqgpy4E/preview" width="640" height="480"></iframe>
+.. video:: _assets/Radio_full_mounting_FINAL.mp4
+   :width: 640
+   :height: 480
 
 You should now have a fully functioning car operable through the radio receiver. Feel free to turn it on and take it for a test drive to verify
 that it works as intended. See video below.
 
-(INSERT TEST DRIVE VIDEO)
+
+.. video:: _assets/Radio_test_drive_FINAL.mp4
+   :width: 640
+   :height: 480
+  
 
 step 4
 -------------
