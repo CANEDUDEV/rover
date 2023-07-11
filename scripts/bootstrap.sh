@@ -6,20 +6,14 @@ YAMLFMT=https://github.com/google/yamlfmt/releases/download/v0.7.1/yamlfmt_0.7.1
 
 sudo apt-get -qq update
 sudo apt-get -qq install -y \
-	black \
 	curl \
 	clang-format \
 	clang-tidy \
 	doxygen \
 	gcc-arm-none-eabi \
-	libc6-dev-armhf-cross \
-	meson \
-	ninja-build \
-	python3-breathe \
-	python3-sphinx \
-	python3-sphinx-rtd-theme \
-	shellcheck \
-	shfmt
+	libc6-dev-armhf-cross
+
+pip install -q -r requirements.txt
 
 if [[ ! -x .bin/yamlfmt ]]; then
 	mkdir -p .bin
