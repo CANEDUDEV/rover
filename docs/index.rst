@@ -8,12 +8,14 @@ accompanying reference applications.
    :maxdepth: 2
    :caption: Contents:
 
-   
+
    boards
    apps
    can-kingdom
    getting-started
    mechanical-components
+
+   assets
 
 Indices and tables
 ==================
