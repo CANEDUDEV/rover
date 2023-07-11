@@ -1,6 +1,6 @@
-Getting started 
-=====================================
-After following this sart up guide. you will have a fully functioning radio car using the CAN protocol. 
+Getting started
+===============
+After following this sart up guide. you will have a fully functioning radio car using the CAN protocol.
 There are several mechanical and electrical components in the set that need to be connected, the specifics about each of them can be found on the starting page.
 
 step 1
@@ -30,13 +30,13 @@ step 2
 -------------
 Connect the radio receiver.
 
-Before assembling a complete CAN system, we will begin by building a simpler version of the car that only needs to run on a radio receiver 
+Before assembling a complete CAN system, we will begin by building a simpler version of the car that only needs to run on a radio receiver
 with no CAN communication. A big advantage with this approach is that it makes it easy to understand the basic function of the simpler components
-in the system and it also makes it easier to later understand how CAN is integrated in the car. To clarify. A fully functioning car can be assembled 
+in the system and it also makes it easier to later understand how CAN is integrated in the car. To clarify. A fully functioning car can be assembled
 without a CAN communication system, the advantage of later integrating CAN is that it allows for simulations of real autonomous vechicles and easy integration
-of externall components user might want in their system. 
+of externall components user might want in their system.
 
-To make a car running only on radio communication, the figure below shows a logical coupling diagram with fewer components. 
+To make a car running only on radio communication, the figure below shows a logical coupling diagram with fewer components.
 
 .. image:: https://drive.google.com/uc?id=13QfoT1vhVVftApaJ50B8O1bqxpXLPOYq&export=view
    :alt: Image not accessible.
@@ -44,25 +44,23 @@ To make a car running only on radio communication, the figure below shows a logi
 
 
 Let us start by mounting the radio receiver to the car. Simply take the reciever and use dual lock bands to connectit to the car.
-A video is available below for more detail. 
+A video is available below for more detail.
 
-
-.. raw:: html
-
-   <iframe src="https://drive.google.com/file/d/1HIjIRUahoGp-xdRurtvmsrER9HhezkiT/preview" width="640" height="480"></iframe>
-
+.. video:: _assets/Radio_FINAL.mp4
+   :width: 640
+   :height: 480
 
 step 3
 -------------
 Connect the ESC and the battery.
 
 The ESC is responsible for controlling the motor and in the case of a system that only uses radio communication it needs to be
-connected to the battery (for power), the Radio receiver (in order to get the PWM siganl that is needed by the ESC) and the motor that 
-it controls. Start by simply mounting the battery in the battery holder (see video below). 
+connected to the battery (for power), the Radio receiver (in order to get the PWM siganl that is needed by the ESC) and the motor that
+it controls. Start by simply mounting the battery in the battery holder (see video below).
 
 .. raw:: html
 
-   <iframe src="https://drive.google.com/file/d/1OoEJFQD-E1rio0Y6K7k7Fzl_vECRsWQB/preview" width="640" height="480"></iframe> 
+   <iframe src="https://drive.google.com/file/d/1OoEJFQD-E1rio0Y6K7k7Fzl_vECRsWQB/preview" width="640" height="480"></iframe>
 
 
 Next, mount the ESC to the chasit with some dual lock band (see video below).
@@ -76,7 +74,7 @@ the proper order (if they are reversed, the motor will rotate in the opposite di
 
 .. raw:: html
 
-   <iframe src="https://drive.google.com/file/d/1aqgw_Y7-yVVJulVM0oCVaDbZCrqgpy4E/preview" width="640" height="480"></iframe> 
+   <iframe src="https://drive.google.com/file/d/1aqgw_Y7-yVVJulVM0oCVaDbZCrqgpy4E/preview" width="640" height="480"></iframe>
 
 You should now have a fully functioning car operable through the radio receiver. Feel free to turn it on and take it for a test drive to verify
 that it works as intended. See video below.
@@ -87,4 +85,4 @@ step 4
 -------------
 Expanding with a CAN system.
 
-... 
+...

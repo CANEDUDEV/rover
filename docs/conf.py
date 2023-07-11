@@ -13,7 +13,12 @@ author = "CANEDUDEV AB"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["breathe", "sphinx_rtd_theme"]
+extensions = [
+    "breathe",
+    "sphinx_toolbox.assets",
+    "sphinxcontrib.video",
+    "sphinx_rtd_theme",
+]
 
 breathe_default_project = "Rover"
 
