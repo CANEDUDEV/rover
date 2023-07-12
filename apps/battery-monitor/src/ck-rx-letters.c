@@ -86,7 +86,15 @@ int process_reg_out_voltage_letter(const ck_letter_t *letter) {
   // Voltages in mV
   const float r_set = 54900 * (1250 / ((float)target_voltage - 2500)) - 6490;
   const float potentiometer_f = r_set * (256.0F / (100 * 1000));
-  const uint8_t potentiometer_value = (uint8_t)roundf(potentiometer_f);
+  uint8_t potentiometer_value = (uint8_t)roundf(potentiometer_f);
+
+  // Check for overflow
+  if (potentiometer_f > 0xFF) {  // NOLINT
+    potentiometer_value = 0xFF;  // NOLINT
+  }
+  if (potentiometer_f < 0) {
+    potentiometer_value = 0;
+  }
 
   configure_potentiometer(potentiometer_value);
 
