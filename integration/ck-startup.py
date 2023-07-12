@@ -36,10 +36,10 @@ with canlib.openChannel(
     ch.writeWait(servo.assign_steering_trim_rx, -1)
     ch.writeWait(servo.assign_report_freq_rx, -1)
 
-    ch.writeWait(sbus.assign_steering, -1)
-    ch.writeWait(sbus.assign_steering_trim, -1)
-    ch.writeWait(sbus.assign_throttle, -1)
-    ch.writeWait(sbus.assign_throttle_trim, -1)
+    ch.writeWait(sbus.assign_steering_tx, -1)
+    ch.writeWait(sbus.assign_steering_trim_tx, -1)
+    ch.writeWait(sbus.assign_throttle_tx, -1)
+    ch.writeWait(sbus.assign_throttle_trim_tx, -1)
 
     ch.writeWait(ck.communicate, -1)
     ch.busOff()
