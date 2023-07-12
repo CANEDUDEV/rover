@@ -15,7 +15,7 @@ accompanying reference applications.
    getting-started
    mechanical-components
 
-   assets
+   videos
 
 Indices and tables
 ==================

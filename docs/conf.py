@@ -21,6 +21,7 @@ extensions = [
 ]
 
 breathe_default_project = "Rover"
+assets_dir = "_assets"
 
 # Tell sphinx what the primary language being documented is.
 primary_domain = "c"
