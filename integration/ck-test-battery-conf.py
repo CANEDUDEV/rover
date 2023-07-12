@@ -25,6 +25,8 @@ with canlib.openChannel(
 
     ch.writeWait(ck.communicate, -1)
 
+    ch.writeWait(battery.set_reg_out_voltage_5v, -1)
+
     sleep(2)
     ch.writeWait(battery.set_reg_pwr_off, -1)
     sleep(2)
