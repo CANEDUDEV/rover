@@ -27,7 +27,7 @@ with canlib.openChannel(
 
     ch.writeWait(ck.communicate, -1)
 
-    ch.writeWait(servo.set_potentiometer_35, -1)
+    ch.writeWait(servo.set_servo_voltage_7400mv, -1)
     ch.writeWait(servo.set_pwm_conf_333hz, -1)
 
     ch.writeWait(servo.set_steer_trim_pulse_200, -1)

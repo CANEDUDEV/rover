@@ -49,8 +49,8 @@ assign_steering_trim_rx = Frame(
 # CAN report frequency receive
 assign_report_freq_rx = Frame(id_=0, dlc=8, data=[ck.servo_id, 2, 9, 2, 0, 0, 11, 0x3])
 
-# Set potentiometer value to 35
-set_potentiometer_35 = Frame(id_=0x205, dlc=2, data=[0x23, 0])
+# Set servo votlage to 7400 mV
+set_servo_voltage_7400mv = Frame(id_=0x205, dlc=2, data=[0xE8, 0x1C])
 
 # Set PWM frequency to 333 Hz
 set_pwm_conf_333hz = Frame(id_=0x206, dlc=2, data=[0x4D, 0x1])

@@ -57,6 +57,9 @@ set_0ma_current = Frame(id_=0x103, dlc=7, data=[0xFF, 0xFF, 0x01, 0, 0, 0, 0])
 # Set over-current threshold to 49500mA. All other values are ignored.
 set_49500ma_current = Frame(id_=0x103, dlc=7, data=[0xFF, 0xFF, 0x01, 0x5C, 0xC1, 0, 0])
 
+# Set regulated output voltage to 5V.
+set_reg_out_voltage_5v = Frame(id_=0x104, dlc=2, data=[0x88, 0x13])
+
 set_reg_pwr_off = Frame(id_=0x105, dlc=2, data=[0, 1])  # Set regulated power out OFF
 
 set_reg_pwr_on = Frame(id_=0x105, dlc=2, data=[1, 1])  # Set regulated power out ON
