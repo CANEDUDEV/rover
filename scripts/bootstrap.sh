@@ -11,7 +11,8 @@ sudo apt-get -qq install -y \
 	clang-tidy \
 	doxygen \
 	gcc-arm-none-eabi \
-	libc6-dev-armhf-cross
+	libc6-dev-armhf-cross \
+	python3-pip
 
 pip install -q -r requirements.txt
 
