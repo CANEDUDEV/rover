@@ -23,7 +23,7 @@ credentials = service_account.Credentials.from_service_account_file(
 )
 scoped_credentials = credentials.with_scopes("https://www.googleapis.com/auth/drive")
 
-assets_folder = os.path.join(root_folder, "docs", "assets")
+assets_folder = os.path.join(root_folder, "docs", "_assets")
 os.makedirs(assets_folder, exist_ok=True)
 
 try:
