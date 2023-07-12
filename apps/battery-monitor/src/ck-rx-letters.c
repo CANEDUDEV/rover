@@ -1,5 +1,6 @@
 #include "ck-rx-letters.h"
 
+#include <math.h>
 #include <string.h>
 
 #include "adc.h"
@@ -50,19 +51,45 @@ int process_jumper_and_fuse_conf_letter(const ck_letter_t *letter) {
   return APP_OK;
 }
 
-// 1 bytes in page
+// 2 bytes in page
 //
-// byte 0: potentiometer value. Higher value gives a lower output voltage.
+// bytes 0-1: desired output voltage on the regulated output.
 //
-// Potentiometer = 0xFF => 3270 mV
-// For 2 cell battery: potentiometer = 0 => 7610 mV
-// For 4 cell battery: potentiometer = 0 => 12510 mV
+// Voltage regulator (PTN78020W) formula for calculating the output voltage
+// using a given resistance:
+//
+// R_set = 54.9 kOhm * (1.25 V / (V_o - 2.5 V)) - 6.490 kOhm,
+//
+// Where V_o is the target voltage and R_set is the required resistance to set
+// the target_voltage.
+//
+// We use a potentiometer to set R_set. The potentiometer (TPL0102-100) takes a
+// value between 0 and 255 (total 256 steps) corresponding to resistances
+// between 0 and 100 kOhm. This gives the formula
+//  R_set = (100 kOhm / 256) * potentiometer_value =>
+//  potentiometer_value = (256 / 100 kOhm) * R_set
+//
 int process_reg_out_voltage_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 1) {
+  if (letter->page.line_count != 2) {
     return APP_NOT_OK;
   }
 
-  configure_potentiometer(letter->page.lines[0]);
+  uint16_t target_voltage = 0;
+  memcpy(&target_voltage, letter->page.lines, sizeof(target_voltage));
+
+  const uint16_t min_voltage = 3300;   // CPU voltage
+  const uint16_t max_voltage = 12600;  // PTN78020W regulator max
+  if (target_voltage < min_voltage || target_voltage > max_voltage) {
+    return APP_NOT_OK;
+  }
+
+  // Voltages in mV
+  const float r_set = 54900 * (1250 / ((float)target_voltage - 2500)) - 6490;
+  const float potentiometer_f = r_set * (256.0F / (100 * 1000));
+  const uint8_t potentiometer_value = (uint8_t)roundf(potentiometer_f);
+
+  configure_potentiometer(potentiometer_value);
+
   return APP_OK;
 }
 
