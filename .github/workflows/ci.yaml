@@ -32,6 +32,13 @@ jobs:
       - name: Check source
         run: ./scripts/check-src.sh
 
+      - name: Cache assets
+        id: cache-assets
+        uses: actions/cache@v3
+        with:
+          path: docs/_assets
+          key: ${{ runner.os }}-assets
+
       - name: Build documentation
         run: meson compile -C build docs
 
