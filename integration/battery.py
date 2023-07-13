@@ -1,81 +1,46 @@
 # Battery board testing frames
 
 from canlib import Frame
-import ck
+from rover import Envelope
 
-# Assign envelope 0x100 to folder 2
-# Cell voltages transmit
-assign_cell_voltage_tx = Frame(
-    id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 0, 1, 0, 0, 2, 0x3]
-)
 
-# Assign envelope 0x101 to folder 3
-# Regulated output current transmit
-assign_reg_out_current_tx = Frame(
-    id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 1, 1, 0, 0, 3, 0x3]
-)
+def set_over_current_threshold_frame(current_ma):
+    data = [0xFF, 0xFF, 0x01] + list(current_ma.to_bytes(4, "little"))
+    return Frame(id_=Envelope.BATTERY_JUMPER_AND_FUSE_CONF, dlc=7, data=data)
 
-# Assign envelope 0x102 to folder 4
-# Unregulated output current transmit
-assign_vbat_out_current_tx = Frame(
-    id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 2, 1, 0, 0, 4, 0x3]
-)
 
-# Assign envelope 0x103 to folder 5
-# Jumper and fuse config, over-current threck.battery_monitor_idhold receive
-assign_jumper_and_fuse_conf_rx = Frame(
-    id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 3, 1, 0, 0, 5, 0x3]
-)
+def set_reg_out_voltage_frame(voltage_mv):
+    data = list(voltage_mv.to_bytes(2, "little"))
+    return Frame(id_=Envelope.BATTERY_REG_OUT_VOLTAGE, dlc=2, data=data)
 
-# Assign envelope 0x104 to folder 6
-# Regulated out voltage receive
-assign_reg_out_voltage_rx = Frame(
-    id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 4, 1, 0, 0, 6, 0x3]
-)
 
-# Assign envelope 0x105 to folder 7
-# Output on/off receive
-assign_output_on_off_rx = Frame(
-    id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 5, 1, 0, 0, 7, 0x3]
-)
+set_reg_pwr_off_frame = Frame(
+    id_=Envelope.BATTERY_OUTPUT_ON_OFF, dlc=2, data=[0, 1]
+)  # Set regulated power out OFF
 
-# Assign envelope 0x106 to folder 8
-# CAN report frequency receive
-assign_report_freq_rx = Frame(
-    id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 6, 1, 0, 0, 8, 0x3]
-)
+set_reg_pwr_on_frame = Frame(
+    id_=Envelope.BATTERY_OUTPUT_ON_OFF, dlc=2, data=[1, 1]
+)  # Set regulated power out ON
 
-# Assign envelope 0x107 to folder 9
-# Low voltage cutoff value receive
-assign_low_voltage_cutoff_rx = Frame(
-    id_=0, dlc=8, data=[ck.battery_monitor_id, 2, 7, 1, 0, 0, 9, 0x3]
-)
+set_pwr_off_frame = Frame(
+    id_=Envelope.BATTERY_OUTPUT_ON_OFF, dlc=2, data=[0, 0]
+)  # Set power out OFF
 
-# Set over-current threshold to 0mA. All other values are ignored.
-set_0ma_current = Frame(id_=0x103, dlc=7, data=[0xFF, 0xFF, 0x01, 0, 0, 0, 0])
+set_pwr_on_frame = Frame(
+    id_=Envelope.BATTERY_OUTPUT_ON_OFF, dlc=2, data=[1, 1]
+)  # Set power out ON
 
-# Set over-current threshold to 49500mA. All other values are ignored.
-set_49500ma_current = Frame(id_=0x103, dlc=7, data=[0xFF, 0xFF, 0x01, 0x5C, 0xC1, 0, 0])
 
-# Set regulated output voltage to 5V.
-set_reg_out_voltage_5v = Frame(id_=0x104, dlc=2, data=[0x88, 0x13])
+def set_low_voltage_cutoff_frame(voltage_mv):
+    data = list(voltage_mv.to_bytes(2, "little"))
+    return Frame(id_=Envelope.BATTERY_LOW_VOLTAGE_CUTOFF, dlc=2, data=data)
 
-set_reg_pwr_off = Frame(id_=0x105, dlc=2, data=[0, 1])  # Set regulated power out OFF
 
-set_reg_pwr_on = Frame(id_=0x105, dlc=2, data=[1, 1])  # Set regulated power out ON
+def set_monitor_period_frame(time_ms):
+    data = list(time_ms.to_bytes(2, "little")) + [0, 0]
+    return Frame(id_=Envelope.BATTERY_REPORT_FREQUENCY, dlc=4, data=data)
 
-set_pwr_off = Frame(id_=0x105, dlc=2, data=[0, 0])  # Set power out OFF
 
-set_pwr_on = Frame(id_=0x105, dlc=2, data=[1, 1])  # Set power out ON
-
-# Set low-voltage cutoff value to 4200mV.
-set_4200mv_cutoff = Frame(id_=0x107, dlc=2, data=[0x68, 0x10])
-
-# Set low-voltage cutoff value to 3200mV.
-set_3200mv_cutoff = Frame(id_=0x107, dlc=2, data=[0x80, 0xC])
-
-# Set monitor frequency to 500 ms. Ignore report frequency.
-set_monitor_freq_500ms = Frame(id_=0x106, dlc=4, data=[0xF4, 0x1, 0, 0])
-
-# Set report frequency to 1000 ms. Ignore monitor frequency.
-set_report_freq_1000ms = Frame(id_=0x106, dlc=4, data=[0, 0, 0xE8, 0x3])
+def set_report_period_frame(time_ms):
+    data = [0, 0] + list(time_ms.to_bytes(2, "little"))
+    return Frame(id_=Envelope.BATTERY_REPORT_FREQUENCY, dlc=4, data=data)
