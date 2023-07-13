@@ -162,8 +162,10 @@ int process_report_freq_letter(const ck_letter_t *letter) {
 
 // 2 bytes in page
 //
-// bytes 0-1: low voltage cutoff value in mV. 16-bit number where byte 0 is MSB
-// and byte 1 is LSB.
+// bytes 0-1: low voltage cutoff value in mV. 16-bit number where byte 0 is LSB
+// and byte 1 is MSB. The value should correspond to the lowest voltage each
+// individual cell in the battery may have, not the total voltage of the cells
+// combined.
 int process_low_voltage_cutoff_letter(const ck_letter_t *letter) {
   if (letter->page.line_count != 2) {
     return APP_NOT_OK;
