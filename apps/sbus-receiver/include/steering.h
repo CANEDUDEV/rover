@@ -20,6 +20,8 @@ typedef struct {
 steering_command_t sbus_packet_to_steering_command(
     const sbus_packet_t *sbus_packet);
 
+steering_command_t neutral_steering_command(void);
+
 #ifdef __cplusplus
 }
 #endif
