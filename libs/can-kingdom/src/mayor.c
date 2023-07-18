@@ -425,13 +425,9 @@ ck_err_t ck_correct_letter_received(void) {
 
   mayor.startup_finished = true;
 
-  // If the bit timing has changed and a letter was correctly received,
-  // we should save the bit timing settings to persistent storage.
-  ck_can_bit_timing_t default_bit_timing = ck_default_bit_timing();
-  if (memcmp(&default_bit_timing, &mayor.current_bit_timing,
-             sizeof(ck_can_bit_timing_t)) != 0) {
-    return ck_save_bit_timing(&mayor.current_bit_timing);
-  }
+  // If a letter was correctly received, we should save the bit timing settings
+  // to persistent storage.
+  ck_save_bit_timing(&mayor.current_bit_timing);
 
   return CK_OK;
 }
