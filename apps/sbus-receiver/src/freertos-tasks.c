@@ -14,6 +14,7 @@
 #include "error.h"
 #include "peripherals.h"
 #include "print.h"
+#include "printf.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"
@@ -31,9 +32,12 @@ static StaticTask_t process_letter_buf;
 static StackType_t process_letter_stack[configMINIMAL_STACK_SIZE];
 
 void sbus_read(void *unused);
-void process_letter(void *unused);
+// SBUS helpers
+int sbus_read_header(uint8_t *sbus_data);
+int sbus_read_data(uint8_t *sbus_data);
+void send_steering_command(steering_command_t *command);
 
-void send_docs(void);
+void process_letter(void *unused);
 void dispatch_letter(ck_letter_t *letter);
 
 void task_init(void) {
@@ -51,67 +55,149 @@ void sbus_read(void *unused) {
 
   peripherals_t *peripherals = get_peripherals();
 
-  ck_data_t *ck_data = get_ck_data();
-
   uint8_t sbus_data[SBUS_PACKET_LENGTH];
   sbus_packet_t sbus_packet;
   steering_command_t steering_command;
-  uint32_t uart_error = 0;
+
+  // Clear receive buffer before we start
+  __HAL_UART_FLUSH_DRREGISTER(&peripherals->huart2);
 
   for (;;) {
     memset(sbus_data, 0, sizeof(sbus_data));
 
-    // Wait until reception of one complete message, in case we power up in the
-    // middle of a transmission
-    while (sbus_data[0] != SBUS_HEADER) {
-      HAL_UART_StateTypeDef status = HAL_OK;
-      status = HAL_UART_Receive(&peripherals->huart2, sbus_data, 1, 3);
-      if (status != HAL_OK && status != HAL_TIMEOUT) {
-        print("UART error in SBUS header.\r\n");
-        sbus_data[0] = 0;
-      }
-    }
-
-    HAL_UART_Receive_IT(&peripherals->huart2, &sbus_data[1],
-                        sizeof(sbus_data) - 1);
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-    uart_error = HAL_UART_GetError(&peripherals->huart2);
-
-    if (uart_error != HAL_UART_ERROR_NONE) {
-      print("UART error in SBUS data.\r\n");
+    if (sbus_read_header(sbus_data) != APP_OK) {
+      steering_command = neutral_steering_command();
+      send_steering_command(&steering_command);
       continue;
     }
 
+    if (sbus_read_data(sbus_data) != APP_OK) {
+      steering_command = neutral_steering_command();
+      send_steering_command(&steering_command);
+      continue;
+    }
+
+    // Parse packet
     sbus_parse_data(sbus_data, &sbus_packet);
-    steering_command = sbus_packet_to_steering_command(&sbus_packet);
 
     // The radio receiver sends a neutral command when the failsafe is activated
     // or a frame is lost, so we still want to send the data over CAN.
 
     // Failsafe usually triggers if many frames are lost in a row Indicates
-    // connection loss (heavy)
+    // connection loss (heavy). This will be handled by the radio receiver,
+    // so we do nothing.
     if (sbus_packet.failsafe_activated) {
       print("Failsafe activated\r\n");
     }
 
     // Indicates slight connection loss or issue with frame.
+    // Also handled by the receiver.
     if (sbus_packet.frame_lost) {
       print("Frame lost\r\n");
     }
 
-    memcpy(&ck_data->steering_page->lines[1], &steering_command.steering,
-           sizeof(steering_command.steering));
-    memcpy(&ck_data->steering_trim_page->lines[1],
-           &steering_command.steering_trim,
-           sizeof(steering_command.steering_trim));
-    memcpy(&ck_data->throttle_page->lines[1], &steering_command.throttle,
-           sizeof(steering_command.throttle));
-    memcpy(&ck_data->throttle_trim_page->lines[1],
-           &steering_command.throttle_trim,
-           sizeof(steering_command.throttle_trim));
+    steering_command = sbus_packet_to_steering_command(&sbus_packet);
+    send_steering_command(&steering_command);
+  }
+}
 
-    send_docs();
+// Try to read a header in a loop. Return error on timeout or bad UART read.
+int sbus_read_header(uint8_t *sbus_data) {
+  peripherals_t *peripherals = get_peripherals();
+  const uint16_t sbus_timeout_ms = 10;
+  uint32_t uart_error = HAL_UART_ERROR_NONE;
+
+  // Wait until reception of a header, in case we power up in the
+  // middle of a transmission
+  while (sbus_data[0] != SBUS_HEADER) {
+    int status = APP_OK;
+
+    HAL_UART_Receive_IT(&peripherals->huart2, sbus_data, sizeof(uint8_t));
+
+    if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(sbus_timeout_ms)) != pdPASS) {
+      // Timeout
+      status = APP_NOT_OK;
+    }
+
+    // Error check
+    uart_error = HAL_UART_GetError(&peripherals->huart2);
+    if (uart_error != HAL_UART_ERROR_NONE) {
+      char str[32];  // NOLINT
+      sprintf(str, "UART error in SBUS header: %u\r\n", uart_error);
+      print(str);
+      // Handle overrun by clearing receive register
+      if (uart_error == HAL_UART_ERROR_ORE) {
+        __HAL_UART_FLUSH_DRREGISTER(&peripherals->huart2);
+      }
+      status = APP_NOT_OK;
+    }
+
+    if (status != APP_OK) {
+      return status;
+    }
+  }
+
+  return APP_OK;
+}
+
+// Try to read an sbus packet.
+int sbus_read_data(uint8_t *sbus_data) {
+  peripherals_t *peripherals = get_peripherals();
+  uint32_t uart_error = HAL_UART_ERROR_NONE;
+  const uint16_t sbus_timeout_ms = 10;
+
+  int status = APP_OK;
+
+  // If header has been received correctly, let's receive the rest of the
+  // packet.
+  HAL_UART_Receive_IT(&peripherals->huart2, &sbus_data[1],
+                      SBUS_PACKET_LENGTH - 1);
+
+  // Don't wait forever, since radio connection could be lost mid transmission
+  if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(sbus_timeout_ms)) != pdPASS) {
+    // Timeout
+    status = APP_NOT_OK;
+  }
+
+  // Check for uart errors
+  uart_error = HAL_UART_GetError(&peripherals->huart2);
+  if (uart_error != HAL_UART_ERROR_NONE) {
+    char str[32];  // NOLINT
+    sprintf(str, "UART error in SBUS data: %u\r\n", uart_error);
+    print(str);
+    // Handle overrun by clearing receive register
+    if (uart_error == HAL_UART_ERROR_ORE) {
+      __HAL_UART_FLUSH_DRREGISTER(&peripherals->huart2);
+    }
+    status = APP_NOT_OK;
+  }
+
+  return status;
+}
+
+void send_steering_command(steering_command_t *command) {
+  ck_data_t *ck_data = get_ck_data();
+
+  memcpy(&ck_data->steering_page->lines[1], &command->steering,
+         sizeof(command->steering));
+  memcpy(&ck_data->steering_trim_page->lines[1], &command->steering_trim,
+         sizeof(command->steering_trim));
+  memcpy(&ck_data->throttle_page->lines[1], &command->throttle,
+         sizeof(command->throttle));
+  memcpy(&ck_data->throttle_trim_page->lines[1], &command->throttle_trim,
+         sizeof(command->throttle_trim));
+
+  if (ck_send_document(ck_data->steering_folder->folder_no) != CK_OK) {
+    print("failed to send doc.\r\n");
+  }
+  if (ck_send_document(ck_data->steering_trim_folder->folder_no) != CK_OK) {
+    print("failed to send doc.\r\n");
+  }
+  if (ck_send_document(ck_data->throttle_folder->folder_no) != CK_OK) {
+    print("failed to send doc.\r\n");
+  }
+  if (ck_send_document(ck_data->throttle_trim_folder->folder_no) != CK_OK) {
+    print("failed to send doc.\r\n");
   }
 }
 
@@ -144,23 +230,6 @@ void process_letter(void *unused) {
   }
 }
 
-void send_docs(void) {
-  ck_data_t *ck_data = get_ck_data();
-
-  if (ck_send_document(ck_data->steering_folder->folder_no) != CK_OK) {
-    print("failed to send doc.\r\n");
-  }
-  if (ck_send_document(ck_data->steering_trim_folder->folder_no) != CK_OK) {
-    print("failed to send doc.\r\n");
-  }
-  if (ck_send_document(ck_data->throttle_folder->folder_no) != CK_OK) {
-    print("failed to send doc.\r\n");
-  }
-  if (ck_send_document(ck_data->throttle_trim_folder->folder_no) != CK_OK) {
-    print("failed to send doc.\r\n");
-  }
-}
-
 void dispatch_letter(ck_letter_t *letter) {
   // Check for default letter
   if (ck_is_default_letter(letter) == CK_OK) {
@@ -179,7 +248,9 @@ void dispatch_letter(ck_letter_t *letter) {
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-  (void)huart;
+  if (huart->Instance != USART2) {
+    return;
+  }
   BaseType_t higher_priority_task_woken = pdFALSE;
   vTaskNotifyGiveFromISR(sbus_read_task, &higher_priority_task_woken);
   portYIELD_FROM_ISR(higher_priority_task_woken);

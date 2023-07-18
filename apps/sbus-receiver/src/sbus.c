@@ -20,6 +20,8 @@
  *
  */
 void sbus_parse_data(const uint8_t *data, sbus_packet_t *sbus_packet) {
+  memset(sbus_packet, 0, sizeof(sbus_packet_t));
+
   // NOLINTBEGIN(*-magic-numbers)
   sbus_packet->channels[0] = data[1] | ((data[2] << 8) & 0x07FF);
   sbus_packet->channels[1] = (data[2] >> 3) | ((data[3] << 5) & 0x07FF);
