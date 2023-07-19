@@ -58,7 +58,7 @@ void mayor_init(void) {
 
   default_letter_timer = xTimerCreateStatic(
       "default letter timer", pdMS_TO_TICKS(200),
-      pdFALSE,  // Auto reload timer
+      pdFALSE,  // Don't auto reload timer
       NULL,     // Timer ID, unused
       default_letter_timer_callback, &default_letter_timer_buf);
 

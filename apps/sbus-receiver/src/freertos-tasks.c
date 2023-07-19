@@ -3,10 +3,12 @@
 #include <string.h>
 
 #include "ck-data.h"
+#include "rover.h"
 #include "sbus.h"
 #include "steering.h"
 
 // CK
+#include "king.h"
 #include "mayor.h"
 #include "postmaster-hal.h"
 
@@ -19,17 +21,30 @@
 // FreeRTOS
 #include "FreeRTOS.h"
 #include "task.h"
+#include "timers.h"
 
 #define LOWEST_TASK_PRIORITY 24
 
+static TaskHandle_t king_task;
+static StaticTask_t king_buf;
+static StackType_t king_stack[configMINIMAL_STACK_SIZE];
+
 static TaskHandle_t sbus_read_task;
-static StaticTask_t sbus_read_buffer;
+static StaticTask_t sbus_read_buf;
 static StackType_t sbus_read_stack[configMINIMAL_STACK_SIZE];
 
 // CAN Kingdom process received letters task
 static TaskHandle_t process_letter_task;
 static StaticTask_t process_letter_buf;
 static StackType_t process_letter_stack[configMINIMAL_STACK_SIZE];
+
+void king(void *unused);
+// King helpers
+void king_timer_callback(TimerHandle_t timer);
+void send_default_letter(void);
+void send_base_number(void);
+void assign_envelopes(void);
+void start_communication(void);
 
 void sbus_read(void *unused);
 // SBUS helpers
@@ -41,13 +56,204 @@ void process_letter(void *unused);
 void dispatch_letter(ck_letter_t *letter);
 
 void task_init(void) {
-  sbus_read_task = xTaskCreateStatic(
-      sbus_read, "sbus read", configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY, sbus_read_stack, &sbus_read_buffer);
+  sbus_read_task =
+      xTaskCreateStatic(sbus_read, "sbus read", configMINIMAL_STACK_SIZE, NULL,
+                        LOWEST_TASK_PRIORITY, sbus_read_stack, &sbus_read_buf);
 
   process_letter_task = xTaskCreateStatic(
       process_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
       LOWEST_TASK_PRIORITY + 1, process_letter_stack, &process_letter_buf);
+
+  king_task =
+      xTaskCreateStatic(king, "king", configMINIMAL_STACK_SIZE, NULL,
+                        LOWEST_TASK_PRIORITY + 2, king_stack, &king_buf);
+}
+
+void king(void *unused) {
+  (void)unused;
+
+  StaticTimer_t timer_buf;
+  TimerHandle_t timer = xTimerCreateStatic("king timer", pdMS_TO_TICKS(150),
+                                           pdFALSE,  // Don't auto reload timer
+                                           NULL,     // Timer ID, unused
+                                           king_timer_callback, &timer_buf);
+  xTimerStart(timer, portMAX_DELAY);
+  ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for timer
+
+  // Default letter was received. We don't need to act as king.
+  if (ck_get_comm_mode() == CK_COMM_MODE_LISTEN_ONLY) {
+    print("Someone else is king. Suspending king task.\r\n");
+    vTaskSuspend(king_task);
+    // Task will never be resumed
+  }
+
+  // Spoof a default letter reception
+  if (ck_default_letter_received() != CK_OK) {
+    print("Error receiving fake default letter.\r\n");
+    error();
+  }
+
+  // Send default letter several times to make sure it is received.
+  for (uint8_t i = 0; i < 5; i++) {  // NOLINT(*-magic-numbers)
+    send_default_letter();
+    vTaskDelay(pdMS_TO_TICKS(1));
+  }
+
+  send_base_number();
+  vTaskDelay(pdMS_TO_TICKS(50));  // Give cities time to respond
+
+  assign_envelopes();
+  start_communication();
+
+  // Start up sbus receiver
+  if (ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE) != CK_OK) {
+    print("Error starting king.\r\n");
+    error();
+  }
+
+  vTaskSuspend(king_task);
+}
+
+void king_timer_callback(TimerHandle_t timer) {
+  (void)timer;
+  xTaskNotifyGive(king_task);
+}
+
+void send_default_letter(void) {
+  peripherals_t *peripherals = get_peripherals();
+  ck_letter_t default_letter = ck_default_letter();
+  CAN_TxHeaderTypeDef can_header = {
+      .IDE = CAN_ID_STD,
+      .StdId = default_letter.envelope.envelope_no,
+      .DLC = default_letter.page.line_count,
+  };
+  uint32_t mailbox = 0;
+
+  while (HAL_CAN_GetTxMailboxesFreeLevel(
+             &peripherals->common_peripherals->hcan) < 1) {
+    // Busy wait for CAN frame to be sent
+  }
+  HAL_CAN_AddTxMessage(&peripherals->common_peripherals->hcan, &can_header,
+                       default_letter.page.lines, &mailbox);
+}
+
+void send_base_number(void) {
+  peripherals_t *peripherals = get_peripherals();
+
+  ck_page_t page;
+
+  ck_kp1_args_t kp1_args = {
+      .address = 0,
+      .base_no = ROVER_BASE_NUMBER,
+      .has_extended_id = false,
+      .mayor_response_no = 0,
+  };
+  if (ck_create_kings_page_1(&kp1_args, &page) != CK_OK) {
+    print("Error creating king's page.\r\n");
+    error();
+  }
+
+  CAN_TxHeaderTypeDef can_header = {
+      .IDE = CAN_ID_STD,
+      .StdId = 0,
+      .DLC = page.line_count,
+  };
+
+  uint32_t mailbox = 0;
+
+  while (HAL_CAN_GetTxMailboxesFreeLevel(
+             &peripherals->common_peripherals->hcan) < 1) {
+    // Busy wait for CAN frame to be sent
+  }
+  HAL_CAN_AddTxMessage(&peripherals->common_peripherals->hcan, &can_header,
+                       page.lines, &mailbox);
+}
+
+void assign_envelopes(void) {
+  peripherals_t *peripherals = get_peripherals();
+  rover_kingdom_t *kingdom = get_rover_kingdom();
+  uint32_t mailbox = 0;
+  ck_page_t page;
+
+  // Asssign envelopes for others
+  for (uint8_t i = 0; i < kingdom->assignment_count; i++) {
+    ck_kp2_args_t kp2_args = {
+        .address = kingdom->assignments[i].city,
+        .envelope.enable = true,
+        .envelope.envelope_no = kingdom->assignments[i].envelope,
+        .folder_no = kingdom->assignments[i].folder,
+        .envelope_action = CK_ENVELOPE_ASSIGN,
+    };
+
+    if (ck_create_kings_page_2(&kp2_args, &page) != CK_OK) {
+      print("Error creating king's page.\r\n");
+      error();
+    }
+
+    CAN_TxHeaderTypeDef can_header = {
+        .IDE = CAN_ID_STD,
+        .StdId = 0,
+        .DLC = page.line_count,
+    };
+
+    while (HAL_CAN_GetTxMailboxesFreeLevel(
+               &peripherals->common_peripherals->hcan) < 1) {
+      // Busy wait for CAN frame to be sent
+    }
+    HAL_CAN_AddTxMessage(&peripherals->common_peripherals->hcan, &can_header,
+                         page.lines, &mailbox);
+  }
+
+  // Finally, assign our own envelopes
+  ck_data_t *ck_data = get_ck_data();
+  ck_data->steering_folder->envelope_count = 1;
+  ck_data->steering_folder->envelopes[0].envelope_no = ROVER_STEERING_ENVELOPE;
+  ck_data->steering_folder->envelopes[0].enable = true;
+
+  ck_data->steering_trim_folder->envelope_count = 1;
+  ck_data->steering_trim_folder->envelopes[0].envelope_no =
+      ROVER_STEERING_TRIM_ENVELOPE;
+  ck_data->steering_trim_folder->envelopes[0].enable = true;
+
+  ck_data->throttle_folder->envelope_count = 1;
+  ck_data->throttle_folder->envelopes[0].envelope_no = ROVER_THROTTLE_ENVELOPE;
+  ck_data->throttle_folder->envelopes[0].enable = true;
+
+  ck_data->throttle_trim_folder->envelope_count = 1;
+  ck_data->throttle_trim_folder->envelopes[0].envelope_no =
+      ROVER_THROTTLE_TRIM_ENVELOPE;
+  ck_data->throttle_trim_folder->envelopes[0].enable = true;
+}
+
+void start_communication(void) {
+  peripherals_t *peripherals = get_peripherals();
+  ck_page_t page;
+  ck_kp0_args_t kp0_args = {
+      .address = 0,
+      .city_mode = CK_CITY_MODE_KEEP_CURRENT,
+      .action_mode = CK_ACTION_MODE_KEEP_CURRENT,
+      .comm_mode = CK_COMM_MODE_COMMUNICATE,
+  };
+
+  if (ck_create_kings_page_0(&kp0_args, &page) != CK_OK) {
+    print("Error creating king's page.\r\n");
+    error();
+  }
+
+  CAN_TxHeaderTypeDef can_header = {
+      .IDE = CAN_ID_STD,
+      .StdId = 0,
+      .DLC = page.line_count,
+  };
+
+  uint32_t mailbox = 0;
+
+  while (HAL_CAN_GetTxMailboxesFreeLevel(
+             &peripherals->common_peripherals->hcan) < 1) {
+    // Busy wait for CAN frame to be sent
+  }
+  HAL_CAN_AddTxMessage(&peripherals->common_peripherals->hcan, &can_header,
+                       page.lines, &mailbox);
 }
 
 void sbus_read(void *unused) {

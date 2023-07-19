@@ -7,6 +7,7 @@ subdir('third-party')
 # Convenience source file list
 common_libs_src = [
   can_kingdom_src,
+  rover_src,
   stm32_common_src,
   stm32_postmaster_src,
 
@@ -31,6 +32,7 @@ common_libs_inc = [
 
 common_libs_tidy_files = [
   can_kingdom_tidy_files,
+  rover_tidy_files,
   stm32_common_tidy_files,
   stm32_postmaster_tidy_files,
 ]
