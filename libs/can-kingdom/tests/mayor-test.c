@@ -594,7 +594,7 @@ static test_err_t test_process_kp1(void) {
 }
 
 // First assign envelopes 200 and 300 to folder 2, then transfer envelope 300 to
-// folder 3, then expel envelope 200.
+// folder 3, then expel envelope 200, then disable envelope 300.
 static test_err_t test_process_kp2(void) {
   test_err_t err = setup_test();
   if (err != TEST_PASS) {
@@ -709,6 +709,22 @@ static test_err_t test_process_kp2(void) {
         "process_kp2: expel: wrong envelope count for folder 2, "
         "expected: 0, got: %u.\n",
         data.folders[2].envelope_count);
+    return TEST_FAIL;
+  }
+
+  // Disable envelope no 300.
+  args.envelope.envelope_no = 300;  // NOLINT
+  args.envelope_action = CK_ENVELOPE_NO_ACTION;
+  args.envelope.enable = false;
+  ck_create_kings_page_2(&args, &letter.page);
+
+  if (ck_process_kings_letter(&letter) != CK_OK) {
+    printf("process_kp2: disable: failed to process page.\n");
+    return TEST_FAIL;
+  }
+  if (data.folders[3].envelopes[0].enable) {
+    printf(
+        "process_kp2: disable: envelope 300 enabled after disable command.\n");
     return TEST_FAIL;
   }
 
