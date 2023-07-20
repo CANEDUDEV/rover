@@ -51,6 +51,7 @@ static ck_err_t process_kp17(const ck_page_t *page);
 
 static ck_err_t remove_envelope_from_folder(ck_folder_t *folder,
                                             const ck_envelope_t *envelope);
+static ck_err_t update_envelope(const ck_envelope_t *envelope);
 static ck_err_t assign_envelope(uint8_t folder_no,
                                 const ck_envelope_t *envelope);
 static ck_err_t expel_envelope(const ck_envelope_t *envelope);
@@ -623,7 +624,7 @@ static ck_err_t process_kp2(const ck_page_t *page) {
 
   switch (envelope_action) {
     case CK_ENVELOPE_NO_ACTION:
-      return CK_OK;
+      return update_envelope(&envelope);
 
     case CK_ENVELOPE_ASSIGN:
       return assign_envelope(folder_no, &envelope);
@@ -904,6 +905,20 @@ static ck_err_t is_envelope_in_folder(const ck_envelope_t *envelope,
   }
 
   return CK_OK;
+}
+
+static ck_err_t update_envelope(const ck_envelope_t *envelope) {
+  // Loop through folders and update the envelope if found.
+  for (uint8_t i = 0; i < mayor.user_data.folder_count; i++) {
+    int envelope_number = find_envelope(&mayor.user_data.folders[i], envelope);
+    // If envelope is found, we update its enable state and return OK.
+    if (envelope_number >= 0) {
+      mayor.user_data.folders[i].envelopes[envelope_number].enable =
+          envelope->enable;
+      return CK_OK;
+    }
+  }
+  return CK_ERR_ITEM_NOT_FOUND;
 }
 
 static ck_err_t assign_envelope(uint8_t folder_no,
