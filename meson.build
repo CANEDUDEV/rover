@@ -35,3 +35,20 @@ run_target(
     tidy_files,
   ]
 )
+
+binary_files = [
+  battery_monitor_bin,
+  joystick_bin,
+  sbus_receiver_bin,
+  servo_bin,
+  motor_bin
+]
+
+run_target(
+  'release',
+  command: [
+    'bash',
+    meson.project_source_root() / 'scripts' / 'create-release.sh',
+  ],
+  depends: binary_files,
+)

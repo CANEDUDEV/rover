@@ -12,7 +12,8 @@ sudo apt-get -qq install -y \
 	doxygen \
 	gcc-arm-none-eabi \
 	libc6-dev-armhf-cross \
-	python3-pip
+	python3-pip \
+	zip
 
 pip install -q -r requirements.txt
 
