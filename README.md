@@ -1,35 +1,42 @@
 # Rover
 
-Project contains default code for all boards in the CANEDUDEV Rover.
+This repository contains the default code for all boards in the CANEDUDEV Rover.
 
-Board applications use [FreeRTOS](https://www.freertos.org/).
+Board applications utilize [FreeRTOS](https://www.freertos.org/).
 
-## Building the board applications
+## Building the Board Applications
 
-This project is built using [meson](https://mesonbuild.com/) with the ninja backend.
+This project is built using [Meson](https://mesonbuild.com/) with the Ninja backend.
 
-Only Ubuntu-22.04 is supported. If using Windows, use the Ubuntu-22.04 [WSL](https://learn.microsoft.com/en-us/windows/wsl/) distro.
+Supported OS: Ubuntu 22.04. If you're using Windows, you can utilize the Ubuntu 22.04 [WSL](https://learn.microsoft.com/en-us/windows/wsl/) distribution.
 
-To build:
+### Build Steps
 
-1. Run `./scripts/bootstrap.sh` to prepare the build environment. This installs all dependencies and prepares the build folder.
-2. Run `meson compile -C build` to build.
-3. Build output is in the `build` folder.
+1. Run `./scripts/bootstrap.sh` to set up the build environment. This step installs all dependencies and prepares the build folder.
+2. Execute `meson compile -C build` to initiate the build process.
+3. The build output can be found in the `build` folder.
 
-## Building the documentation
+## Building the Documentation
 
-Run `meson compile -C build docs` to build the documentation. The html output is in the `build/docs/html` folder.
+To build the documentation, run `meson compile -C build docs`. The HTML output is located in the `build/docs/html` folder.
 
-## Running tests
+## Building a Release
 
-Run `meson test -C build` to run all tests.
+Generate a zip file containing the board binaries by running `meson compile -C build release`. The output is stored in the `build` folder.
 
-## Using STM32CubeMX to generate code
+## Running Tests
 
-Hardware initialization code for the various boards is generated using the [STM32CubeMX](https://www.st.com/en/development-tools/stm32cubemx.html) program. STM32CubeMX projects are defined in `.ioc` files. To modify a board's hardware initialization, load the project's `.ioc` file from within STM32CubeMX. The rover's `.ioc` files are in the `boards` directory.
+To run all unit tests, execute `meson test -C build`. Additionally, there are integration tests that run against the boards. Note that these tests require hardware that supports canlib, such as the [Kvaser Leaf Light](https://www.kvaser.com/product/kvaser-leaf-light-hs-v2/).
 
-After loading a project, generate code by clicking on "GENERATE CODE" in the top right. If asked to download firmware, always download.
+## Using STM32CubeMX to Generate Code
 
-## Flashing binaries onto the board
+The hardware initialization code for various boards was initially generated using [STM32CubeMX](https://www.st.com/en/development-tools/stm32cubemx.html). STM32CubeMX projects are defined in `.ioc` files located in the `boards` directory.
 
-Binaries are flashed onto the board using the [ST-LINK/V2 programmer](https://www.st.com/en/development-tools/st-link-v2.html) and the [STM32CubeProgrammer software](https://www.st.com/en/development-tools/stm32cubeprog.html).
+Follow these steps to generate code:
+1. Load a project in STM32CubeMX.
+2. Click "GENERATE CODE" in the top right corner.
+3. If prompted to download firmware, proceed with the download.
+
+## Flashing Binaries onto the Board
+
+Binaries are flashed onto the board using the [ST-LINK/V2 programmer](https://www.st.com/en/development-tools/st-link-v2.html) along with the [STM32CubeProgrammer software](https://www.st.com/en/development-tools/stm32cubeprog.html).
