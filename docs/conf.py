@@ -15,8 +15,6 @@ author = "CANEDUDEV AB"
 
 extensions = [
     "breathe",
-    "sphinx_toolbox.assets",
-    "sphinxcontrib.video",
     "sphinx_rtd_theme",
 ]
 
