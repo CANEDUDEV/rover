@@ -13,19 +13,6 @@ doxygen_xml = custom_target(
   build_always_stale: true,
 )
 
-python = find_program('python3', required: true)
-
-download_assets = custom_target(
-  'assets',
-  command: [
-    python,
-    meson.project_source_root() / 'scripts' / 'download-assets.py',
-    meson.project_source_root(),
-  ],
-  output: 'assets', # ignored
-  build_always_stale: true,
-)
-
 sphinx = find_program('sphinx-build', required: false)
 
 sphinx_project_arg = '-Dbreathe_projects.@0@=@1@'.format(
@@ -44,7 +31,8 @@ docs = custom_target(
     meson.current_build_dir() / 'html',
   ],
   input: sphinx_src,
-  depends: [doxygen_xml, download_assets],
+  # depends: [doxygen_xml, download_assets],
+  depends: doxygen_xml,
   output: 'html',
   build_always_stale: true,
 )
