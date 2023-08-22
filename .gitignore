@@ -6,3 +6,5 @@
 build/
 compile_commands.json
 *Zone.Identifier
+*.csv
+*.mp4
