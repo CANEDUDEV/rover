@@ -1,19 +1,14 @@
 Welcome to the Rover's documentation!
 =====================================
-This page contains the documentation for the CANEDUDEV Rover. The
-documentation provides an overview of the Rover's components and the
-accompanying reference applications.
+This page contains the documentation for the CANEDUDEV Rover.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
-
-   boards
-   apps
-   can-kingdom
    getting-started
-   mechanical-components
+   hardware
+   software
 
 Indices and tables
 ==================
