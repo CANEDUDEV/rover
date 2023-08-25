@@ -11,7 +11,7 @@ Unbox the car and gather the different components. The car comes with a fully
 assembled chassis structure, including wheels and a motor. It looks like the
 picture below:
 
-.. image:: https://%DOMAIN%/wp-content/uploads/2023/08/20230803_Chasit_pic.jpg
+.. image:: https://%DOMAIN%/rover/_images/chassis.jpg
 
 ..
     The remaining components need to be manually mounted, and this guide will cover
@@ -22,9 +22,9 @@ picture below:
     Additionally, an example of where these components can be mounted on the actual
     car is provided.
 
-.. .. image:: https://%DOMAIN%/wp-content/uploads/2023/08/20230803_rover_koppling.png
+.. .. image:: https://%DOMAIN%/rover/_images/rover_koppling.png
 
-.. .. image:: https://%DOMAIN%/wp-content/uploads/2023/08/20230803_CAN_koppling.png
+.. .. image:: https://%DOMAIN%/rover/_images/CAN_koppling.png
 
 Connect the Radio Receiver
 --------------------------
@@ -36,12 +36,11 @@ simpler components in the system and makes it easier to later integrate CAN
 functionality. It's important to note that a fully functional car can be
 assembled without a CAN communication system. However, with CAN it's possible
 to integrate external components into the system, and the Rover becomes more
-like a real vehicle.
-
+like a real vehiclechassis
 To create a car that runs solely on radio communication, refer to the logical
 connection diagram below, which features fewer components.
 
-.. image:: https://%DOMAIN%/wp-content/uploads/2023/08/20230803_Radio_koppling.png
+.. image:: https://%DOMAIN%/rover/_images/radio-connection.svg
 
 Let's begin by mounting the radio receiver onto the car. Secure the receiver in
 place using dual-lock bands. For more detailed instructions, refer to the video
@@ -50,9 +49,9 @@ below:
 .. raw:: html
 
     <iframe
-        src="https://drive.google.com/file/d/1-3gWJnZZubKGLmURvWDrlAjw7OOtkZgL/preview"
+        src="https://%DOMAIN%/rover/_videos/radio-mount.mp4"
         width="640"
-        height="480"
+        height="360"
         allowfullscreen>
     </iframe>
 
@@ -67,9 +66,9 @@ mounting the battery into the battery holder, as shown in the video below:
 .. raw:: html
 
     <iframe
-        src="https://drive.google.com/file/d/1-4EV5S6nP1TR25fQqRmXC2eF8FLqkBos/preview"
+        src="https://%DOMAIN%/rover/_videos/battery-mount.mp4"
         width="640"
-        height="480"
+        height="360"
         allowfullscreen>
     </iframe>
 
@@ -79,9 +78,9 @@ this video:
 .. raw:: html
 
     <iframe
-        src="https://drive.google.com/file/d/1-455EEHtMENinTFDLyQ3desgI4G_R7z3/preview"
+        src="https://%DOMAIN%/rover/_videos/esc-mount.mp4"
         width="640"
-        height="480"
+        height="360"
         allowfullscreen>
     </iframe>
 
@@ -93,9 +92,9 @@ below for detailed instructions:
 .. raw:: html
 
     <iframe
-        src="https://drive.google.com/file/d/1-5Wft4Lpu3ftsbtzfde2yVR1hEQrILQ0/preview"
+        src="https://%DOMAIN%/rover/_videos/radio-connect.mp4"
         width="640"
-        height="480"
+        height="360"
         allowfullscreen>
     </iframe>
 
@@ -106,9 +105,9 @@ functionality:
 .. raw:: html
 
     <iframe
-        src="https://drive.google.com/file/d/1-BLLkLxk2fuAjFI8hj9rInPU9z_X1g7q/preview"
+        src="https://%DOMAIN%/rover/_videos/test-drive.mp4"
         width="640"
-        height="480"
+        height="360"
         allowfullscreen>
     </iframe>
 
