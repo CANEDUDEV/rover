@@ -335,7 +335,7 @@ typedef enum {
  * | #CK_LIST_PAGE     | ck_page_t *     |
  * | #CK_LIST_DOCUMENT | ck_document_t * |
  *
- * The `uint8_t *` in a #CK_BIT_LIST will be treated as a contiguous bit array.
+ * The `uint8_t *` in a #CK_LIST_BIT will be treated as a contiguous bit array.
  * This means the record count should reflect the number of bits, not the number
  * of bytes in the list.
  *
