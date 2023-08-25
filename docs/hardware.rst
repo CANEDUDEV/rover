@@ -35,8 +35,8 @@ Check out the video below on how to program the ESC using the Performa programma
 
     <iframe
         src="https://%DOMAIN%/rover/_videos/esc-programmer.mp4"
-        width="640"
-        height="360"
+        width="1024"
+        height="576"
         allowfullscreen>
     </iframe><br></br>
 
