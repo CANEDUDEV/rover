@@ -4,6 +4,8 @@ Getting Started
 After following this startup guide, you will have a fully functioning
 radio-controlled car using the CAN protocol.
 
+.. _unboxing:
+
 Unboxing
 --------
 
@@ -26,6 +28,8 @@ picture below:
 
 .. .. image:: https://%DOMAIN%/rover/_images/CAN_koppling.png
 
+.. _radio:
+
 Connect the Radio Receiver
 --------------------------
 
@@ -36,9 +40,8 @@ simpler components in the system and makes it easier to later integrate CAN
 functionality. It's important to note that a fully functional car can be
 assembled without a CAN communication system. However, with CAN it's possible
 to integrate external components into the system, and the Rover becomes more
-like a real vehiclechassis
-To create a car that runs solely on radio communication, refer to the logical
-connection diagram below, which features fewer components.
+like a real vehicle. To create a car that runs solely on radio communication,
+refer to the logical connection diagram below, which features fewer components.
 
 .. image:: https://%DOMAIN%/rover/_images/radio-connection.svg
 
@@ -50,10 +53,12 @@ below:
 
     <iframe
         src="https://%DOMAIN%/rover/_videos/radio-mount.mp4"
-        width="640"
-        height="360"
+        width="1024"
+        height="576"
         allowfullscreen>
     </iframe>
+
+.. _esc:
 
 Connect the ESC and the Battery
 -------------------------------
@@ -67,8 +72,8 @@ mounting the battery into the battery holder, as shown in the video below:
 
     <iframe
         src="https://%DOMAIN%/rover/_videos/battery-mount.mp4"
-        width="640"
-        height="360"
+        width="1024"
+        height="576"
         allowfullscreen>
     </iframe>
 
@@ -79,8 +84,8 @@ this video:
 
     <iframe
         src="https://%DOMAIN%/rover/_videos/esc-mount.mp4"
-        width="640"
-        height="360"
+        width="1024"
+        height="576"
         allowfullscreen>
     </iframe>
 
@@ -93,8 +98,8 @@ below for detailed instructions:
 
     <iframe
         src="https://%DOMAIN%/rover/_videos/radio-connect.mp4"
-        width="640"
-        height="360"
+        width="1024"
+        height="576"
         allowfullscreen>
     </iframe>
 
@@ -106,8 +111,8 @@ functionality:
 
     <iframe
         src="https://%DOMAIN%/rover/_videos/test-drive.mp4"
-        width="640"
-        height="360"
+        width="1024"
+        height="576"
         allowfullscreen>
     </iframe>
 
