@@ -1,3 +1,4 @@
+altgraph==0.17.3
 canlib==1.23.804
 contourpy==1.1.0
 cycler==0.11.0
@@ -9,6 +10,8 @@ numpy==1.25.2
 Pillow==10.0.0
 pydantic==2.0.2
 pydantic_core==2.1.2
+pyinstaller==5.13.2
+pyinstaller-hooks-contrib==2023.8
 pyparsing==3.0.9
 python-dateutil==2.8.2
 six==1.16.0

@@ -1,3 +1,6 @@
+*.csv
+*.mp4
+*Zone.Identifier
 .bin/
 .cache/
 .mxproject
@@ -5,6 +8,3 @@
 .vscode/
 build/
 compile_commands.json
-*Zone.Identifier
-*.csv
-*.mp4
