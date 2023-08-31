@@ -7,9 +7,6 @@ from canlib import canlib, kvadblib
 from rover import Rover
 import servo
 
-unique_messages = {}
-unique_messages_lock = threading.Lock()
-
 
 def parse_frame(db, frame):
     output = ""
@@ -53,6 +50,10 @@ def parse_frame(db, frame):
     return output + "┗\n"
 
 
+unique_messages = {}
+unique_messages_lock = threading.Lock()
+
+
 def receive_can_messages():
     db = kvadblib.Dbc(filename="rover.dbc")
 
@@ -65,9 +66,8 @@ def receive_can_messages():
             try:
                 frame = ch.read(timeout=1000)
                 if frame:
-                    unique_messages_lock.acquire()
-                    unique_messages[str(frame.id)] = parse_frame(db, frame)
-                    unique_messages_lock.release()
+                    with unique_messages_lock:
+                        unique_messages[str(frame.id)] = parse_frame(db, frame)
 
             except KeyboardInterrupt:
                 break
@@ -79,12 +79,9 @@ def update_ui():
             received_text.config(state=tk.NORMAL)
             received_text.delete("1.0", tk.END)  # Clear existing text
 
-            unique_messages_lock.acquire()
-
-            for msg in unique_messages.values():
-                received_text.insert(tk.END, msg)
-
-            unique_messages_lock.release()
+            with unique_messages_lock:
+                for msg in unique_messages.values():
+                    received_text.insert(tk.END, msg)
 
             received_text.config(state=tk.DISABLED)
 
