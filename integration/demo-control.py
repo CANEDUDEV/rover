@@ -6,8 +6,13 @@ import threading
 import tkinter as tk
 from tkinter import font
 from canlib import canlib, kvadblib
-from rover import Rover
+from rover import Envelope, Rover
 import servo
+
+
+sent_messages = {}
+received_messages = {}
+messages_lock = threading.Lock()
 
 
 def parse_frame(db, frame):
@@ -15,16 +20,9 @@ def parse_frame(db, frame):
     try:
         bmsg = db.interpret(frame)
     except kvadblib.KvdNoMessage:
-        print(f"<<< No message found for frame with id {frame.id} >>>")
         return ""
 
     if not bmsg._message.dlc == bmsg._frame.dlc:
-        print(
-            "<<< Could not interpret message because DLC does not match for"
-            f" frame with id {frame.id} >>>"
-        )
-        print(f"\t- DLC (database): {bmsg._message.dlc}")
-        print(f"\t- DLC (received frame): {bmsg._frame.dlc}")
         return ""
 
     msg = bmsg._message
@@ -52,10 +50,6 @@ def parse_frame(db, frame):
     return output + "┗\n"
 
 
-unique_messages = {}
-unique_messages_lock = threading.Lock()
-
-
 def receive_can_messages():
     # If packaged as one binary using pyinstaller,
     # we need to look for the file in sys._MEIPASS.
@@ -76,9 +70,14 @@ def receive_can_messages():
         while True:
             try:
                 frame = ch.read(timeout=1000)
-                if frame:
-                    with unique_messages_lock:
-                        unique_messages[str(frame.id)] = parse_frame(db, frame)
+                if not frame:
+                    continue
+
+                with messages_lock:
+                    if frame.id == Envelope.THROTTLE or frame.id == Envelope.STEERING:
+                        sent_messages[str(frame.id)] = parse_frame(db, frame)
+                    else:
+                        received_messages[str(frame.id)] = parse_frame(db, frame)
 
             except canlib.exceptions.CanNoMsg:
                 continue
@@ -90,14 +89,22 @@ def receive_can_messages():
 def update_ui():
     while True:
         try:
-            received_text.config(state=tk.NORMAL)
-            received_text.delete("1.0", tk.END)  # Clear existing text
+            sent_messages_text.config(state=tk.NORMAL)
+            received_messages_text.config(state=tk.NORMAL)
 
-            with unique_messages_lock:
-                for msg in unique_messages.values():
-                    received_text.insert(tk.END, msg)
+            # Clear existing text
+            sent_messages_text.delete("1.0", tk.END)
+            received_messages_text.delete("1.0", tk.END)
 
-            received_text.config(state=tk.DISABLED)
+            with messages_lock:
+                for msg in sent_messages.values():
+                    sent_messages_text.insert(tk.END, msg)
+
+                for msg in received_messages.values():
+                    received_messages_text.insert(tk.END, msg)
+
+            sent_messages_text.config(state=tk.DISABLED)
+            received_messages_text.config(state=tk.DISABLED)
 
             time.sleep(0.2)
 
@@ -158,13 +165,28 @@ def send_can_messages():
 # Create and configure GUI
 root = tk.Tk()
 root.title("CAN Message Viewer")
-received_text = tk.Text(root, height=30, width=80)
-received_text.pack()
+
+height = 10
+width = 40
+
+sent_messages_label = tk.Label(root, text="Sent messages")
+sent_messages_text = tk.Text(root, height=height, width=width)
+sent_messages_label.grid(row=0, column=0, columnspan=1)
+sent_messages_text.grid(row=1, column=0)
+
+received_messages_label = tk.Label(root, text="Received messages")
+received_messages_text = tk.Text(root, height=height, width=width)
+received_messages_label.grid(row=0, column=1, columnspan=2)
+received_messages_text.grid(row=1, column=1)
 
 # Set font size
-font_size = 12  # Adjust the font size as needed
+font_size = 18  # Adjust the font size as needed
 font_obj = font.Font(family="Consolas", size=font_size)
-received_text.configure(font=font_obj)
+
+sent_messages_text.configure(font=font_obj)
+sent_messages_label.configure(font=font_obj)
+received_messages_text.configure(font=font_obj)
+received_messages_label.configure(font=font_obj)
 
 # Create threads for sending and receiving messages
 receive_thread = threading.Thread(target=receive_can_messages, daemon=True)
