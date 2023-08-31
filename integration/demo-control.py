@@ -1,4 +1,6 @@
 import keyboard
+import os
+import sys
 import time
 import threading
 import tkinter as tk
@@ -55,19 +57,31 @@ unique_messages_lock = threading.Lock()
 
 
 def receive_can_messages():
-    db = kvadblib.Dbc(filename="rover.dbc")
+    # If packaged as one binary using pyinstaller,
+    # we need to look for the file in sys._MEIPASS.
+    # Otherwise, just look in the current dir.
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    db = kvadblib.Dbc(filename=os.path.join(base_path, "rover.dbc"))
 
     with canlib.openChannel(
         channel=0,
         flags=canlib.Open.NO_INIT_ACCESS,
     ) as ch:
         ch.busOn()
+
         while True:
             try:
                 frame = ch.read(timeout=1000)
                 if frame:
                     with unique_messages_lock:
                         unique_messages[str(frame.id)] = parse_frame(db, frame)
+
+            except canlib.exceptions.CanNoMsg:
+                continue
 
             except KeyboardInterrupt:
                 break
