@@ -51,12 +51,11 @@ below:
 
 .. raw:: html
 
-    <iframe
-        src="https://%DOMAIN%/rover/_videos/radio-mount.mp4"
-        width="1024"
-        height="576"
-        allowfullscreen>
-    </iframe>
+    <br></br>
+    <video width="1024" height="576" controls>
+    <source src="https://%DOMAIN%/rover/_videos/radio-mount.mp4"
+    </video>
+    <br></br>
 
 .. _esc:
 
@@ -70,24 +69,22 @@ mounting the battery into the battery holder, as shown in the video below:
 
 .. raw:: html
 
-    <iframe
-        src="https://%DOMAIN%/rover/_videos/battery-mount.mp4"
-        width="1024"
-        height="576"
-        allowfullscreen>
-    </iframe>
+    <br></br>
+    <video width="1024" height="576" controls>
+    <source src="https://%DOMAIN%/rover/_videos/battery-mount.mp4">
+    </video>
+    <br></br>
 
 Next, secure the ESC to the chassis using dual-lock bands, as demonstrated in
 this video:
 
 .. raw:: html
 
-    <iframe
-        src="https://%DOMAIN%/rover/_videos/esc-mount.mp4"
-        width="1024"
-        height="576"
-        allowfullscreen>
-    </iframe>
+    <br></br>
+    <video width="1024" height="576" controls>
+    <source src="https://%DOMAIN%/rover/_videos/esc-mount.mp4">
+    </video>
+    <br></br>
 
 Finally, connect the radio receiver to the ESC and the battery, along with the
 three wires to the motor. Ensure that the wires are connected in the correct
@@ -96,12 +93,11 @@ below for detailed instructions:
 
 .. raw:: html
 
-    <iframe
-        src="https://%DOMAIN%/rover/_videos/radio-connect.mp4"
-        width="1024"
-        height="576"
-        allowfullscreen>
-    </iframe>
+    <br></br>
+    <video width="1024" height="576" controls>
+    <source src="https://%DOMAIN%/rover/_videos/radio-connect.mp4">
+    </video>
+    <br></br>
 
 At this point, your car should be fully operational through the radio receiver.
 Feel free to turn it on and take it for a test drive to verify its
@@ -109,12 +105,11 @@ functionality:
 
 .. raw:: html
 
-    <iframe
-        src="https://%DOMAIN%/rover/_videos/test-drive.mp4"
-        width="1024"
-        height="576"
-        allowfullscreen>
-    </iframe>
+    <br></br>
+    <video width="1024" height="576" controls>
+    <source src="https://%DOMAIN%/rover/_videos/test-drive.mp4">
+    </video>
+    <br></br>
 
 ..
     Step 4

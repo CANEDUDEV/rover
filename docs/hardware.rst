@@ -33,12 +33,11 @@ Check out the video below on how to program the ESC using the Performa programma
 
 .. raw:: html
 
-    <iframe
-        src="https://%DOMAIN%/rover/_videos/esc-programmer.mp4"
-        width="1024"
-        height="576"
-        allowfullscreen>
-    </iframe><br></br>
+    <br></br>
+    <video  width="1024" height="576" controls>
+    <source src="https://%DOMAIN%/rover/_videos/esc-programmer.mp4" type="video/mp4"
+    </video>
+    <br></br>
 
 
 Radio Receiver
