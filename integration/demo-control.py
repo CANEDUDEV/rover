@@ -18,6 +18,8 @@ sent_messages = {}
 received_messages = {}
 lock = threading.Lock()
 
+restart_rover = False
+
 # Graphs
 max_items_sent = 400
 max_items_received = 100
@@ -100,7 +102,7 @@ def update_ui():
         sent_messages_text.config(state=tk.DISABLED)
         received_messages_text.config(state=tk.DISABLED)
 
-        time.sleep(0.25)
+        root.after(100)
 
 
 def send_can_messages():
@@ -115,6 +117,8 @@ def send_can_messages():
 
     step = 10
 
+    global restart_rover
+
     # Initialize CAN channel
     with canlib.openChannel(
         channel=0,
@@ -128,6 +132,10 @@ def send_can_messages():
         rover.start()
 
         while True:
+            if restart_rover:
+                rover.start()
+                restart_rover = False
+
             if keyboard.is_pressed("up"):
                 if throttle < throttle_max:
                     throttle += step
@@ -185,7 +193,7 @@ def parse_frame(db, frame):
 
 
 def animate(_):
-    ax1, ax2, ax3 = plt.gcf().get_axes()
+    ax1, ax2, ax3 = fig.get_axes()
 
     # Clear current data
     ax1.cla()
@@ -211,6 +219,11 @@ def animate(_):
 def on_closing():
     root.destroy()
     sys.exit(0)
+
+
+def restart_button_click():
+    global restart_rover
+    restart_rover = True
 
 
 # Create and configure GUI
@@ -239,6 +252,11 @@ sent_messages_text.configure(font=font_obj)
 sent_messages_label.configure(font=font_obj)
 received_messages_text.configure(font=font_obj)
 received_messages_label.configure(font=font_obj)
+
+
+restart_button = tk.Button(root, text="Restart", command=restart_button_click)
+restart_button.grid(row=3, column=2)
+restart_button.configure(font=font_obj)
 
 # Plotting
 fig = plt.figure(figsize=(12, 4))

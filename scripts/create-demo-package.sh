@@ -3,6 +3,9 @@
 # Only works in WSL
 python.exe -m PyInstaller \
 	--name=rover-demo \
+	--clean \
+	--onefile \
+	--windowed \
 	--add-data='../rover.dbc;.' \
 	--workpath='build/rover-demo-tmp' \
 	--specpath='build' \
