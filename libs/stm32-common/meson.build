@@ -44,7 +44,15 @@ stm32_bootloader_bin = custom_target(
   'stm32-bootloader.bin',
   output: 'stm32-bootloader.bin',
   input: stm32_bootloader_elf,
-  command: [objcopy, '-O', 'binary', '-S', '--pad-to', '0x08010000', '@INPUT@', '@OUTPUT@'],
+  command: [
+    objcopy,
+    '-S',
+    '-O', 'binary',
+    '--pad-to=0x08010000',
+    '--gap-fill=0xFF', # Flash erase value
+    '@INPUT@',
+    '@OUTPUT@',
+  ],
   depends: stm32_bootloader_elf,
   build_by_default: true,
 )
