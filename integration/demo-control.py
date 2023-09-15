@@ -84,25 +84,24 @@ def receive_can_messages():
 
 
 def update_ui():
-    while True:
-        sent_messages_text.config(state=tk.NORMAL)
-        received_messages_text.config(state=tk.NORMAL)
+    sent_messages_text.config(state=tk.NORMAL)
+    received_messages_text.config(state=tk.NORMAL)
 
-        # Clear existing text
-        sent_messages_text.delete("1.0", tk.END)
-        received_messages_text.delete("1.0", tk.END)
+    # Clear existing text
+    sent_messages_text.delete("1.0", tk.END)
+    received_messages_text.delete("1.0", tk.END)
 
-        with lock:
-            for msg in sent_messages.values():
-                sent_messages_text.insert(tk.END, msg)
+    with lock:
+        for msg in sent_messages.values():
+            sent_messages_text.insert(tk.END, msg)
 
-            for msg in received_messages.values():
-                received_messages_text.insert(tk.END, msg)
+        for msg in received_messages.values():
+            received_messages_text.insert(tk.END, msg)
 
-        sent_messages_text.config(state=tk.DISABLED)
-        received_messages_text.config(state=tk.DISABLED)
+    sent_messages_text.config(state=tk.DISABLED)
+    received_messages_text.config(state=tk.DISABLED)
 
-        root.after(100)
+    root.after(100, update_ui)
 
 
 def send_can_messages():
