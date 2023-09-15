@@ -14,6 +14,7 @@ project(
 
 objcopy = find_program('objcopy')
 clang_tidy = find_program('clang-tidy')
+cat = find_program('cat')
 
 subdir('libs')
 subdir('apps')

@@ -1,8 +1,8 @@
+subdir('third-party')
 subdir('can-kingdom')
 subdir('rover')
 subdir('stm32-common')
 subdir('stm32-postmaster')
-subdir('third-party')
 
 # Convenience source file list
 common_libs_src = [

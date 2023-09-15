@@ -1,24 +1,4 @@
 /*
-******************************************************************************
-**
-
-**  File        : LinkerScript.ld
-**
-**  Author		: STM32CubeMX
-**
-**  Abstract    : Linker script for STM32F302RETx series
-**                512Kbytes FLASH and 64Kbytes RAM
-**
-**                Set heap size, stack size and stack location according
-**                to application requirements.
-**
-**                Set memory bank area and size if external memory is used.
-**
-**  Target      : STMicroelectronics STM32
-**
-**  Distribution: The file is distributed “as is,” without any warranty
-**                of any kind.
-**
 *****************************************************************************
 ** @attention
 **
@@ -49,6 +29,18 @@
 *****************************************************************************
 */
 
+/* Specify the memory areas for the boards. */
+MEMORY
+{
+    RAM (rwx)    : ORIGIN = 0x20000000, LENGTH = 64K
+
+    /* 512K flash available. Use 64K for bootloader, 440K for app,
+     * and 8K for storing user data. */
+    BOOTROM (rx) : ORIGIN = 0x08000000, LENGTH = 64K
+    APPROM (rx)  : ORIGIN = 0x08000000 + 64K, LENGTH = 440K
+    STORAGE (rw) : ORIGIN = 0x08000000 + 64K + 440K, LENGTH = 8K
+}
+
 /* Entry Point */
 ENTRY(Reset_Handler)
 
@@ -58,27 +50,18 @@ _estack = ORIGIN(RAM) + LENGTH(RAM);    /* end of RAM */
 _Min_Heap_Size = 0x200;      /* required amount of heap  */
 _Min_Stack_Size = 0x400; /* required amount of stack */
 
-/* Specify the memory areas */
-MEMORY
-{
-RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 64K
-FLASH (rx)     : ORIGIN = 0x08000000, LENGTH = 510K
-/* Reserve final flash sector for persistent configuration files */
-FLASH_RW (rw)  : ORIGIN = 0x0807F800, LENGTH = 2K
-}
-
 /* Define output sections */
 SECTIONS
 {
-  /* The startup code goes first into FLASH */
+  /* The startup code goes first into BOOTROM */
   .isr_vector :
   {
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >FLASH
+  } >BOOTROM
 
-  /* The program code and other data goes into FLASH */
+  /* The program code and other data goes into BOOTROM */
   .text :
   {
     . = ALIGN(4);
@@ -93,44 +76,44 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >FLASH
+  } >BOOTROM
 
-  /* Constant data goes into FLASH */
+  /* Constant data goes into BOOTROM */
   .rodata :
   {
     . = ALIGN(4);
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
-  } >FLASH
+  } >BOOTROM
 
-  .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >FLASH
+  .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >BOOTROM
   .ARM : {
     __exidx_start = .;
     *(.ARM.exidx*)
     __exidx_end = .;
-  } >FLASH
+  } >BOOTROM
 
   .preinit_array     :
   {
     PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
-  } >FLASH
+  } >BOOTROM
   .init_array :
   {
     PROVIDE_HIDDEN (__init_array_start = .);
     KEEP (*(SORT(.init_array.*)))
     KEEP (*(.init_array*))
     PROVIDE_HIDDEN (__init_array_end = .);
-  } >FLASH
+  } >BOOTROM
   .fini_array :
   {
     PROVIDE_HIDDEN (__fini_array_start = .);
     KEEP (*(SORT(.fini_array.*)))
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
-  } >FLASH
+  } >BOOTROM
 
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
@@ -145,7 +128,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM AT> FLASH
+  } >RAM AT> BOOTROM
 
 
   /* Uninitialized data section */
