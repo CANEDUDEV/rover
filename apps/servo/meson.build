@@ -15,8 +15,8 @@ servo_elf = executable(
   'servo.elf',
   [common_libs_src, servo_src],
   include_directories: [common_libs_inc, servo_inc],
-  link_depends: stm32_app_linker_script,
-  link_args: ['-T@0@'.format(stm32_app_linker_script)],
+  link_depends: app_linker_script,
+  link_args: ['-T@0@'.format(app_linker_script)],
 )
 
 servo_bin = custom_target(
@@ -32,8 +32,8 @@ motor_elf = executable(
   'motor.elf',
   [common_libs_src, servo_src],
   include_directories: [common_libs_inc, servo_inc],
-  link_depends: stm32_app_linker_script,
-  link_args: ['-T@0@'.format(stm32_app_linker_script)],
+  link_depends: app_linker_script,
+  link_args: ['-T@0@'.format(app_linker_script)],
   c_args: ['-DMOTOR'],
 )
 
