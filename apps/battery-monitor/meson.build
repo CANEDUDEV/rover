@@ -17,8 +17,8 @@ battery_monitor_elf = executable(
   'battery-monitor.elf',
   [common_libs_src, battery_monitor_src],
   include_directories: [common_libs_inc, battery_monitor_inc],
-  link_depends: stm32_app_linker_script,
-  link_args: ['-T@0@'.format(stm32_app_linker_script)],
+  link_depends: app_linker_script,
+  link_args: ['-T@0@'.format(app_linker_script)],
 )
 
 battery_monitor_bin = custom_target(

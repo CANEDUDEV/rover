@@ -19,8 +19,8 @@ foreach name, app: app_binaries
     build_by_default: true,
     capture: true, # This makes stdout of cat be captured and written to output file.
     command: [cat, '@INPUT@'],
-    depends: [stm32_bootloader_bin, app],
-    input: [stm32_bootloader_bin, app],
+    depends: [bootloader_bin, app],
+    input: [bootloader_bin, app],
     output: ['@0@-with-bootloader.bin'.format(name)],
   )
 endforeach

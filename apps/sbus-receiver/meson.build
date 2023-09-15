@@ -14,8 +14,8 @@ sbus_receiver_elf = executable(
   'sbus-receiver.elf',
   [common_libs_src, sbus_receiver_src],
   include_directories: [common_libs_inc, sbus_receiver_inc],
-  link_depends: stm32_app_linker_script,
-  link_args: ['-T@0@'.format(stm32_app_linker_script)],
+  link_depends: app_linker_script,
+  link_args: ['-T@0@'.format(app_linker_script)],
 )
 
 sbus_receiver_bin = custom_target(

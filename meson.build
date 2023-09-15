@@ -16,12 +16,15 @@ objcopy = find_program('objcopy')
 clang_tidy = find_program('clang-tidy')
 cat = find_program('cat')
 
+# Order is important
 subdir('libs')
+subdir('bootloader')
 subdir('apps')
 subdir('docs')
 
 tidy_files = [
   apps_tidy_files,
+  bootloader_tidy_files,
   common_libs_tidy_files,
 ]
 
