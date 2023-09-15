@@ -1,4 +1,5 @@
 sbus_receiver_inc = include_directories('include')
+
 sbus_receiver_src = files(
   'src' / 'ck-data.c',
   'src' / 'freertos-tasks.c',
@@ -13,8 +14,8 @@ sbus_receiver_elf = executable(
   'sbus-receiver.elf',
   [common_libs_src, sbus_receiver_src],
   include_directories: [common_libs_inc, sbus_receiver_inc],
-  link_depends: stm32_linker_script,
-  link_args: ['-T@0@'.format(stm32_linker_script)],
+  link_depends: stm32_app_linker_script,
+  link_args: ['-T@0@'.format(stm32_app_linker_script)],
 )
 
 sbus_receiver_bin = custom_target(

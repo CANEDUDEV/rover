@@ -1,4 +1,5 @@
 joystick_inc = include_directories('include')
+
 joystick_src = files(
   'src' / 'app.c',
   'src' / 'interrupts.c',
@@ -10,8 +11,8 @@ joystick_elf = executable(
   'joystick.elf',
   [common_libs_src, joystick_src],
   include_directories: [common_libs_inc, joystick_inc],
-  link_depends: stm32_linker_script,
-  link_args: ['-T@0@'.format(stm32_linker_script)],
+  link_depends: stm32_app_linker_script,
+  link_args: ['-T@0@'.format(stm32_app_linker_script)],
 )
 
 joystick_bin = custom_target(
