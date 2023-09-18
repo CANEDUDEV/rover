@@ -200,7 +200,7 @@ def animate(_):
     ax3.cla()
 
     ax1.set_title("Servo Current Draw (mA)")
-    ax1.set_ylim(0, 400)
+    ax1.set_ylim(0, 250)
 
     ax2.set_title("Throttle Pulse Width (µs)")
     ax2.set_ylim(950, 2050)
@@ -225,47 +225,78 @@ def restart_button_click():
     restart_rover = True
 
 
+def zoom_in():
+    global font_size
+    font_size += 2
+    set_font_size(font_size)
+
+
+def zoom_out():
+    global font_size
+    font_size -= 2
+    set_font_size(font_size)
+
+
+def set_font_size(size):
+    font_obj = font.Font(size=size + 4)
+
+    sent_messages_text.configure(font=font_obj)
+    sent_messages_label.configure(font=font_obj)
+    received_messages_text.configure(font=font_obj)
+    received_messages_label.configure(font=font_obj)
+    restart_button.configure(font=font_obj)
+    zoom_in_button.configure(font=font_obj)
+    zoom_out_button.configure(font=font_obj)
+    plt.rcParams.update({"font.size": font_size})
+
+
 # Create and configure GUI
 root = tk.Tk()
 root.title("CAN Message Viewer")
 root.protocol("WM_DELETE_WINDOW", on_closing)
 
-height = 10
-width = 40
+root.state("zoomed")
 
-sent_messages_label = tk.Label(root, text="Sent messages")
-sent_messages_text = tk.Text(root, height=height, width=width)
-sent_messages_label.grid(row=0, column=0, columnspan=1)
-sent_messages_text.grid(row=1, column=0)
+can_messages_frame = tk.Frame(root, height=20)
+can_messages_frame.pack(side="top", fill="both", expand=1, padx="0.5cm", pady="1cm")
+sent_messages_frame = tk.Frame(can_messages_frame)
+received_messages_frame = tk.Frame(can_messages_frame)
+sent_messages_frame.pack(side="left", fill="x", expand=1, padx="0.5cm")
+received_messages_frame.pack(side="left", fill="x", expand=1, padx="0.5cm")
 
-received_messages_label = tk.Label(root, text="Received messages")
-received_messages_text = tk.Text(root, height=height, width=width)
-received_messages_label.grid(row=0, column=1, columnspan=2)
-received_messages_text.grid(row=1, column=1)
+sent_messages_label = tk.Label(sent_messages_frame, text="Sent messages")
+sent_messages_text = tk.Text(sent_messages_frame, height=10, width=10)
+sent_messages_label.pack(side="top", expand=1, anchor="w")
+sent_messages_text.pack(side="top", fill="both", expand=1)
 
-# Set font size
-font_size = 18  # Adjust the font size as needed
-font_obj = font.Font(family="Consolas", size=font_size)
-
-sent_messages_text.configure(font=font_obj)
-sent_messages_label.configure(font=font_obj)
-received_messages_text.configure(font=font_obj)
-received_messages_label.configure(font=font_obj)
-
-
-restart_button = tk.Button(root, text="Restart", command=restart_button_click)
-restart_button.grid(row=3, column=2)
-restart_button.configure(font=font_obj)
+received_messages_label = tk.Label(received_messages_frame, text="Received messages")
+received_messages_text = tk.Text(received_messages_frame, height=10, width=10)
+received_messages_label.pack(side="top", expand=1, anchor="w")
+received_messages_text.pack(side="top", fill="both", expand=1)
 
 # Plotting
-fig = plt.figure(figsize=(12, 4))
+fig = plt.figure()
 subplots = fig.subplots(1, 3)
-fig.subplots_adjust(left=0.05, right=0.95, wspace=0.3)
+fig.subplots_adjust(left=0.05, right=0.95, wspace=0.2)
 
 ani = FuncAnimation(fig, animate, interval=100, blit=False, save_count=3000)
 
 canvas = FigureCanvasTkAgg(fig, master=root)
-canvas.get_tk_widget().grid(row=2, column=0, columnspan=3)
+canvas.get_tk_widget().pack(
+    side="top", padx="1cm", expand=1, fill="both", anchor="center"
+)
+
+restart_button = tk.Button(root, text="Restart", command=restart_button_click)
+restart_button.pack(side="right", pady=10, padx=40, anchor="e")
+
+zoom_in_button = tk.Button(root, text="Zoom in", command=zoom_in)
+zoom_in_button.pack(side="right", pady=10, padx=10, anchor="e")
+
+zoom_out_button = tk.Button(root, text="Zoom out", command=zoom_out)
+zoom_out_button.pack(side="right", pady=10, padx=10, anchor="e")
+
+# Set font size
+font_size = 14
 
 # Create threads for sending and receiving messages
 receive_thread = threading.Thread(target=receive_can_messages, daemon=True)
@@ -276,9 +307,5 @@ receive_thread.start()
 update_thread.start()
 send_thread.start()
 
-_, row_count = root.grid_size()
-
-for row in range(row_count):
-    root.grid_rowconfigure(row, pad=10)
 
 root.mainloop()
