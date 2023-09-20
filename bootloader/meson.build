@@ -1,4 +1,9 @@
-bootloader_src = files('src' / 'main.c')
+bootloader_inc = include_directories('include')
+
+bootloader_src = files(
+  'src' / 'ck-data.c',
+  'src' / 'main.c',
+)
 
 app_linker_script = configure_file(
   copy: true,
@@ -14,8 +19,8 @@ bootloader_linker_script = configure_file(
 
 bootloader_elf = executable(
   'bootloader.elf',
-  [bootloader_src, stm32_common_src, drivers_src, freertos_src, printf_src],
-  include_directories: [stm32_common_inc, drivers_inc, freertos_inc, printf_inc],
+  [bootloader_src, common_libs_src],
+  include_directories: [bootloader_inc, common_libs_inc],
   link_depends: bootloader_linker_script,
   link_args: ['-T@0@'.format(bootloader_linker_script)],
 )
