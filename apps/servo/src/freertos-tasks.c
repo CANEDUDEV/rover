@@ -112,7 +112,8 @@ void king(void *unused) {
   xTimerStart(timer, portMAX_DELAY);
   ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for timer
 
-  // Default letter was received. We don't need to act as king.
+  // There is already traffic on the CAN bus, so don't act as king.
+  // TODO: how to handle traffic that is not detected due to incorrect bitrate?
   if (ck_get_comm_mode() == CK_COMM_MODE_LISTEN_ONLY) {
     print("Someone else is king. Suspending king task.\r\n");
     vTaskSuspend(king_task);
@@ -133,6 +134,9 @@ void king(void *unused) {
 
   send_base_number();
   vTaskDelay(pdMS_TO_TICKS(50));  // Give cities time to respond
+
+  // Set our own base number
+  ck_set_base_number(ROVER_BASE_NUMBER, false);
 
   assign_envelopes();
   start_communication();
