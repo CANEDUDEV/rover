@@ -37,9 +37,11 @@ MEMORY
     /* 512K flash available. Use 64K for bootloader, 440K for app,
      * and 8K for storing user data. */
     BOOTROM (rx) : ORIGIN = 0x08000000, LENGTH = 64K
-    APPROM (rx)  : ORIGIN = 0x08000000 + 64K, LENGTH = 440K
-    STORAGE (rw) : ORIGIN = 0x08000000 + 64K + 440K, LENGTH = 8K
+    APPROM (rx)  : ORIGIN = 0x08000000 + 64K, LENGTH = 512K - 64K
 }
+
+APPROM_START = ORIGIN(APPROM);
+APPROM_SIZE = LENGTH(APPROM);
 
 /* Entry Point */
 ENTRY(Reset_Handler)
