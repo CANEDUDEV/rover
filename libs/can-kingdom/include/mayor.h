@@ -187,6 +187,30 @@ ck_err_t ck_add_mayors_page(ck_page_t *page);
 ck_err_t ck_send_document(uint8_t folder_no);
 
 /*******************************************************************************
+ * Send the specified page from the document in the specified folder.
+ *
+ * Will look for the given folder, check if it's a transmit folder and enabled,
+ * then send the document within it. For each enabled envelope in the folder,
+ * a letter with the specified page will be sent using that envelope.
+ * Take for example a folder with 2 envelopes assigned to it and enabled (0xA
+ * and 0xB), and whose document has 2 pages. \p page_no is given as 0. The
+ * letters will be sent in the following order:
+ *
+ * 1. Letter with envelope 0xA, page 0
+ * 2. Letter with envelope 0xB, page 0
+ *
+ * @param folder_no the requested folder number.
+ * @param page_no the requested page from the folder's document.
+ *
+ * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
+ * @return #CK_ERR_ITEM_NOT_FOUND if the folder or it's document don't exist.
+ * @return #CK_ERR_SEND_FAILED if sending a letter fails.
+ * @return #CK_OK on success or if document is not sent due to being a receive
+ *         document or in a receive folder.
+ ******************************************************************************/
+ck_err_t ck_send_page(uint8_t folder_no, uint8_t page_no);
+
+/*******************************************************************************
  * Sends the specified mayor's page.
  *
  * @param page_no mayor's page number.
