@@ -249,6 +249,54 @@ ck_err_t ck_send_document(uint8_t folder_no) {
   return CK_OK;
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+ck_err_t ck_send_page(uint8_t folder_no, uint8_t page_no) {
+  // Check if mayor has been initialized
+  if (mayor.user_data.city_address == 0) {
+    return CK_ERR_NOT_INITIALIZED;
+  }
+  if (mayor.comm_mode != CK_COMM_MODE_COMMUNICATE) {
+    return CK_OK;
+  }
+  int folder_index = find_folder(folder_no);
+  if (folder_index < 0) {
+    return CK_ERR_ITEM_NOT_FOUND;
+  }
+  ck_folder_t *folder = &mayor.user_data.folders[folder_index];
+
+  // If folder is disabled or is a receive folder, return OK.
+  if (folder->direction != CK_DIRECTION_TRANSMIT || !folder->enable) {
+    return CK_OK;
+  }
+
+  ck_list_t *doc_list =
+      find_list(CK_LIST_DOCUMENT, CK_DIRECTION_TRANSMIT, folder->doc_list_no);
+  if (!doc_list) {
+    return CK_ERR_ITEM_NOT_FOUND;
+  }
+  if (folder->doc_no >= doc_list->record_count) {
+    return CK_ERR_ITEM_NOT_FOUND;
+  }
+  ck_document_t *doc = (ck_document_t *)doc_list->records[folder->doc_no];
+  // If it's a receive document, return OK.
+  if (doc->direction != CK_DIRECTION_TRANSMIT) {
+    return CK_OK;
+  }
+
+  ck_letter_t letter;
+  for (int i = 0; i < folder->envelope_count; i++) {
+    if (!folder->envelopes[i].enable) {
+      continue;
+    }
+    letter.envelope = folder->envelopes[i];
+    memcpy(&letter.page, doc->pages[page_no], sizeof(ck_page_t));
+    if (ck_send_letter(&letter, folder->dlc) != CK_OK) {
+      return CK_ERR_SEND_FAILED;
+    }
+  }
+  return CK_OK;
+}
+
 ck_err_t ck_send_mayors_page(uint8_t page_no) {
   // Check if mayor has been initialized
   if (mayor.user_data.city_address == 0) {
