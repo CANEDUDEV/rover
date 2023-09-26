@@ -311,8 +311,10 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
   if (mayor.user_data.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
-  mayor.comm_mode = mode;
-  return ck_apply_comm_mode(mode);
+  if (mode != CK_COMM_MODE_KEEP_CURRENT) {
+    mayor.comm_mode = mode;
+  }
+  return ck_apply_comm_mode(mayor.comm_mode);
 }
 
 ck_comm_mode_t ck_get_comm_mode(void) { return mayor.comm_mode; }
