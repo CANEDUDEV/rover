@@ -608,6 +608,9 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi) {
   if (hspi->Instance == SPI1) {
     spi1_msp_init();
 
+  } else if (hspi->Instance == SPI2) {
+    spi2_msp_init();
+
   } else if (hspi->Instance == SPI3) {
     /* Peripheral clock enable */
     __HAL_RCC_SPI3_CLK_ENABLE();
@@ -636,6 +639,9 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi) {
 void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi) {
   if (hspi->Instance == SPI1) {
     spi1_msp_deinit();
+
+  } else if (hspi->Instance == SPI2) {
+    spi2_msp_deinit();
 
   } else if (hspi->Instance == SPI3) {
     /* Peripheral clock disable */

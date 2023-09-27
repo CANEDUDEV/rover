@@ -91,6 +91,9 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* hcan) {
 void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi) {
   if (hspi->Instance == SPI1) {
     spi1_msp_init();
+
+  } else if (hspi->Instance == SPI2) {
+    spi2_msp_init();
   }
 }
 
@@ -103,6 +106,9 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi) {
 void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi) {
   if (hspi->Instance == SPI1) {
     spi1_msp_deinit();
+
+  } else if (hspi->Instance == SPI2) {
+    spi2_msp_deinit();
   }
 }
 

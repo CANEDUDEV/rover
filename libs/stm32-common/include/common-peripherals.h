@@ -10,6 +10,7 @@ extern "C" {
 typedef struct {
   CAN_HandleTypeDef hcan;
   SPI_HandleTypeDef hcanfd;
+  SPI_HandleTypeDef hspi_flash;
   UART_HandleTypeDef huart1;
 } common_peripherals_t;
 
@@ -22,6 +23,8 @@ void can_msp_init(void);
 void can_msp_deinit(void);
 void spi1_msp_init(void);
 void spi1_msp_deinit(void);
+void spi2_msp_init(void);
+void spi2_msp_deinit(void);
 void uart1_msp_init(void);
 void uart1_msp_deinit(void);
 
