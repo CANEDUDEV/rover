@@ -586,11 +586,17 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi) {
   if (hspi->Instance == SPI1) {
     spi1_msp_init();
   }
+  if (hspi->Instance == SPI2) {
+    spi2_msp_init();
+  }
 }
 
 void HAL_SPI_MspDeInit(SPI_HandleTypeDef *hspi) {
   if (hspi->Instance == SPI1) {
     spi1_msp_deinit();
+  }
+  if (hspi->Instance == SPI2) {
+    spi2_msp_deinit();
   }
 }
 
