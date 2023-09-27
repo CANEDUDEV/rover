@@ -64,19 +64,6 @@ void can_init(void) {
 }
 
 void canfd_init(void) {
-  GPIO_InitTypeDef gpio_init;
-  /*Configure GPIO pins : CAN_FD_INT_PIN CAN_FD_SOF_PIN */
-  gpio_init.Pin = CAN_FD_INT_PIN | CAN_FD_SOF_PIN;
-  gpio_init.Mode = GPIO_MODE_INPUT;
-  gpio_init.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(CAN_FD_INT_GPIO_PORT, &gpio_init);
-
-  /*Configure GPIO pins : CAN_FD_INT1_PIN CAN_FD_INT0_PIN */
-  gpio_init.Pin = CAN_FD_INT1_PIN | CAN_FD_INT0_PIN;
-  gpio_init.Mode = GPIO_MODE_INPUT;
-  gpio_init.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(CAN_FD_INT1_GPIO_PORT, &gpio_init);
-
   SPI_HandleTypeDef* hcanfd = &common_peripherals.hcanfd;
   /* SPI1 parameter configuration*/
   hcanfd->Instance = SPI1;
