@@ -46,3 +46,10 @@ freertos_src = files(
   'FreeRTOS' / 'Source' / 'portable/MemMang/heap_4.c',
   'FreeRTOS' / 'Source' / 'portable/GCC/ARM_CM4F/port.c',
 )
+
+littlefs_inc = include_directories('littlefs')
+
+littlefs_src = files(
+  'littlefs' / 'lfs.c',
+  'littlefs' / 'lfs_util.c',
+)
