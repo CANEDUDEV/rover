@@ -9,9 +9,9 @@
 #define RX_BIT_COUNT 1
 #define RX_LINE_COUNT 2
 #define RX_PAGE_COUNT 2
-#define TX_PAGE_COUNT 2  // Mayor's pages
+#define TX_PAGE_COUNT 3  // Mayor's pages + test page
 #define RX_DOCUMENT_COUNT 2
-#define TX_DOCUMENT_COUNT 1  // For the mayor's document
+#define TX_DOCUMENT_COUNT 2  // Mayor's document + test doc
 #define FOLDER_COUNT 4
 
 #define RX_BIT_ARRAY_LENGTH (1 + RX_BIT_COUNT / 8)
@@ -27,6 +27,7 @@ struct city_data {
   uint8_t rx_bits[RX_BIT_ARRAY_LENGTH];
   uint8_t rx_lines[RX_LINE_COUNT];
   ck_page_t rx_pages[RX_PAGE_COUNT];
+  ck_page_t tx_pages[TX_PAGE_COUNT - 2];  // Don't store mayor's pages
   ck_document_t rx_docs[RX_DOCUMENT_COUNT];
   ck_document_t tx_docs[TX_DOCUMENT_COUNT];
   ck_list_t lists[LIST_COUNT];
@@ -47,6 +48,7 @@ static test_err_t test_mayor_init(void);
 static test_err_t test_process_kings_letter(void);
 static test_err_t test_add_mayors_page(void);
 static test_err_t test_send_document(void);
+static test_err_t test_send_page(void);
 static test_err_t test_send_mayors_page(void);
 static test_err_t test_is_kings_envelope(void);
 static test_err_t test_get_envelopes_folder(void);
@@ -102,6 +104,11 @@ int main(void) {
   }
 
   ret = test_send_document();
+  if (ret != TEST_PASS) {
+    return ret;
+  }
+
+  ret = test_send_page();
   if (ret != TEST_PASS) {
     return ret;
   }
@@ -326,6 +333,35 @@ static test_err_t test_send_document(void) {
   // Test invalid folder number
   if (ck_send_document(FOLDER_COUNT + 1) == CK_OK) {
     printf("send_document: invalid folder number returned OK.\n");
+    return TEST_FAIL;
+  }
+
+  return TEST_PASS;
+}
+
+static test_err_t test_send_page(void) {
+  test_err_t err = setup_test();
+  if (err != TEST_PASS) {
+    return err;
+  }
+
+  ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE);
+
+  // Test valid folder and page numbers
+  if (ck_send_page(2, 0) != CK_OK) {
+    printf("send_document: sending document failed.\n");
+    return TEST_FAIL;
+  }
+
+  // Test invalid folder number
+  if (ck_send_page(FOLDER_COUNT + 1, 0) == CK_OK) {
+    printf("send_document: invalid folder number returned OK.\n");
+    return TEST_FAIL;
+  }
+
+  // Test invalid page number
+  if (ck_send_page(2, 1) == CK_OK) {
+    printf("send_document: invalid page number returned OK.\n");
     return TEST_FAIL;
   }
 
@@ -1158,6 +1194,8 @@ static void init_pages(void) {
   data.rx_pages[0].line_count = CK_MAX_LINES_PER_PAGE;
   const uint8_t rx_line[8] = {7, 6, 5, 4, 3, 2, 1, 0};
   memcpy(data.rx_pages[0].lines, rx_line, sizeof(rx_line));
+
+  data.tx_pages[0].line_count = 0;
 }
 
 static void init_docs(void) {
@@ -1166,7 +1204,8 @@ static void init_docs(void) {
   data.rx_docs[0].pages[0] = data.rx_pages;
 
   data.tx_docs[0].direction = CK_DIRECTION_TRANSMIT;
-  data.tx_docs[0].page_count = 0;
+  data.tx_docs[0].page_count = 1;
+  data.tx_docs[0].pages[0] = data.tx_pages;
 }
 
 static void init_lists(void) {
@@ -1177,7 +1216,7 @@ static void init_lists(void) {
   data.tx_doc_list->type = CK_LIST_DOCUMENT;
   data.tx_doc_list->direction = CK_DIRECTION_TRANSMIT;
   data.tx_doc_list->list_no = 0;
-  data.tx_doc_list->record_count = 1 + TX_DOCUMENT_COUNT;
+  data.tx_doc_list->record_count = TX_DOCUMENT_COUNT;
   // Record no 0 reserved for the mayor's document.
   data.tx_doc_list->records[1] = &data.tx_docs[0];
 
