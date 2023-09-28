@@ -278,9 +278,14 @@ ck_err_t ck_send_page(uint8_t folder_no, uint8_t page_no) {
     return CK_ERR_ITEM_NOT_FOUND;
   }
   ck_document_t *doc = (ck_document_t *)doc_list->records[folder->doc_no];
+
   // If it's a receive document, return OK.
   if (doc->direction != CK_DIRECTION_TRANSMIT) {
     return CK_OK;
+  }
+
+  if (page_no >= doc->page_count) {
+    return CK_ERR_ITEM_NOT_FOUND;
   }
 
   ck_letter_t letter;
