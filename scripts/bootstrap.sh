@@ -5,7 +5,7 @@ set -eo pipefail
 YAMLFMT=https://github.com/google/yamlfmt/releases/download/v0.7.1/yamlfmt_0.7.1_Linux_x86_64.tar.gz
 
 sudo apt-get -qq update
-sudo apt-get -qq install -y \
+sudo apt-get -qq install --no-upgrade -y \
 	curl \
 	clang-format \
 	clang-tidy \
