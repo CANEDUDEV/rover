@@ -2,13 +2,6 @@ can_kingdom_inc = include_directories('include')
 
 can_kingdom_postmaster_src = files('src' / 'postmaster-dummy.c')
 
-can_kingdom_postmaster_native_lib = library(
-  'can-kingdom-postmaster-native',
-  can_kingdom_postmaster_src,
-  include_directories: can_kingdom_inc,
-  native: true,
-)
-
 can_kingdom_src = files(
   'src' / 'king.c',
   'src' / 'mayor.c',
@@ -18,9 +11,8 @@ can_kingdom_src = files(
 # Build native lib for unit testing
 can_kingdom_native_lib = library(
   'can-kingdom-native',
-  can_kingdom_src,
+  [can_kingdom_src, can_kingdom_postmaster_src],
   include_directories: can_kingdom_inc,
-  link_with: can_kingdom_postmaster_native_lib,
   native: true,
 )
 

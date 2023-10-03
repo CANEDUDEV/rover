@@ -15,8 +15,9 @@ battery_monitor_src = files(
 
 battery_monitor_elf = executable(
   'battery-monitor.elf',
-  [common_libs_src, battery_monitor_src],
+  battery_monitor_src,
   include_directories: [common_libs_inc, battery_monitor_inc],
+  link_with: common_libs,
   link_depends: app_linker_script,
   link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )
