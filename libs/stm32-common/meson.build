@@ -1,6 +1,6 @@
 stm32_common_inc = include_directories('include')
 
-stm32_lib_src =  files(
+stm32_lib_src = files(
   'src' / 'assert.c',
   'src' / 'clock.c',
   'src' / 'common-interrupts.c',
