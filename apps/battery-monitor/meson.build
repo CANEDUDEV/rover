@@ -18,11 +18,10 @@ battery_monitor_elf = executable(
   [common_libs_src, battery_monitor_src],
   include_directories: [common_libs_inc, battery_monitor_inc],
   link_depends: app_linker_script,
-  link_args: ['-T@0@'.format(app_linker_script)],
+  link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )
 
 battery_monitor_bin = custom_target(
-  'battery-monitor.bin',
   output: 'battery-monitor.bin',
   input: battery_monitor_elf,
   command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],

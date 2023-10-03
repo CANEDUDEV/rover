@@ -157,7 +157,7 @@ ck_err_t ck_create_kings_page_2(const ck_kp2_args_t *args, ck_page_t *page);
  * KP8 is used to set the CAN bit timing settings for a city.
  *
  * @param address city or group address.
- * @param args ck_can_bit_timing_t with the desired values.
+ * @param bit_timing ck_can_bit_timing_t with the desired values.
  * @param page will be populated with the created king's page.
  *
  * @return #CK_ERR_INCOMPATIBLE_PARAMS if some of the args are incompatible.
