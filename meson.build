@@ -9,7 +9,7 @@ project(
     'warning_level=3',
     'werror=true',
     'c_std=c17',
-  ]
+  ],
 )
 
 objcopy = find_program('objcopy')
@@ -37,16 +37,10 @@ run_target(
     '--quiet',
     '-p', meson.project_build_root(),
     tidy_files,
-  ]
+  ],
 )
 
-binary_files = [
-  battery_monitor_bin,
-  joystick_bin,
-  sbus_receiver_bin,
-  servo_bin,
-  motor_bin
-]
+binary_files = [battery_monitor_bin, joystick_bin, sbus_receiver_bin, servo_bin, motor_bin]
 
 run_target(
   'release',

@@ -21,12 +21,16 @@ sphinx_project_arg = '-Dbreathe_projects.@0@=@1@'.format(
 )
 
 sphinx_src = files('conf.py', 'index.rst')
-docs = custom_target(
+
+custom_target(
   'docs',
   command: [
     sphinx,
-    '-W', '-a', '-q', '-j=auto', '-E',
-    sphinx_project_arg,
+    '-W',
+    '-a',
+    '-q',
+    '-j=auto',
+    '-E', sphinx_project_arg,
     meson.current_source_dir(),
     meson.current_build_dir() / 'html',
   ],

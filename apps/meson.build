@@ -13,7 +13,7 @@ app_binaries = {
   'servo': [servo_bin],
 }
 
-foreach name, app: app_binaries
+foreach name, app : app_binaries
   custom_target(
     '@0@-with-bootloader.bin'.format(name),
     build_by_default: true,
