@@ -16,11 +16,10 @@ servo_elf = executable(
   [common_libs_src, servo_src],
   include_directories: [common_libs_inc, servo_inc],
   link_depends: app_linker_script,
-  link_args: ['-T@0@'.format(app_linker_script)],
+  link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )
 
 servo_bin = custom_target(
-  'servo.bin',
   output: 'servo.bin',
   input: servo_elf,
   command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],
@@ -33,12 +32,11 @@ motor_elf = executable(
   [common_libs_src, servo_src],
   include_directories: [common_libs_inc, servo_inc],
   link_depends: app_linker_script,
-  link_args: ['-T@0@'.format(app_linker_script)],
+  link_args: ['-T@0@'.format(app_linker_script.full_path())],
   c_args: ['-DMOTOR'],
 )
 
 motor_bin = custom_target(
-  'motor.bin',
   output: 'motor.bin',
   input: motor_elf,
   command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],

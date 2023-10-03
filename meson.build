@@ -1,7 +1,7 @@
 project(
   'Rover',
   'c',
-  meson_version: '==0.61.2',
+  meson_version: '>=1.2.0',
   version: '0.1',
   default_options: [
     'buildtype=debugoptimized',

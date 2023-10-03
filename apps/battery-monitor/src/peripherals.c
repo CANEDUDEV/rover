@@ -31,11 +31,6 @@ void peripherals_init(void) {
   i2c1_init();
 }
 
-/**
- * @brief ADC1 Initialization Function
- * @param None
- * @retval None
- */
 void adc1_init(void) {
   ADC_MultiModeTypeDef multimode;
   ADC_ChannelConfTypeDef config;
@@ -109,11 +104,6 @@ void adc1_init(void) {
   }
 }
 
-/**
- * @brief ADC2 Initialization Function
- * @param None
- * @retval None
- */
 void adc2_init(void) {
   ADC_ChannelConfTypeDef config;
 
@@ -179,11 +169,6 @@ void adc2_init(void) {
   }
 }
 
-/**
- * @brief I2C1 Initialization Function
- * @param None
- * @retval None
- */
 void i2c1_init(void) {
   I2C_HandleTypeDef* hi2c1 = &peripherals.hi2c1;
   hi2c1->Instance = I2C1;
@@ -229,11 +214,6 @@ void dma_init(void) {
   HAL_NVIC_EnableIRQ(DMA2_Channel1_IRQn);
 }
 
-/**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
 void gpio_init(void) {
   GPIO_InitTypeDef gpio_init;
 
