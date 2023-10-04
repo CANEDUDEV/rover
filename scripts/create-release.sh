@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-TAG=$(git describe --tags)
+TAG=$(git describe --tags --always)
 RELEASE_FILE="rover-release-${TAG}.zip"
 
 # Add all .bin files
