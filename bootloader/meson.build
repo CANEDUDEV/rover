@@ -5,8 +5,6 @@ bootloader_src = files(
   'src' / 'main.c',
 )
 
-fs = import('fs')
-
 app_linker_script = fs.copyfile(files('src' / 'app.ld'))
 
 bootloader_linker_script = fs.copyfile(files('src' / 'bootloader.ld'))
