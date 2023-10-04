@@ -31,3 +31,6 @@ jobs:
 
       - name: Build documentation
         run: meson compile -C build docs
+
+      - name: Build release
+        run: meson compile -C build release
