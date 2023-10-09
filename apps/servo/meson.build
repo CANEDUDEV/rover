@@ -13,9 +13,8 @@ servo_src = files(
 
 servo_elf = executable(
   'servo.elf',
-  servo_src,
+  [common_libs_src, servo_src],
   include_directories: [common_libs_inc, servo_inc],
-  link_with: common_libs,
   link_depends: app_linker_script,
   link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )
@@ -30,9 +29,8 @@ servo_bin = custom_target(
 
 motor_elf = executable(
   'motor.elf',
-  servo_src,
+  [common_libs_src, servo_src],
   include_directories: [common_libs_inc, servo_inc],
-  link_with: common_libs,
   link_depends: app_linker_script,
   link_args: ['-T@0@'.format(app_linker_script.full_path())],
   c_args: ['-DMOTOR'],
