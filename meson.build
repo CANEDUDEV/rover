@@ -2,7 +2,7 @@ project(
   'Rover',
   'c',
   meson_version: '>=1.2.0',
-  version: '0.2.0',
+  version: '0.1',
   default_options: [
     'buildtype=debugoptimized',
     'default_library=static',

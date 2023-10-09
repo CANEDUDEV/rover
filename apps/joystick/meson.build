@@ -9,9 +9,8 @@ joystick_src = files(
 
 joystick_elf = executable(
   'joystick.elf',
-  joystick_src,
+  [common_libs_src, joystick_src],
   include_directories: [common_libs_inc, joystick_inc],
-  link_with: common_libs,
   link_depends: app_linker_script,
   link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )

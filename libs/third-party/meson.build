@@ -49,8 +49,4 @@ freertos_src = files(
 
 printf_inc = include_directories('printf')
 
-printf_lib = library(
-  'printf',
-  files('printf' / 'printf.c'),
-  include_directories: printf_inc,
-)
+printf_src = files('printf' / 'printf.c')
