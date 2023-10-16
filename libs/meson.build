@@ -1,4 +1,5 @@
 subdir('third-party')
+subdir('freertos-config')
 subdir('can-kingdom')
 subdir('rover')
 subdir('stm32-common')
@@ -14,7 +15,6 @@ common_libs_src = [
   # third-party
   drivers_src,
   freertos_src,
-  littlefs_src,
 ]
 
 # Convenience include dir list
@@ -27,7 +27,14 @@ common_libs_inc = [
   # third-party
   drivers_inc,
   freertos_inc,
+  freertos_config_inc,
   littlefs_inc,
+]
+
+common_libs = [
+  # third-party
+  freertos_lib,
+  littlefs_lib,
 ]
 
 common_libs_tidy_files = [
