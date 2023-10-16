@@ -7,7 +7,6 @@ stm32_lib_src = files(
   'src' / 'common-peripherals.c',
   'src' / 'error.c',
   'src' / 'flash.c',
-  'src' / 'freertos.c',
   'src' / 'print.c',
 )
 

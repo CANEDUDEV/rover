@@ -13,6 +13,7 @@ bootloader_elf = executable(
   'bootloader.elf',
   [bootloader_src, common_libs_src],
   include_directories: [bootloader_inc, common_libs_inc],
+  link_with: common_libs,
   link_depends: bootloader_linker_script,
   link_args: ['-T@0@'.format(bootloader_linker_script.full_path())],
 )
