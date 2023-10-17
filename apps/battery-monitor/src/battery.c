@@ -71,7 +71,8 @@ void set_over_current_threshold(uint32_t threshold) {
 }
 
 void update_battery_state(const adc_reading_t *adc_reading) {
-  GPIO_PinState power_on = HAL_GPIO_ReadPin(POWER_ON_GPIO_PORT, POWER_ON_PIN);
+  GPIO_PinState power_on =
+      HAL_GPIO_ReadPin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN);
 
   // Measurement depends on power on state. Measuring during power off state
   // will give wrong readings.
@@ -105,7 +106,7 @@ void update_battery_state(const adc_reading_t *adc_reading) {
   // Turn off main power on faults.
   if (battery_state.low_voltage_fault || battery_state.over_current_fault) {
     // Turn off the power outputs
-    HAL_GPIO_WritePin(POWER_ON_GPIO_PORT, POWER_ON_PIN, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_RESET);
     // Blink LEDs red to show user something is wrong.
     blink_leds_red();
   }
