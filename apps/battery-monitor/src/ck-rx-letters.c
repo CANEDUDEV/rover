@@ -69,7 +69,7 @@ int process_jumper_and_fuse_conf_letter(const ck_letter_t *letter) {
 //  R_set = (100 kOhm / 256) * potentiometer_value =>
 //  potentiometer_value = (256 / 100 kOhm) * R_set
 //
-int process_reg_out_voltage_letter(const ck_letter_t *letter) {
+int process_set_reg_out_voltage_letter(const ck_letter_t *letter) {
   if (letter->page.line_count != 2) {
     return APP_NOT_OK;
   }

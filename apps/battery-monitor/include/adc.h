@@ -8,7 +8,7 @@ extern "C" {
 #include <stdint.h>
 
 #define ADC1_NUM_CHANNELS 4
-#define ADC2_NUM_CHANNELS 4
+#define ADC2_NUM_CHANNELS 5
 
 typedef struct {
   uint16_t adc1_buf[ADC1_NUM_CHANNELS];
@@ -33,6 +33,7 @@ typedef enum {
 
 uint16_t adc_to_cell_voltage(uint16_t adc_value);
 uint16_t adc_to_reg_out_current(uint16_t adc_value);
+uint16_t adc_to_reg_out_voltage(uint16_t adc_value);
 uint32_t adc_to_vbat_out_current(uint16_t adc_value);
 void set_jumper_config(jumper_config_t jumper_config);
 
