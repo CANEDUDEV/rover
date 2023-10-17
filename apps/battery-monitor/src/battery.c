@@ -80,8 +80,12 @@ void update_battery_state(const adc_reading_t *adc_reading) {
   if (power_on == GPIO_PIN_SET) {
     battery_state.reg_out_current =
         adc_to_reg_out_current(adc_reading->adc2_buf[2]);
+
+    battery_state.reg_out_voltage =
+        adc_to_reg_out_voltage(adc_reading->adc2_buf[3]);
+
     battery_state.vbat_out_current =
-        adc_to_vbat_out_current(adc_reading->adc2_buf[3]);
+        adc_to_vbat_out_current(adc_reading->adc2_buf[4]);
 
     update_battery_cells(adc_reading);
     update_battery_charge();

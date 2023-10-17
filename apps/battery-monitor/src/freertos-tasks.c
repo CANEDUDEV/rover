@@ -194,8 +194,10 @@ void update_pages(void) {
   memcpy(&ck_data->cell_page1->lines[1], &battery_state->cells[3],
          ck_data->cell_folder->dlc);
 
-  memcpy(ck_data->reg_out_current_page->lines, &battery_state->reg_out_current,
-         ck_data->reg_out_current_folder->dlc);
+  memcpy(ck_data->reg_out_page->lines, &battery_state->reg_out_voltage,
+         sizeof(uint16_t));
+  memcpy(&ck_data->reg_out_page->lines[2], &battery_state->reg_out_current,
+         sizeof(uint16_t));
 
   memcpy(ck_data->vbat_out_current_page->lines,
          &battery_state->vbat_out_current,
@@ -208,7 +210,7 @@ void send_docs(void) {
   if (ck_send_document(ck_data->cell_folder->folder_no) != CK_OK) {
     print("failed to send doc.\r\n");
   }
-  if (ck_send_document(ck_data->reg_out_current_folder->folder_no) != CK_OK) {
+  if (ck_send_document(ck_data->reg_out_folder->folder_no) != CK_OK) {
     print("failed to send doc.\r\n");
   }
   if (ck_send_document(ck_data->vbat_out_current_folder->folder_no) != CK_OK) {
@@ -245,8 +247,8 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
   if (folder->folder_no == ck_data->jumper_and_fuse_conf_folder->folder_no) {
     return process_jumper_and_fuse_conf_letter(letter);
   }
-  if (folder->folder_no == ck_data->reg_out_voltage_folder->folder_no) {
-    return process_reg_out_voltage_letter(letter);
+  if (folder->folder_no == ck_data->set_reg_out_voltage_folder->folder_no) {
+    return process_set_reg_out_voltage_letter(letter);
   }
   if (folder->folder_no == ck_data->output_on_off_folder->folder_no) {
     return process_output_on_off_letter(letter);

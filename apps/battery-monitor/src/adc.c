@@ -40,6 +40,18 @@ uint16_t adc_to_reg_out_current(const uint16_t adc_value) {
   return i_sense;
 }
 
+/* Voltage divider with R1 = 47kOhm and R2 = 10kOhm
+ * reg_vout = v_out * (R1 + R2) / R2
+ * v_out is measured by ADC, v_out = ADC_REF_VOLTAGE * adc_value / ADC_MAX
+ */
+uint16_t adc_to_reg_out_voltage(uint16_t adc_value) {
+  uint32_t v_out = (ADC_REF_VOLTAGE * adc_value) / ADC_MAX;
+  const uint32_t numerator = v_out * (47000 + 10000);
+  const uint32_t denominator = 10000;
+  uint16_t reg_vout = (uint16_t)(numerator / denominator);
+  return reg_vout;
+}
+
 /*
  * Uses LT6106 as well, with variable r_out configured by placing jumpers on X11
  * and X12.

@@ -1,4 +1,3 @@
-
 #ifndef CK_DATA_H
 #define CK_DATA_H
 
@@ -30,21 +29,21 @@ typedef struct {
 
   ck_page_t *cell_page0;
   ck_page_t *cell_page1;
-  ck_page_t *reg_out_current_page;
+  ck_page_t *reg_out_page;
   ck_page_t *vbat_out_current_page;
 
   ck_document_t *cell_doc;
-  ck_document_t *reg_out_current_doc;
+  ck_document_t *reg_out_doc;
   ck_document_t *vbat_out_current_doc;
 
   // Transmit
   ck_folder_t *cell_folder;
-  ck_folder_t *reg_out_current_folder;
+  ck_folder_t *reg_out_folder;
   ck_folder_t *vbat_out_current_folder;
 
   // Receive
   ck_folder_t *jumper_and_fuse_conf_folder;
-  ck_folder_t *reg_out_voltage_folder;
+  ck_folder_t *set_reg_out_voltage_folder;
   ck_folder_t *output_on_off_folder;
   ck_folder_t *report_freq_folder;
   ck_folder_t *low_voltage_cutoff_folder;

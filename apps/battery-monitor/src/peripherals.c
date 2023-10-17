@@ -106,10 +106,9 @@ void adc1_init(void) {
 
 void adc2_init(void) {
   ADC_ChannelConfTypeDef config;
-
   ADC_HandleTypeDef* hadc2 = &peripherals.hadc2;
-  /** Common config
-   */
+
+  // Common config for all channels
   hadc2->Instance = ADC2;
   hadc2->Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
   hadc2->Init.Resolution = ADC_RESOLUTION_12B;
@@ -119,7 +118,7 @@ void adc2_init(void) {
   hadc2->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc2->Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc2->Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc2->Init.NbrOfConversion = 4;
+  hadc2->Init.NbrOfConversion = 5;  // NOLINT
   hadc2->Init.DMAContinuousRequests = DISABLE;
   hadc2->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc2->Init.LowPowerAutoWait = DISABLE;
@@ -128,8 +127,7 @@ void adc2_init(void) {
     error();
   }
 
-  /** Configure Regular Channel
-   */
+  // Configure the ADC channels
   config.Channel = ADC_CHANNEL_1;
   config.Rank = ADC_REGULAR_RANK_1;
   config.SingleDiff = ADC_SINGLE_ENDED;
@@ -140,26 +138,26 @@ void adc2_init(void) {
     error();
   }
 
-  /** Configure Regular Channel
-   */
   config.Channel = ADC_CHANNEL_2;
   config.Rank = ADC_REGULAR_RANK_2;
   if (HAL_ADC_ConfigChannel(hadc2, &config) != HAL_OK) {
     error();
   }
 
-  /** Configure Regular Channel
-   */
   config.Channel = ADC_CHANNEL_3;
   config.Rank = ADC_REGULAR_RANK_3;
   if (HAL_ADC_ConfigChannel(hadc2, &config) != HAL_OK) {
     error();
   }
 
-  /** Configure Regular Channel
-   */
-  config.Channel = ADC_CHANNEL_11;
+  config.Channel = ADC_CHANNEL_4;
   config.Rank = ADC_REGULAR_RANK_4;
+  if (HAL_ADC_ConfigChannel(hadc2, &config) != HAL_OK) {
+    error();
+  }
+
+  config.Channel = ADC_CHANNEL_11;
+  config.Rank = ADC_REGULAR_RANK_5;
   if (HAL_ADC_ConfigChannel(hadc2, &config) != HAL_OK) {
     error();
   }
@@ -335,9 +333,11 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     PA4     ------> ADC2_IN1
     PA5     ------> ADC2_IN2
     PA6     ------> ADC2_IN3
+    PA7     ------> ADC2_IN4
     PC5     ------> ADC2_IN11
     */
-    gpio_init.Pin = CELL5_MEASURE_PIN | CELL6_MEASURE_PIN | I_PWR_A_MEASURE_PIN;
+    gpio_init.Pin = CELL5_MEASURE_PIN | CELL6_MEASURE_PIN |
+                    I_PWR_A_MEASURE_PIN | REG_VOUT_MEASURE_PIN;
     gpio_init.Mode = GPIO_MODE_ANALOG;
     gpio_init.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(CELL5_MEASURE_GPIO_PORT, &gpio_init);
@@ -390,9 +390,9 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
     PA6     ------> ADC2_IN3
     PC5     ------> ADC2_IN11
     */
-    HAL_GPIO_DeInit(CELL5_MEASURE_GPIO_PORT, CELL5_MEASURE_PIN |
-                                                 CELL6_MEASURE_PIN |
-                                                 I_PWR_A_MEASURE_PIN);
+    HAL_GPIO_DeInit(CELL5_MEASURE_GPIO_PORT,
+                    CELL5_MEASURE_PIN | CELL6_MEASURE_PIN |
+                        I_PWR_A_MEASURE_PIN | REG_VOUT_MEASURE_PIN);
 
     HAL_GPIO_DeInit(VBAT_I_MEASURE_GPIO_PORT, VBAT_I_MEASURE_PIN);
 
