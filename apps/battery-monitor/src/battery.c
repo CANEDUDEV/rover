@@ -19,6 +19,7 @@
 
 static battery_state_t battery_state;
 
+void update_battery_cells(const adc_reading_t *adc_reading);
 void update_battery_charge(void);
 void update_battery_leds(void);
 void send_docs(void);
@@ -77,18 +78,12 @@ void update_battery_state(const adc_reading_t *adc_reading) {
   // Measurement depends on power on state. Measuring during power off state
   // will give wrong readings.
   if (power_on == GPIO_PIN_SET) {
-    for (int i = 0; i < 4; i++) {
-      battery_state.cells[i] = adc_to_cell_voltage(adc_reading->adc1_buf[i]);
-    }
-    // NOLINTBEGIN(*-magic-numbers)
-    battery_state.cells[4] = adc_to_cell_voltage(adc_reading->adc2_buf[0]);
-    battery_state.cells[5] = adc_to_cell_voltage(adc_reading->adc2_buf[1]);
-    // NOLINTEND(*-magic-numbers)
     battery_state.reg_out_current =
         adc_to_reg_out_current(adc_reading->adc2_buf[2]);
     battery_state.vbat_out_current =
         adc_to_vbat_out_current(adc_reading->adc2_buf[3]);
 
+    update_battery_cells(adc_reading);
     update_battery_charge();
     update_battery_leds();
 
@@ -110,6 +105,52 @@ void update_battery_state(const adc_reading_t *adc_reading) {
     // Blink LEDs red to show user something is wrong.
     blink_leds_red();
   }
+}
+
+void update_battery_cells(const adc_reading_t *adc_reading) {
+  // NOLINTBEGIN(*-magic-numbers)
+  int32_t total_voltage = 0;
+  int32_t cell_voltage = adc_to_cell_voltage(adc_reading->adc1_buf[0]);
+  if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
+    cell_voltage = 0;
+  }
+  battery_state.cells[0] = cell_voltage;
+  total_voltage = battery_state.cells[0];
+
+  cell_voltage = adc_to_cell_voltage(adc_reading->adc1_buf[1]) - total_voltage;
+  if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
+    cell_voltage = 0;
+  }
+  battery_state.cells[1] = cell_voltage;
+  total_voltage += battery_state.cells[1];
+
+  cell_voltage = adc_to_cell_voltage(adc_reading->adc1_buf[2]) - total_voltage;
+  if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
+    cell_voltage = 0;
+  }
+  battery_state.cells[2] = cell_voltage;
+  total_voltage += battery_state.cells[2];
+
+  cell_voltage = adc_to_cell_voltage(adc_reading->adc1_buf[3]) - total_voltage;
+  if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
+    cell_voltage = 0;
+  }
+  battery_state.cells[3] = cell_voltage;
+  total_voltage += battery_state.cells[3];
+
+  cell_voltage = adc_to_cell_voltage(adc_reading->adc2_buf[0]) - total_voltage;
+  if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
+    cell_voltage = 0;
+  }
+  battery_state.cells[4] = cell_voltage;
+  total_voltage += battery_state.cells[4];
+
+  cell_voltage = adc_to_cell_voltage(adc_reading->adc2_buf[1]) - total_voltage;
+  if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
+    cell_voltage = 0;
+  }
+  battery_state.cells[5] = cell_voltage;
+  // NOLINTEND(*-magic-numbers)
 }
 
 // Always report lowest detected charge to detect the most discharged cell.
