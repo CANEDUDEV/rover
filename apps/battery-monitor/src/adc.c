@@ -7,18 +7,15 @@
 
 static uint32_t vbat_sense_r_out;
 
-/* Voltage divider with R1 = 1kOhm and R2 = 2kOhm
+/* Voltage divider with R1 = 13kOhm and R2 = 1.6kOhm
  * v_cell = v_out * (R1 + R2) / R2
  * v_out is measured by ADC, v_out = ADC_REF_VOLTAGE * adc_value / ADC_MAX
  */
 uint16_t adc_to_cell_voltage(const uint16_t adc_value) {
   uint32_t v_out = (ADC_REF_VOLTAGE * adc_value) / ADC_MAX;
-  const uint32_t numerator = v_out * (1000 + 2000);
-  const uint32_t denominator = 2000;
+  const uint32_t numerator = v_out * (13000 + 1600);
+  const uint32_t denominator = 1600;
   uint16_t v_cell = (uint16_t)(numerator / denominator);
-  if (v_cell < BATTERY_CELL_DETECTION_THRESHOLD) {
-    v_cell = 0;
-  }
   return v_cell;
 }
 
