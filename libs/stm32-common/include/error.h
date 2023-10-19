@@ -6,8 +6,10 @@ extern "C" {
 #endif
 
 // Simple error reporting codes for user applications
-#define APP_OK 0
-#define APP_NOT_OK 1
+enum app_err_t {
+  APP_OK = 0,
+  APP_NOT_OK = -1,
+};
 
 // General error handler
 void error(void);
