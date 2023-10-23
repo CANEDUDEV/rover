@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 
 #include "ck-data.h"
@@ -12,7 +13,6 @@
 #include "clock.h"
 #include "error.h"
 #include "peripherals.h"
-#include "print.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"
@@ -41,7 +41,7 @@ int main(void) {
   task_init();
   mayor_init();
 
-  print("Starting application...\r\n");
+  printf("Starting application...\r\n");
 
   // Start scheduler
   vTaskStartScheduler();
@@ -81,7 +81,7 @@ void mayor_init(void) {
   };
 
   if (ck_mayor_init(&mayor) != CK_OK) {
-    print("Error setting up mayor.\r\n");
+    printf("Error setting up mayor.\r\n");
     error();
   }
 }
@@ -90,7 +90,7 @@ void default_letter_timer_callback(TimerHandle_t timer) {
   (void)timer;
 
   if (ck_default_letter_timeout() != CK_OK) {
-    print("CAN Kingdom error in ck_default_letter_timeout().\r\n");
+    printf("CAN Kingdom error in ck_default_letter_timeout().\r\n");
   }
 }
 

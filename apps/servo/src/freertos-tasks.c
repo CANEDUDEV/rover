@@ -1,5 +1,6 @@
 #include "freertos-tasks.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "adc.h"
@@ -11,7 +12,6 @@
 // STM32Common
 #include "error.h"
 #include "postmaster-hal.h"
-#include "print.h"
 #include "rover.h"
 #include "stm32f3xx_hal.h"
 
@@ -115,14 +115,14 @@ void king(void *unused) {
   // There is already traffic on the CAN bus, so don't act as king.
   // TODO: how to handle traffic that is not detected due to incorrect bitrate?
   if (ck_get_comm_mode() == CK_COMM_MODE_LISTEN_ONLY) {
-    print("Someone else is king. Suspending king task.\r\n");
+    printf("Someone else is king. Suspending king task.\r\n");
     vTaskSuspend(king_task);
     // Task will never be resumed
   }
 
   // Spoof a default letter reception
   if (ck_default_letter_received() != CK_OK) {
-    print("Error receiving fake default letter.\r\n");
+    printf("Error receiving fake default letter.\r\n");
     error();
   }
 
@@ -143,7 +143,7 @@ void king(void *unused) {
 
   // Start up our own communications
   if (ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE) != CK_OK) {
-    print("Error starting king.\r\n");
+    printf("Error starting king.\r\n");
     error();
   }
 
@@ -185,7 +185,7 @@ void send_base_number(void) {
       .mayor_response_no = 0,
   };
   if (ck_create_kings_page_1(&kp1_args, &page) != CK_OK) {
-    print("Error creating king's page.\r\n");
+    printf("Error creating king's page.\r\n");
     error();
   }
 
@@ -259,7 +259,7 @@ void assign_envelopes(void) {
     };
 
     if (ck_create_kings_page_2(&kp2_args, &page) != CK_OK) {
-      print("Error creating king's page.\r\n");
+      printf("Error creating king's page.\r\n");
       error();
     }
 
@@ -292,7 +292,7 @@ void start_communication(void) {
   };
 
   if (ck_create_kings_page_0(&kp0_args, &page) != CK_OK) {
-    print("Error creating king's page.\r\n");
+    printf("Error creating king's page.\r\n");
     error();
   }
 
@@ -392,7 +392,7 @@ void process_letter(void *unused) {
   for (;;) {
     if (HAL_CAN_ActivateNotification(&peripherals->common_peripherals->hcan,
                                      CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) {
-      print("Error activating interrupt.\r\n");
+      printf("Error activating interrupt.\r\n");
       error();
     }
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -401,7 +401,7 @@ void process_letter(void *unused) {
     while (HAL_CAN_GetRxMessage(&peripherals->common_peripherals->hcan,
                                 CAN_RX_FIFO0, &header, data) == HAL_OK) {
       if (ck_correct_letter_received() != CK_OK) {
-        print("CAN Kingdom error in ck_correct_letter_received().\r\n");
+        printf("CAN Kingdom error in ck_correct_letter_received().\r\n");
       }
       letter = frame_to_letter(&header, data);
       dispatch_letter(&letter);
@@ -423,19 +423,19 @@ void send_docs(void) {
   ck_data_t *ck_data = get_ck_data();
 
   if (ck_send_document(ck_data->sensor_power_folder->folder_no) != CK_OK) {
-    print("failed to send doc.\r\n");
+    printf("failed to send doc.\r\n");
   }
   if (ck_send_document(ck_data->servo_current_folder->folder_no) != CK_OK) {
-    print("failed to send doc.\r\n");
+    printf("failed to send doc.\r\n");
   }
   if (ck_send_document(ck_data->battery_voltage_folder->folder_no) != CK_OK) {
-    print("failed to send doc.\r\n");
+    printf("failed to send doc.\r\n");
   }
   if (ck_send_document(ck_data->servo_voltage_folder->folder_no) != CK_OK) {
-    print("failed to send doc.\r\n");
+    printf("failed to send doc.\r\n");
   }
   if (ck_send_document(ck_data->h_bridge_current_folder->folder_no) != CK_OK) {
-    print("failed to send doc.\r\n");
+    printf("failed to send doc.\r\n");
   }
 }
 
@@ -445,19 +445,19 @@ void dispatch_letter(ck_letter_t *letter) {
   // Check for default letter
   if (ck_is_default_letter(letter) == CK_OK) {
     if (ck_default_letter_received() != CK_OK) {
-      print("CAN Kingdom error in ck_default_letter_received().\r\n");
+      printf("CAN Kingdom error in ck_default_letter_received().\r\n");
     }
   }
   // Check for king's letter
   else if (ck_is_kings_envelope(&letter->envelope) == CK_OK) {
     if (ck_process_kings_letter(letter) != CK_OK) {
-      print("failed to process king's letter.\r\n");
+      printf("failed to process king's letter.\r\n");
     }
   }
   // Check for any other letter
   else if (ck_get_envelopes_folder(&letter->envelope, &folder) == CK_OK) {
     if (handle_letter(folder, letter) != APP_OK) {
-      print("failed to process page.\r\n");
+      printf("failed to process page.\r\n");
     }
   }
 }
