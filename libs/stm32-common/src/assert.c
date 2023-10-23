@@ -1,5 +1,7 @@
-#include "stm32f3xx.h"
-#include "stm32f3xx_hal_conf.h"
+#include <stdio.h>
+
+#include "error.h"
+#include "stm32f3xx_hal.h"
 
 #ifdef USE_FULL_ASSERT
 /**
@@ -10,8 +12,16 @@
  * @retval None
  */
 void assert_failed(uint8_t *file, uint32_t line) {
-  /* User can add his own implementation to report the file name and line
-     number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
-     line) */
+  printf("Assertion failed. File: %s, Line: %u\r\n", (char *)file, line);
+  error();
 }
 #endif /* USE_FULL_ASSERT */
+
+// NOLINTBEGIN(bugprone-reserved-identifier)
+void __assert_fail(const char *__assertion, const char *__file,
+                   unsigned int __line, const char *__function) {
+  printf("Assertion %s failed. File: %s, Function: %s, Line: %u\r\n",
+         __assertion, __file, __function, __line);
+  error();
+}
+// NOLINTEND(bugprone-reserved-identifier)
