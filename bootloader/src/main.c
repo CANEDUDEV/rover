@@ -1,12 +1,11 @@
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "ck-data.h"
 #include "clock.h"
 #include "common-peripherals.h"
 #include "error.h"
-#include "print.h"
-#include "printf.h"
 
 // CK
 #include "mayor.h"
@@ -126,12 +125,12 @@ static void mayor_init(void) {
   };
 
   if (ck_mayor_init(&mayor) != CK_OK) {
-    print("Error setting up mayor.\r\n");
+    printf("Error setting up mayor.\r\n");
     error();
   }
 
   if (ck_add_mayors_page(ck_data->bootloader_page) != CK_OK) {
-    print("Error adding bootloader page to mayor.\r\n");
+    printf("Error adding bootloader page to mayor.\r\n");
     error();
   }
 }
@@ -141,7 +140,7 @@ static void default_letter_timer_callback(TimerHandle_t timer) {
   (void)timer;
 
   if (ck_default_letter_timeout() != CK_OK) {
-    print("CAN Kingdom error in ck_default_letter_timeout().\r\n");
+    printf("CAN Kingdom error in ck_default_letter_timeout().\r\n");
   }
 
   if (!bootloader_entered) {
@@ -175,7 +174,7 @@ static void process_letter(void *unused) {
   for (;;) {
     if (HAL_CAN_ActivateNotification(&peripherals->hcan,
                                      CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) {
-      print("Error activating interrupt.\r\n");
+      printf("Error activating interrupt.\r\n");
       error();
     }
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -184,7 +183,7 @@ static void process_letter(void *unused) {
     while (HAL_CAN_GetRxMessage(&peripherals->hcan, CAN_RX_FIFO0, &header,
                                 data) == HAL_OK) {
       if (ck_correct_letter_received() != CK_OK) {
-        print("CAN Kingdom error in ck_correct_letter_received().\r\n");
+        printf("CAN Kingdom error in ck_correct_letter_received().\r\n");
       }
       letter = frame_to_letter(&header, data);
       dispatch_letter(&letter);
@@ -198,21 +197,21 @@ static void dispatch_letter(ck_letter_t *letter) {
   // Check for default letter
   if (ck_is_default_letter(letter) == CK_OK) {
     if (ck_default_letter_received() != CK_OK) {
-      print("CAN Kingdom error in ck_default_letter_received().\r\n");
+      printf("CAN Kingdom error in ck_default_letter_received().\r\n");
     }
   }
 
   // Check for king's letter
   else if (ck_is_kings_envelope(&letter->envelope) == CK_OK) {
     if (ck_process_kings_letter(letter) != CK_OK) {
-      print("failed to process king's letter.\r\n");
+      printf("failed to process king's letter.\r\n");
     }
   }
 
   // Check for any other letter
   else if (ck_get_envelopes_folder(&letter->envelope, &folder) == CK_OK) {
     if (handle_letter(folder, letter) != APP_OK) {
-      print("failed to process page.\r\n");
+      printf("failed to process page.\r\n");
     }
   }
 }
@@ -239,7 +238,7 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
 }
 
 static void enter_bootloader(const ck_letter_t *letter) {
-  print("Entered bootloader.\r\n");
+  printf("Entered bootloader.\r\n");
   bootloader_entered = true;
   send_ack(letter);
 }
@@ -250,7 +249,7 @@ static void exit_bootloader(const ck_letter_t *letter) {
     send_ack(letter);
   }
 
-  print("Exiting bootloader...\r\n");
+  printf("Exiting bootloader...\r\n");
 
   // Resets the peripheral buses, so no need for additional deinit.
   HAL_DeInit();
@@ -273,12 +272,12 @@ static int process_flash_erase_letter(const ck_letter_t *letter) {
   ck_data_t *ck_data = get_ck_data();
 
   if (letter->page.line_count != ck_data->flash_erase_folder->dlc) {
-    print("Incorrect flash erase page length.\r\n");
+    printf("Incorrect flash erase page length.\r\n");
     send_nack(letter);
     return APP_NOT_OK;
   }
 
-  print("Erasing flash...\r\n");
+  printf("Erasing flash...\r\n");
 
   // Get start and end addresses of erase operation
   uint32_t bytes_to_erase = 0;
@@ -316,14 +315,14 @@ static int process_flash_erase_letter(const ck_letter_t *letter) {
 
   if (err != flash_erase_ok || status != HAL_OK) {
     flash_failed = true;
-    print("Failed to erase flash.\r\n");
+    printf("Failed to erase flash.\r\n");
     send_nack(letter);
     return APP_NOT_OK;
   }
 
   send_ack(letter);
 
-  print("Finished erasing flash.\r\n");
+  printf("Finished erasing flash.\r\n");
   return APP_OK;
 }
 
@@ -334,7 +333,7 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
 
   // Fatal error, something is wrong with the flash.
   if (flash_failed) {
-    print("Fatal flash error. Aborting.\r\n");
+    printf("Fatal flash error. Aborting.\r\n");
     send_abort_page();
     transfer_started = false;  // Reset transfer state
     return APP_NOT_OK;
@@ -344,7 +343,7 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
   if (letter->page.line_count != ck_data->flash_program_receive_folder->dlc ||
       (letter->page.lines[0] != 1 && letter->page.lines[0] != 3 &&
        letter->page.lines[0] != 4)) {
-    print("Incorrect flash program letter. Aborting.\r\n");
+    printf("Incorrect flash program letter. Aborting.\r\n");
     send_abort_page();
     transfer_started = false;  // Reset transfer state
     return APP_NOT_OK;
@@ -364,7 +363,7 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
     memcpy(&bytes_to_receive, &letter->page.lines[1], sizeof(bytes_to_receive));
     // Check if we can receive that many bytes
     if (bytes_to_receive > approm_size) {
-      print("Bytes to receive larger than approm size. Aborting.\r\n");
+      printf("Bytes to receive larger than approm size. Aborting.\r\n");
       send_abort_page();
       return APP_NOT_OK;
     }
@@ -375,11 +374,11 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
     if (ck_send_page(ck_data->flash_program_transmit_folder->folder_no,
                      ck_data->flash_program_bundle_request_page->lines[0]) !=
         CK_OK) {
-      print("Error sending block transfer bundle request page.\r\n");
+      printf("Error sending block transfer bundle request page.\r\n");
       return APP_NOT_OK;
     }
 
-    print("Flashing app...\r\n");
+    printf("Flashing app...\r\n");
 
     // Initial state for flashing
     transfer_started = true;
@@ -390,7 +389,7 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
   }
 
   if (!transfer_started) {
-    print("Block transfer not initialized, Aborting.\r\n");
+    printf("Block transfer not initialized, Aborting.\r\n");
     send_abort_page();
     return APP_NOT_OK;
   }
@@ -399,7 +398,7 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
 
   // Duplicate transmission, discard message
   if (letter->page.lines[0] != expected_data_page) {
-    print("Duplicate received, skipping.\r\n");
+    printf("Duplicate received, skipping.\r\n");
     return APP_OK;
   }
 
@@ -436,11 +435,11 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
     if (ck_send_page(ck_data->flash_program_transmit_folder->folder_no,
                      ck_data->flash_program_bundle_request_page->lines[0]) !=
         CK_OK) {
-      print("Error sending block transfer bundle request page.\r\n");
+      printf("Error sending block transfer bundle request page.\r\n");
       return APP_NOT_OK;
     }
 
-    print("Finished flashing app.\r\n");
+    printf("Finished flashing app.\r\n");
   }
 
   return APP_OK;
@@ -499,11 +498,11 @@ static void flash_program(void *unused) {
 
       if (status != HAL_OK) {
         ck_data_t *ck_data = get_ck_data();
-        print("Fatal error, flashing failed.\r\n");
+        printf("Fatal error, flashing failed.\r\n");
         if (ck_send_page(ck_data->flash_program_transmit_folder->folder_no,
                          ck_data->flash_program_abort_page->lines[0]) !=
             CK_OK) {
-          print("Error sending block transfer abort page.\r\n");
+          printf("Error sending block transfer abort page.\r\n");
         }
         flash_failed = true;
         break;
@@ -519,7 +518,7 @@ static void send_abort_page(void) {
   ck_data_t *ck_data = get_ck_data();
   if (ck_send_page(ck_data->flash_program_transmit_folder->folder_no,
                    ck_data->flash_program_abort_page->lines[0]) != CK_OK) {
-    print("Error sending block transfer abort page.\r\n");
+    printf("Error sending block transfer abort page.\r\n");
   }
 }
 
@@ -532,10 +531,7 @@ static void send_ack(const ck_letter_t *letter) {
 
   // Don't raise error here since this is an error on the flasher's part.
   if (ck_send_document(ck_data->command_ack_folder->folder_no) != CK_OK) {
-    char str[32];  // NOLINT(*-magic-numbers)
-    sprintf(str, "Error sending ACK with ID 0x%x.\r\n",
-            letter->envelope.envelope_no);
-    print(str);
+    printf("Error sending ACK with ID 0x%x.\r\n", letter->envelope.envelope_no);
   }
 }
 
@@ -547,10 +543,8 @@ static void send_nack(const ck_letter_t *letter) {
 
   // Don't raise error here since this is an error on the flasher's part.
   if (ck_send_document(ck_data->command_ack_folder->folder_no) != CK_OK) {
-    char str[32];  // NOLINT(*-magic-numbers)
-    sprintf(str, "Error sending NACK with ID 0x%x.\r\n",
-            letter->envelope.envelope_no);
-    print(str);
+    printf("Error sending NACK with ID 0x%x.\r\n",
+           letter->envelope.envelope_no);
   }
 }
 

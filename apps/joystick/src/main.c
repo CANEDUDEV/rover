@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "app.h"
@@ -6,7 +7,6 @@
 #include "error.h"
 #include "flash.h"
 #include "peripherals.h"
-#include "print.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"
@@ -43,7 +43,7 @@ int main(void) {
 
   task_init();
 
-  print("Starting application...\n");
+  printf("Starting application...\n");
 
   // Start scheduler
   vTaskStartScheduler();

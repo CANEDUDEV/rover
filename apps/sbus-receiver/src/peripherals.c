@@ -2,7 +2,6 @@
 
 #include "error.h"
 #include "ports.h"
-#include "print.h"
 #include "stm32f3xx_hal.h"
 
 #define USART2_IRQ_PRIORITY 5
