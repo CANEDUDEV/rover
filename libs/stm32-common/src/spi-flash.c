@@ -47,11 +47,6 @@ int erase(uint32_t sector_address) {
   cmd[3] = (sector_address >> 0 * 8) & 0xFF;
   // NOLINTEND(*-magic-numbers)
 
-  // Wait for flash
-  if (wait_until_ready() != APP_OK) {
-    return APP_NOT_OK;
-  }
-
   // Set write enable flag before erase
   if (write_enable() != APP_OK) {
     return APP_NOT_OK;
@@ -71,7 +66,8 @@ int erase(uint32_t sector_address) {
 
   end_cmd();
 
-  return APP_OK;
+  // Wait for flash
+  return wait_until_ready();
 }
 
 // Can program at most 256 bytes at once.
@@ -96,11 +92,6 @@ int program(uint32_t page_address, uint8_t *bytes, size_t size) {
     cmd[3] = 0;
   }
   // NOLINTEND(*-magic-numbers)
-
-  // Wait for flash
-  if (wait_until_ready() != APP_OK) {
-    return APP_NOT_OK;
-  }
 
   // Set write enable flag before page program
   if (write_enable() != APP_OK) {
@@ -129,7 +120,8 @@ int program(uint32_t page_address, uint8_t *bytes, size_t size) {
 
   end_cmd();
 
-  return APP_OK;
+  // Wait for flash
+  return wait_until_ready();
 }
 
 // Can read whole flash using one command
@@ -150,11 +142,6 @@ int read(uint32_t address, uint8_t *data, size_t size) {
   cmd[2] = (address >> 1 * 8) & 0xFF;
   cmd[3] = (address >> 0 * 8) & 0xFF;
   // NOLINTEND(*-magic-numbers)
-
-  // Wait for flash
-  if (wait_until_ready() != APP_OK) {
-    return APP_NOT_OK;
-  }
 
   // Read data
   common_peripherals_t *peripherals = get_common_peripherals();
