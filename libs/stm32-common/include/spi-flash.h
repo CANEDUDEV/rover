@@ -5,9 +5,18 @@
 extern "C" {
 #endif
 
-#include "lfs.h"
+#include <stddef.h>
+#include <stdint.h>
 
-const struct lfs_config *get_spi_flash_lfs_config(void);
+#define SPI_FLASH_SECTOR_SIZE (4 * 1024)
+#define SPI_FLASH_SECTOR_COUNT 512
+#define SPI_FLASH_PAGE_SIZE 256
+#define SPI_FLASH_SIZE (SPI_FLASH_SECTOR_SIZE * SPI_FLASH_SECTOR_COUNT)
+
+// SPI flash driver interface
+int erase(uint32_t sector_address);
+int program(uint32_t page_address, uint8_t *bytes, size_t size);
+int read(uint32_t address, uint8_t *data, size_t size);
 
 #ifdef __cplusplus
 }
