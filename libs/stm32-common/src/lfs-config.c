@@ -55,6 +55,19 @@ static const struct lfs_config lfs_cfg = {
 static lfs_t lfs = {0};
 static bool mounted = false;
 
+static void format_and_mount(void) {
+  int err = lfs_format(&lfs, &lfs_cfg);
+  if (err < 0) {
+    printf("Fatal flash error, couldn't format flash: %d\r\n", err);
+    error();
+  }
+  err = lfs_mount(&lfs, &lfs_cfg);
+  if (err < 0) {
+    printf("Fatal flash error, couldn't mount after format: %d\r\n", err);
+    error();
+  }
+}
+
 lfs_config_t get_lfs_config(void) {
   lfs_config_t cfg = {.cfg = &lfs_cfg, .lfs = &lfs};
   return cfg;
@@ -68,20 +81,29 @@ int lfs_init(void) {
   int err = lfs_mount(&lfs, &lfs_cfg);
 
   if (err < 0) {  // Should only happen on first boot
-    printf("lfs_mount error: %d\r\n", err);
-    err = lfs_format(&lfs, &lfs_cfg);
+    printf("Formatting flash...\r\n");
+    format_and_mount();
+  }
+
+  lfs_dir_t dir;
+  err = lfs_dir_open(&lfs, &dir, "/");
+
+  if (err == LFS_ERR_CORRUPT) {
+    printf("Corrupt filesystem, reformatting flash...\r\n");
+    format_and_mount();
+  }
+
+  if (err == LFS_ERR_OK) {
+    err = lfs_dir_close(&lfs, &dir);
     if (err < 0) {
-      printf("lfs_format error: %d\r\n", err);
+      printf("Fatal flash error, couldn't close root directory: %d\r\n", err);
       error();
     }
-    err = lfs_mount(&lfs, &lfs_cfg);
   }
 
-  if (err >= 0) {
-    mounted = true;
-  }
+  mounted = true;
 
-  return err;
+  return APP_OK;
 }
 
 int lfs_deinit(void) {
