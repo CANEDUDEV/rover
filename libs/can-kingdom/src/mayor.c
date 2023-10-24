@@ -8,10 +8,6 @@
 struct mayor_state {
   ck_mayor_t user_data;  // Data provided by the user.
 
-  bool base_no_is_known;
-  bool base_no_has_extended_id;
-  uint32_t base_no;
-
   // For keeping track of startup sequence
   bool default_letter_received;
   bool default_letter_timeout;  // 200ms has passed
@@ -82,7 +78,7 @@ static ck_err_t change_bit_timing(void);
 ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
   // Check for unset parameters.
   if (mayor_->ean_no == 0 || mayor_->serial_no == 0 ||
-      mayor_->city_address == 0 || !mayor_->set_action_mode ||
+      mayor_->ck_id.city_address == 0 || !mayor_->set_action_mode ||
       !mayor_->set_city_mode || !mayor_->start_200ms_timer ||
       !mayor_->folders) {
     return CK_ERR_MISSING_PARAMETER;
@@ -91,6 +87,18 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
   // Verify EAN and serial numbers are at most 40 bits.
   if (mayor_->ean_no > CK_MAX_EAN_NO || mayor_->serial_no > CK_MAX_EAN_NO) {
     return CK_ERR_INVALID_PARAMETER;
+  }
+
+  // Base number bounds check
+  if (mayor_->ck_id.base_no_is_known) {
+    if ((!mayor_->ck_id.base_no_has_extended_id &&
+         mayor_->ck_id.base_no + mayor_->ck_id.city_address >
+             CK_CAN_MAX_STD_ID) ||
+        (mayor_->ck_id.base_no_has_extended_id &&
+         mayor_->ck_id.base_no + mayor_->ck_id.city_address >
+             CK_CAN_MAX_EXT_ID)) {
+      return CK_ERR_INVALID_PARAMETER;
+    }
   }
 
   // Need at least 2 folders and 2 lists.
@@ -140,7 +148,7 @@ ck_err_t ck_process_kings_letter(const ck_letter_t *letter) {
     return CK_ERR_INVALID_PARAMETER;
   }
   // Check if mayor has been initialized
-  if (mayor.user_data.city_address == 0) {
+  if (mayor.user_data.ck_id.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
 
@@ -156,7 +164,7 @@ ck_err_t ck_process_kings_letter(const ck_letter_t *letter) {
   uint8_t address = letter->page.lines[0];
 
   // Check if letter is addressed to us.
-  if (address != 0 && address != mayor.user_data.city_address &&
+  if (address != 0 && address != mayor.user_data.ck_id.city_address &&
       !in_group(address)) {
     return CK_OK;
   }
@@ -183,7 +191,7 @@ ck_err_t ck_process_kings_letter(const ck_letter_t *letter) {
 
 ck_err_t ck_add_mayors_page(ck_page_t *page) {
   // Check if mayor has been initialized
-  if (mayor.user_data.city_address == 0) {
+  if (mayor.user_data.ck_id.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
   if (!page) {
@@ -202,7 +210,7 @@ ck_err_t ck_add_mayors_page(ck_page_t *page) {
 
 ck_err_t ck_send_document(uint8_t folder_no) {
   // Check if mayor has been initialized
-  if (mayor.user_data.city_address == 0) {
+  if (mayor.user_data.ck_id.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
   if (mayor.comm_mode != CK_COMM_MODE_COMMUNICATE) {
@@ -252,7 +260,7 @@ ck_err_t ck_send_document(uint8_t folder_no) {
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 ck_err_t ck_send_page(uint8_t folder_no, uint8_t page_no) {
   // Check if mayor has been initialized
-  if (mayor.user_data.city_address == 0) {
+  if (mayor.user_data.ck_id.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
   if (mayor.comm_mode != CK_COMM_MODE_COMMUNICATE) {
@@ -304,7 +312,7 @@ ck_err_t ck_send_page(uint8_t folder_no, uint8_t page_no) {
 
 ck_err_t ck_send_mayors_page(uint8_t page_no) {
   // Check if mayor has been initialized
-  if (mayor.user_data.city_address == 0) {
+  if (mayor.user_data.ck_id.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
   // Mayor's page should be sent in listen only mode and communicate mode.
@@ -345,7 +353,7 @@ ck_err_t ck_is_kings_envelope(const ck_envelope_t *envelope) {
 ck_err_t ck_get_envelopes_folder(const ck_envelope_t *envelope,
                                  ck_folder_t **folder) {
   // Check if mayor has been initialized
-  if (mayor.user_data.city_address == 0) {
+  if (mayor.user_data.ck_id.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
 
@@ -361,7 +369,7 @@ ck_err_t ck_get_envelopes_folder(const ck_envelope_t *envelope,
 
 ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
   // Check if mayor has been initialized
-  if (mayor.user_data.city_address == 0) {
+  if (mayor.user_data.ck_id.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
   if (mode != CK_COMM_MODE_KEEP_CURRENT) {
@@ -372,32 +380,7 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
 
 ck_comm_mode_t ck_get_comm_mode(void) { return mayor.comm_mode; }
 
-uint32_t ck_get_base_number(void) { return mayor.base_no; }
-
-ck_err_t ck_set_base_number(uint32_t base_no, bool has_extended_id) {
-  // Check if mayor has been initialized
-  if (mayor.user_data.city_address == 0) {
-    return CK_ERR_NOT_INITIALIZED;
-  }
-  // Base number bounds check
-  if ((!has_extended_id &&
-       base_no + mayor.user_data.city_address > CK_CAN_MAX_STD_ID) ||
-      (has_extended_id &&
-       base_no + mayor.user_data.city_address > CK_CAN_MAX_EXT_ID)) {
-    return CK_ERR_INVALID_CAN_ID;
-  }
-  mayor.base_no = base_no;
-  mayor.base_no_is_known = true;
-  mayor.base_no_has_extended_id = has_extended_id;
-  ck_envelope_t mayors_envelope = {
-      .envelope_no = base_no + mayor.user_data.city_address,
-      .enable = true,
-      .has_extended_id = has_extended_id,
-      .is_remote = false,
-      .is_compressed = false,
-  };
-  return assign_envelope(CK_MAYORS_FOLDER_NO, &mayors_envelope);
-}
+uint32_t ck_get_base_number(void) { return mayor.user_data.ck_id.base_no; }
 
 ck_err_t ck_is_default_letter(ck_letter_t *letter) {
   ck_letter_t dletter = ck_default_letter();
@@ -412,7 +395,7 @@ ck_err_t ck_is_default_letter(ck_letter_t *letter) {
 
 ck_err_t ck_default_letter_received(void) {
   // Check if mayor has been initialized
-  if (mayor.user_data.city_address == 0) {
+  if (mayor.user_data.ck_id.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
   if (mayor.default_letter_timeout || mayor.startup_finished) {
@@ -424,7 +407,7 @@ ck_err_t ck_default_letter_received(void) {
 
 ck_err_t ck_default_letter_timeout(void) {
   // Check if mayor has been initialized
-  if (mayor.user_data.city_address == 0) {
+  if (mayor.user_data.ck_id.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
   if (mayor.default_letter_timeout || mayor.default_letter_received ||
@@ -454,7 +437,7 @@ ck_err_t ck_default_letter_timeout(void) {
 
 ck_err_t ck_correct_letter_received(void) {
   // Check if mayor has been initialized
-  if (mayor.user_data.city_address == 0) {
+  if (mayor.user_data.ck_id.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
   if (mayor.correct_letter_received || mayor.startup_finished) {
@@ -463,7 +446,7 @@ ck_err_t ck_correct_letter_received(void) {
 
   mayor.correct_letter_received = true;
 
-  if (mayor.base_no_is_known) {
+  if (mayor.user_data.ck_id.base_no_is_known) {
     ck_err_t ret = ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE);
     if (ret != CK_OK) {
       return ret;
@@ -623,31 +606,24 @@ static ck_err_t process_kp1(const ck_page_t *page) {
 
   // Bounds check
   if ((!extended_id &&
-       base_no + mayor.user_data.city_address > CK_CAN_MAX_STD_ID) ||
+       base_no + mayor.user_data.ck_id.city_address > CK_CAN_MAX_STD_ID) ||
       (extended_id &&
-       base_no + mayor.user_data.city_address > CK_CAN_MAX_EXT_ID)) {
+       base_no + mayor.user_data.ck_id.city_address > CK_CAN_MAX_EXT_ID)) {
     return CK_ERR_INVALID_CAN_ID;
   }
 
-  // Check if we already assigned an envelope based on this base number.
-  if (mayor.base_no != base_no) {
-    ck_envelope_t mayors_envelope = {
-        .envelope_no = base_no + mayor.user_data.city_address,
-        .enable = true,
-        .has_extended_id = extended_id,
-        .is_compressed = false,
-        .is_remote = false,
-    };
+  ck_envelope_t mayors_envelope = {
+      .envelope_no = base_no + mayor.user_data.ck_id.city_address,
+      .enable = true,
+      .has_extended_id = extended_id,
+      .is_compressed = false,
+      .is_remote = false,
+  };
 
-    ck_err_t ret = assign_envelope(CK_MAYORS_FOLDER_NO, &mayors_envelope);
-    if (ret != CK_OK) {
-      return ret;
-    }
-  }
-
-  mayor.base_no = base_no;
-  mayor.base_no_has_extended_id = extended_id;
-  mayor.base_no_is_known = true;
+  mayor.user_data.folders[CK_MAYORS_FOLDER_NO].envelopes[0] = mayors_envelope;
+  mayor.user_data.ck_id.base_no = base_no;
+  mayor.user_data.ck_id.base_no_has_extended_id = extended_id;
+  mayor.user_data.ck_id.base_no_is_known = true;
 
   // Send response page if it's requested.
   uint8_t response_page = page->lines[2];
@@ -888,13 +864,13 @@ static ck_err_t process_kp17(const ck_page_t *page) {
 
 static ck_folder_t kings_folder(void) {
   ck_folder_t folder = {
+      .enable = true,
       .folder_no = 0,
       .doc_list_no = 0,
       .doc_no = 0,
       .direction = CK_DIRECTION_RECEIVE,
       .dlc = CK_CAN_MAX_DLC,
       .has_rtr = false,
-      .enable = true,
       .envelope_count = 1,
   };
   folder.envelopes[0].envelope_no = 0;
@@ -911,13 +887,19 @@ static ck_folder_t mayors_folder(void) {
       .direction = CK_DIRECTION_TRANSMIT,
       .dlc = CK_CAN_MAX_DLC,
       .has_rtr = false,
+      .envelope_count = 1,
   };
+  folder.envelopes[0].envelope_no =
+      mayor.user_data.ck_id.base_no + mayor.user_data.ck_id.city_address;
+  folder.envelopes[0].has_extended_id =
+      mayor.user_data.ck_id.base_no_has_extended_id;
+  folder.envelopes[0].enable = true;
   return folder;
 }
 
 static bool in_group(uint8_t group_no) {
   for (uint8_t i = 0; i < CK_MAX_GROUPS_PER_CITY; i++) {
-    if (mayor.user_data.group_addresses[i] == group_no) {
+    if (mayor.user_data.ck_id.group_addresses[i] == group_no) {
       return true;
     }
   }

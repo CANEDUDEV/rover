@@ -123,6 +123,10 @@ extern "C" {
 /// Max number of records in a list.
 #define CK_MAX_RECORDS_PER_LIST 8
 #endif
+#ifndef CK_MAX_GROUPS_PER_CITY
+/// Limited to 6 groups for ease of implementation.
+#define CK_MAX_GROUPS_PER_CITY 6
+#endif
 
 /// Error codes.
 typedef enum {
@@ -404,6 +408,33 @@ typedef struct {
   uint8_t sjw;
 
 } ck_can_bit_timing_t;
+
+/*******************************************************************************
+ * Structure grouping various identification mechanisms for a city.
+ *
+ * A city's hardware is identified by its EAN and Serial number, and in the CK
+ * layer it can be additionally identified by its city address and the groups it
+ * belongs to, which is configurable by the king.
+ ******************************************************************************/
+typedef struct {
+  /// The city address. Must not be 0. Can be changed by the king.
+  uint8_t city_address;
+
+  /// The group addresses. Can be changed by the king.
+  /// The city always belongs to group 0 as well.
+  uint8_t group_addresses[CK_MAX_GROUPS_PER_CITY];
+
+  /// The base number of the kingdom.
+  uint32_t base_no;
+
+  /// Set to true if the base number uses extended CAN IDs.
+  bool base_no_has_extended_id;
+
+  /// Set to true if the base number is known. If set to false, the given
+  /// #base_no value will be ignored.
+  bool base_no_is_known;
+
+} ck_id_t;
 
 /*******************************************************************************
  * Check if the specified action mode is a valid action mode.
