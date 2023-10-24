@@ -106,12 +106,15 @@ static void mayor_init(void) {
 
   ck_data_init();
   ck_data_t *ck_data = get_ck_data();
-  uint32_t city_address = 99;  // NOLINT(*-magic-numbers) // TODO: change this
+
+  ck_id_t ck_id = {
+      .city_address = 99,  // NOLINT(*-magic-numbers) // TODO: change this
+  };
 
   ck_mayor_t mayor = {
-      .ean_no = 100 + city_address,     // NOLINT(*-magic-numbers)
-      .serial_no = 200 + city_address,  // NOLINT(*-magic-numbers)
-      .city_address = city_address,
+      .ean_no = 100 + ck_id.city_address,     // NOLINT(*-magic-numbers)
+      .serial_no = 200 + ck_id.city_address,  // NOLINT(*-magic-numbers)
+      .ck_id = ck_id,
       .set_action_mode = set_action_mode,
       .set_city_mode = set_city_mode,
       .start_200ms_timer = start_default_letter_timer,

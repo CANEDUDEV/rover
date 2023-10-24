@@ -135,9 +135,6 @@ void king(void *unused) {
   send_base_number();
   vTaskDelay(pdMS_TO_TICKS(50));  // Give cities time to respond
 
-  // Set our own base number
-  ck_set_base_number(ROVER_BASE_NUMBER, false);
-
   assign_envelopes();
 
   // Set reverse direction
@@ -210,6 +207,16 @@ void send_base_number(void) {
   }
   HAL_CAN_AddTxMessage(&peripherals->common_peripherals->hcan, &can_header,
                        page.lines, &mailbox);
+
+  // Also "send" KP1 to ourselves
+  ck_letter_t letter;
+  letter.page = page;
+  letter.envelope.envelope_no = ROVER_BASE_NUMBER;
+  letter.envelope.has_extended_id = false;
+  if (ck_process_kings_letter(&letter) != CK_OK) {
+    printf("Error receiving our own king's page.\r\n");
+    error();
+  }
 }
 
 void assign_servo_envelopes(void) {

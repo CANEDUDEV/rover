@@ -22,12 +22,6 @@ extern "C" {
 
 #include "types.h"
 
-#ifndef CK_MAX_GROUPS_PER_CITY
-/// Limited to 6 groups for ease of implementation.
-/// Can be redefined during compilation if wanted.
-#define CK_MAX_GROUPS_PER_CITY 6
-#endif
-
 /*******************************************************************************
  * Struct contains pointers to parameters that should be defined by the user.
  * The parameters are used by the mayor library to initialize the library state.
@@ -38,18 +32,14 @@ typedef struct {
   // it's impossible to detect if the user has provided an invalid number as it
   // would just overflow.
 
-  /// 40-bit EAN-13 number.
+  /// User-provided 40-bit EAN-13 number.
   uint64_t ean_no;
 
-  /// 40-bit serial number.
+  /// User-provided 40-bit serial number.
   uint64_t serial_no;
 
-  /// The city address. Must not be 0. Can be changed by the king.
-  uint8_t city_address;
-
-  /// The group addresses. Can be changed by the king.
-  /// The city always belongs to group 0 as well.
-  uint8_t group_addresses[CK_MAX_GROUPS_PER_CITY];
+  /// User-provided city, group and kingdom identification.
+  ck_id_t ck_id;
 
   /// Function for setting the action mode.
   /// Should return CK_OK on success.
@@ -266,18 +256,6 @@ ck_comm_mode_t ck_get_comm_mode(void);
  * initialized.
  ******************************************************************************/
 uint32_t ck_get_base_number(void);
-
-/*******************************************************************************
- * Sets the base number.
- *
- * @param base_no the base number to set.
- * @param has_extended_id whether the base number should use extended CAN IDs.
- *
- * @return #CK_ERR_NOT_INITIALIZED if #ck_mayor_init() has not been called.
- * @return #CK_ERR_INVALID_CAN_ID if the base number is not a valid CAN ID.
- * @return #CK_OK on success.
- ******************************************************************************/
-ck_err_t ck_set_base_number(uint32_t base_no, bool has_extended_id);
 
 /*******************************************************************************
  * Checks if the given letter is the default letter.

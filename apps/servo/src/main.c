@@ -79,10 +79,14 @@ void mayor_init(void) {
   city_address = ROVER_MOTOR_ID;
 #endif
 
+  ck_id_t ck_id = {
+      .city_address = city_address,
+  };
+
   ck_mayor_t mayor = {
       .ean_no = 100 + city_address,     // NOLINT(*-magic-numbers)
       .serial_no = 200 + city_address,  // NOLINT(*-magic-numbers)
-      .city_address = city_address,
+      .ck_id = ck_id,
       .set_action_mode = set_action_mode,
       .set_city_mode = set_city_mode,
       .start_200ms_timer = start_default_letter_timer,
