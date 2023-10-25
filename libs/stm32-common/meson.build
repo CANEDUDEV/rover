@@ -5,6 +5,7 @@ stm32_lib_src = files(
   'src' / 'clock.c',
   'src' / 'common-interrupts.c',
   'src' / 'common-peripherals.c',
+  'src' / 'device-id.c',
   'src' / 'error.c',
   'src' / 'flash.c',
   'src' / 'lfs-config.c',
