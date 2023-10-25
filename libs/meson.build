@@ -15,6 +15,7 @@ common_libs_src = [
   # third-party
   drivers_src,
   freertos_src,
+  freertos_config_src,
 ]
 
 # Convenience include dir list
@@ -33,7 +34,6 @@ common_libs_inc = [
 
 common_libs = [
   # third-party
-  freertos_lib,
   littlefs_lib,
 ]
 
