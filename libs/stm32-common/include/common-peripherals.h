@@ -10,6 +10,7 @@ extern "C" {
 typedef struct {
   CAN_HandleTypeDef hcan;
   SPI_HandleTypeDef hcanfd;
+  CRC_HandleTypeDef hcrc;
   SPI_HandleTypeDef hspi_flash;
   UART_HandleTypeDef huart1;
 } common_peripherals_t;
@@ -21,6 +22,8 @@ void common_peripherals_init(void);
 // MSP init functions required by STM32 HAL
 void can_msp_init(void);
 void can_msp_deinit(void);
+void crc_msp_init(void);
+void crc_msp_deinit(void);
 void spi1_msp_init(void);
 void spi1_msp_deinit(void);
 void spi2_msp_init(void);

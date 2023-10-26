@@ -5,6 +5,7 @@ drivers_inc = include_directories(
   'CMSIS' / 'Include',
 )
 
+# Not all source files are included, only those used by the application.
 drivers_src = files(
   'STM32F3xx_HAL_Driver' / 'Src' / 'stm32f3xx_hal_adc.c',
   'STM32F3xx_HAL_Driver' / 'Src' / 'stm32f3xx_hal_adc_ex.c',
@@ -22,6 +23,8 @@ drivers_src = files(
   'STM32F3xx_HAL_Driver' / 'Src' / 'stm32f3xx_hal_i2c_ex.c',
   'STM32F3xx_HAL_Driver' / 'Src' / 'stm32f3xx_hal_exti.c',
   'STM32F3xx_HAL_Driver' / 'Src' / 'stm32f3xx_hal_can.c',
+  'STM32F3xx_HAL_Driver' / 'Src' / 'stm32f3xx_hal_crc.c',
+  'STM32F3xx_HAL_Driver' / 'Src' / 'stm32f3xx_hal_crc_ex.c',
   'STM32F3xx_HAL_Driver' / 'Src' / 'stm32f3xx_hal_spi.c',
   'STM32F3xx_HAL_Driver' / 'Src' / 'stm32f3xx_hal_spi_ex.c',
   'STM32F3xx_HAL_Driver' / 'Src' / 'stm32f3xx_hal_tim.c',
