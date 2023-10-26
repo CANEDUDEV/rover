@@ -10,6 +10,7 @@
 static common_peripherals_t common_peripherals;
 
 void can_init(void);
+void crc_init(void);
 void canfd_init(void);
 void spi_flash_init(void);
 void uart1_init(void);
@@ -20,6 +21,7 @@ common_peripherals_t* get_common_peripherals(void) {
 
 void common_peripherals_init(void) {
   can_init();
+  crc_init();
   canfd_init();
   spi_flash_init();
   uart1_init();
@@ -83,6 +85,20 @@ void canfd_init(void) {
   hcanfd->Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
   hcanfd->Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
   if (HAL_SPI_Init(hcanfd) != HAL_OK) {
+    error();
+  }
+}
+
+void crc_init(void) {
+  CRC_HandleTypeDef* hcrc = &common_peripherals.hcrc;
+
+  hcrc->Instance = CRC;
+  hcrc->Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
+  hcrc->Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
+  hcrc->Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
+  hcrc->Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
+  hcrc->InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
+  if (HAL_CRC_Init(hcrc) != HAL_OK) {
     error();
   }
 }
@@ -163,6 +179,10 @@ void can_msp_deinit(void) {
   /* CAN interrupt DeInit */
   HAL_NVIC_DisableIRQ(USB_LP_CAN_RX0_IRQn);
 }
+
+void crc_msp_init(void) { __HAL_RCC_CRC_CLK_ENABLE(); }
+
+void crc_msp_deinit(void) { __HAL_RCC_CRC_CLK_DISABLE(); }
 
 void spi1_msp_init(void) {
   GPIO_InitTypeDef gpio_init;
