@@ -8,6 +8,8 @@ stm32_lib_src = files(
   'src' / 'error.c',
   'src' / 'flash.c',
   'src' / 'lfs-config.c',
+  'src' / 'postmaster.c',
+  'src' / 'postmaster-hal.c',
   'src' / 'print.c',
   'src' / 'spi-flash.c',
 )

@@ -1,5 +1,6 @@
 #include "postmaster.h"
 
+#include "common-peripherals.h"
 #include "error.h"
 #include "flash.h"
 #include "postmaster-hal.h"
@@ -18,7 +19,8 @@ inline int min(int a, int b) {  // NOLINT
 }
 
 ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc) {
-  CAN_HandleTypeDef *hcan = get_can_handle();
+  common_peripherals_t *common_peripherals = get_common_peripherals();
+  CAN_HandleTypeDef *hcan = &common_peripherals->hcan;
 
   // If bus off, return error
   if (hcan->State != HAL_CAN_STATE_READY &&
@@ -59,7 +61,9 @@ ck_err_t ck_apply_comm_mode(ck_comm_mode_t mode) {
     return ret;
   }
 
-  CAN_HandleTypeDef *hcan = get_can_handle();
+  common_peripherals_t *common_peripherals = get_common_peripherals();
+  CAN_HandleTypeDef *hcan = &common_peripherals->hcan;
+
   switch (mode) {
     case CK_COMM_MODE_COMMUNICATE:
     case CK_COMM_MODE_LISTEN_ONLY:
@@ -116,7 +120,8 @@ ck_err_t ck_set_bit_timing(const ck_can_bit_timing_t *bit_timing) {
     return ret;
   }
 
-  CAN_HandleTypeDef *hcan = get_can_handle();
+  common_peripherals_t *common_peripherals = get_common_peripherals();
+  CAN_HandleTypeDef *hcan = &common_peripherals->hcan;
 
   // Store old values
   CAN_InitTypeDef old_init = hcan->Init;
