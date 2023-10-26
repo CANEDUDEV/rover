@@ -98,9 +98,6 @@ int main(void) {
 }
 
 static void mayor_init(void) {
-  common_peripherals_t *peripherals = get_common_peripherals();
-  postmaster_init(&peripherals->hcan);  // Set up the postmaster
-
   default_letter_timer = xTimerCreateStatic(
       "default letter timer", pdMS_TO_TICKS(200),
       pdFALSE,  // Don't auto reload timer
