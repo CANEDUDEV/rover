@@ -52,3 +52,7 @@ def set_measure_period_frame(time_ms):
 def set_report_period_frame(time_ms):
     data = [0, 0] + list(time_ms.to_bytes(2, "little"))
     return Frame(id_=Envelope.SERVO_REPORT_FREQUENCY, dlc=4, data=data)
+
+
+def set_reverse_direction():
+    return Frame(id_=Envelope.SERVO_REVERSE_DIRECTION, dlc=0, data=[])

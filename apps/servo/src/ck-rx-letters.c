@@ -20,6 +20,9 @@ const float m_angle_to_pulse = 1500;
 static int16_t steering_pulse = (int16_t)m_angle_to_pulse;
 static int16_t steering_trim_pulse = 0;
 
+// Whether to reverse steering direction
+static bool reverse = false;
+
 // 2 bytes in page
 // bytes 1-2: desired servo voltage in mV. Allowed range: 2740-10800 mV
 int process_set_servo_voltage_letter(const ck_letter_t *letter) {
@@ -137,7 +140,12 @@ int process_steering_letter(const ck_letter_t *letter) {
       return APP_NOT_OK;
   }
 
-  steering_pulse = pulse;
+  if (reverse) {
+    steering_pulse = (int16_t)((int16_t)(2 * m_angle_to_pulse) - pulse);
+  } else {
+    steering_pulse = pulse;
+  }
+
   // Write new pulse to CCR register
   __HAL_TIM_SET_COMPARE(&peripherals->htim1, TIM_CHANNEL_4,
                         (uint32_t)(steering_pulse + steering_trim_pulse));
@@ -186,7 +194,11 @@ int process_steering_trim_letter(const ck_letter_t *letter) {
       return APP_NOT_OK;
   }
 
-  steering_trim_pulse = trim_pulse;
+  if (reverse) {
+    steering_trim_pulse = (int16_t)-trim_pulse;
+  } else {
+    steering_trim_pulse = trim_pulse;
+  }
 
   // Write new pulse to CCR register
   __HAL_TIM_SET_COMPARE(&peripherals->htim1, TIM_CHANNEL_4,
@@ -212,5 +224,13 @@ int process_report_freq_letter(const ck_letter_t *letter) {
          sizeof(periods.report_period_ms));
 
   set_task_periods(&periods);
+  return APP_OK;
+}
+
+int process_reverse_letter(const ck_letter_t *letter) {
+  if (letter->page.line_count != 0) {
+    return APP_NOT_OK;
+  }
+  reverse = !reverse;
   return APP_OK;
 }

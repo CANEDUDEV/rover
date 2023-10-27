@@ -43,6 +43,9 @@ extern "C" {
 
 #define ROVER_MOTOR_PWM_CONFIG_ENVELOPE 0x308
 
+#define ROVER_SERVO_REVERSE_ENVELOPE 0x309
+#define ROVER_MOTOR_REVERSE_ENVELOPE 0x30A
+
 typedef struct {
   uint8_t city;
   uint16_t envelope;
