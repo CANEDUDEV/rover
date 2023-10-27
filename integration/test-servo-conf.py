@@ -45,6 +45,14 @@ with canlib.openChannel(
     ch.writeWait(servo.set_steering_angle_frame(-45), -1)
     sleep(2)
 
+    # Reverse direction then set same steering angle as before.
+    # This should move servo 90 degrees total.
+    ch.writeWait(servo.set_reverse_direction(), -1)
+    ch.writeWait(servo.set_steering_angle_frame(0), -1)
+    sleep(2)
+    ch.writeWait(servo.set_steering_angle_frame(-45), -1)
+    sleep(2)
+
     # This will cause two reports in a row to have the same measurements.
     ch.writeWait(servo.set_measure_period_frame(500), -1)
     sleep(2)

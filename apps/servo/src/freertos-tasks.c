@@ -139,6 +139,13 @@ void king(void *unused) {
   ck_set_base_number(ROVER_BASE_NUMBER, false);
 
   assign_envelopes();
+
+  // Set reverse direction
+  // Since the steering servo acts as king, set it to reverse.
+  // This makes the motor not reversed but the steering reversed.
+  ck_letter_t letter = {.page.line_count = 0};
+  process_reverse_letter(&letter);
+
   start_communication();
 
   // Start up our own communications
@@ -240,6 +247,11 @@ void assign_servo_envelopes(void) {
   ck_data->report_freq_folder->envelopes[0].envelope_no =
       ROVER_SERVO_REPORT_FREQUENCY_ENVELOPE;
   ck_data->report_freq_folder->envelopes[0].enable = true;
+
+  ck_data->reverse_folder->envelope_count = 1;
+  ck_data->reverse_folder->envelopes[0].envelope_no =
+      ROVER_SERVO_REVERSE_ENVELOPE;
+  ck_data->reverse_folder->envelopes[0].enable = true;
 }
 
 void assign_envelopes(void) {
@@ -479,6 +491,9 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
   }
   if (folder->folder_no == ck_data->report_freq_folder->folder_no) {
     return process_report_freq_letter(letter);
+  }
+  if (folder->folder_no == ck_data->reverse_folder->folder_no) {
+    return process_reverse_letter(letter);
   }
   return APP_OK;
 }
