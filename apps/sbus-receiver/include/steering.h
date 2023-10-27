@@ -22,6 +22,9 @@ steering_command_t sbus_packet_to_steering_command(
 
 steering_command_t neutral_steering_command(void);
 
+bool steering_commands_are_equal(const steering_command_t *cmd1,
+                                 const steering_command_t *cmd2);
+
 #ifdef __cplusplus
 }
 #endif
