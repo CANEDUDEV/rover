@@ -43,6 +43,9 @@ class Envelope(IntEnum):
     SERVO_REVERSE_DIRECTION = 0x309
     MOTOR_REVERSE_DIRECTION = 0x30A
 
+    SERVO_FAILSAFE = 0x30B
+    MOTOR_FAILSAFE = 0x30C
+
 
 class Rover:
     channel = None
@@ -76,6 +79,8 @@ class Rover:
         (City.MOTOR, Envelope.MOTOR_PWM_CONFIG, 8),
         (City.SERVO, Envelope.SERVO_REVERSE_DIRECTION, 12),
         (City.MOTOR, Envelope.MOTOR_REVERSE_DIRECTION, 12),
+        (City.SERVO, Envelope.SERVO_FAILSAFE, 13),
+        (City.MOTOR, Envelope.MOTOR_FAILSAFE, 13),
     ]
 
     default_letter = Frame(

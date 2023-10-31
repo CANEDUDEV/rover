@@ -1,9 +1,11 @@
 #include <stdio.h>
 
 #include "ck-data.h"
+#include "failsafe.h"
 #include "freertos-tasks.h"
 #include "peripherals.h"
 #include "potentiometer.h"
+#include "pwm.h"
 #include "rover.h"
 
 // CK
@@ -42,8 +44,11 @@ int main(void) {
   configure_servo_potentiometer(POT_SERVO_DEFAULT);
   configure_sensor_potentiometer(POT_SENSOR_DEFAULT);
 
-  peripherals_t *peripherals = get_peripherals();
-  HAL_TIM_PWM_Start(&peripherals->htim1, TIM_CHANNEL_4);
+  pwm_init();
+  pwm_set_pulse(PWM_NEUTRAL_PULSE_MUS);  // Start at neutral
+
+  failsafe_init();
+  failsafe_on();  // On by default
 
   task_init();
   mayor_init();
