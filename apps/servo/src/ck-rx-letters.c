@@ -5,17 +5,17 @@
 
 #include "adc.h"
 #include "error.h"
+#include "failsafe.h"
 #include "freertos-tasks.h"
 #include "peripherals.h"
 #include "ports.h"
 #include "potentiometer.h"
+#include "pwm.h"
 
 // y = kx + m. 500 µs pulse corresponds to 45 degree movement,
-// yielding k = 500/45.
-//
-// m is the neutral position, i.e. 1500 µs pulse.
-const float k_angle_to_pulse = 500 / 45.0F;
-const float m_angle_to_pulse = 1500;
+// yielding k = 500/45. m is the neutral position.
+static const float k_angle_to_pulse = 500 / 45.0F;
+static const float m_angle_to_pulse = PWM_NEUTRAL_PULSE_MUS;
 
 static int16_t steering_pulse = (int16_t)m_angle_to_pulse;
 static int16_t steering_trim_pulse = 0;
@@ -86,17 +86,11 @@ int process_pwm_conf_letter(const ck_letter_t *letter) {
   uint16_t frequency = 0;
   memcpy(&frequency, letter->page.lines, sizeof(frequency));
 
-  if (frequency == 0 || frequency > 333) {  // NOLINT
+  if (frequency == 0 || frequency > PWM_MAX_FREQUENCY_HZ) {
     return APP_NOT_OK;
   }
 
-  // Timer is prescaled to 1MHz, so a reload value of 1 equals 1 microsecond.
-  // Frequency is defined as f = 1/s => s = 1/f => µs = 1 000 000 / f.
-  // STM32 timer driver requires value to be subtracted by 1.
-  const uint32_t reload_value = (1000 * 1000) / frequency - 1;
-
-  peripherals_t *peripherals = get_peripherals();
-  __HAL_TIM_SET_AUTORELOAD(&peripherals->htim1, reload_value);
+  pwm_set_frequency(frequency);
 
   return APP_OK;
 }
@@ -115,7 +109,6 @@ int process_steering_letter(const ck_letter_t *letter) {
     return APP_NOT_OK;
   }
 
-  peripherals_t *peripherals = get_peripherals();
   int16_t pulse = 0;
 
   switch (letter->page.lines[0]) {
@@ -146,9 +139,8 @@ int process_steering_letter(const ck_letter_t *letter) {
     steering_pulse = pulse;
   }
 
-  // Write new pulse to CCR register
-  __HAL_TIM_SET_COMPARE(&peripherals->htim1, TIM_CHANNEL_4,
-                        (uint32_t)(steering_pulse + steering_trim_pulse));
+  pwm_set_pulse(steering_pulse + steering_trim_pulse);
+  failsafe_refresh();
 
   return APP_OK;
 }
@@ -168,7 +160,6 @@ int process_steering_trim_letter(const ck_letter_t *letter) {
     return APP_NOT_OK;
   }
 
-  peripherals_t *peripherals = get_peripherals();
   int16_t trim_pulse = 0;
 
   switch (letter->page.lines[0]) {
@@ -200,9 +191,8 @@ int process_steering_trim_letter(const ck_letter_t *letter) {
     steering_trim_pulse = trim_pulse;
   }
 
-  // Write new pulse to CCR register
-  __HAL_TIM_SET_COMPARE(&peripherals->htim1, TIM_CHANNEL_4,
-                        (uint32_t)(steering_pulse + steering_trim_pulse));
+  pwm_set_pulse(steering_pulse + steering_trim_pulse);
+  failsafe_refresh();
 
   return APP_OK;
 }
@@ -232,5 +222,34 @@ int process_reverse_letter(const ck_letter_t *letter) {
     return APP_NOT_OK;
   }
   reverse = !reverse;
+  return APP_OK;
+}
+
+int process_failsafe_letter(const ck_letter_t *letter) {
+  if (letter->page.line_count != 5) {  // NOLINT
+    return APP_NOT_OK;
+  }
+
+  // byte 0: on/off/keep current. 0 = off, 1 = on, all others = keep current
+  if (letter->page.lines[0] == 0) {
+    failsafe_off();
+  } else if (letter->page.lines[0] == 1) {
+    failsafe_on();
+  }
+
+  // 0 = keep current setting
+  uint16_t timeout = 0;
+  memcpy(&timeout, &letter->page.lines[1], sizeof(timeout));
+  if (timeout) {
+    failsafe_set_timeout(timeout);
+  }
+
+  // 0 = keep current setting
+  uint16_t pulse = 0;
+  memcpy(&pulse, &letter->page.lines[3], sizeof(timeout));
+  if (pulse) {
+    failsafe_set_pulse(pulse);
+  }
+
   return APP_OK;
 }

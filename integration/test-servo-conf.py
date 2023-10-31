@@ -14,6 +14,8 @@ with canlib.openChannel(
     rover = Rover(ch)
     rover.start()
 
+    # Set servo settings
+    ch.writeWait(servo.set_failsafe(servo.FAILSAFE_OFF), -1)
     ch.writeWait(servo.set_servo_voltage_frame(7400), -1)
     ch.writeWait(servo.set_pwm_frequency_frame(333), -1)
 
@@ -52,6 +54,11 @@ with canlib.openChannel(
     sleep(2)
     ch.writeWait(servo.set_steering_angle_frame(-45), -1)
     sleep(2)
+
+    # This should set the servo position to neutral by triggering the failsafe.
+    ch.writeWait(
+        servo.set_failsafe(servo.FAILSAFE_ON, timeout_ms=100, pulse_mus=1500), -1
+    )
 
     # This will cause two reports in a row to have the same measurements.
     ch.writeWait(servo.set_measure_period_frame(500), -1)

@@ -252,6 +252,11 @@ void assign_servo_envelopes(void) {
   ck_data->reverse_folder->envelopes[0].envelope_no =
       ROVER_SERVO_REVERSE_ENVELOPE;
   ck_data->reverse_folder->envelopes[0].enable = true;
+
+  ck_data->failsafe_folder->envelope_count = 1;
+  ck_data->failsafe_folder->envelopes[0].envelope_no =
+      ROVER_SERVO_FAILSAFE_ENVELOPE;
+  ck_data->failsafe_folder->envelopes[0].enable = true;
 }
 
 void assign_envelopes(void) {
@@ -329,11 +334,12 @@ void measure(void *unused) {
 
   peripherals_t *peripherals = get_peripherals();
 
-  TimerHandle_t timer = xTimerCreate(
+  StaticTimer_t timer_buf;
+  TimerHandle_t timer = xTimerCreateStatic(
       "measure timer", pdMS_TO_TICKS(task_periods.measure_period_ms),
       pdFALSE,  // Don't auto reload timer
       NULL,     // Timer ID, unused
-      measure_timer);
+      measure_timer, &timer_buf);
 
   uint16_t adc1_buf[3];
   uint16_t adc2_buf[2];
@@ -379,11 +385,12 @@ void measure(void *unused) {
 void report(void *unused) {
   (void)unused;
 
-  TimerHandle_t timer =
-      xTimerCreate("report timer", pdMS_TO_TICKS(task_periods.report_period_ms),
-                   pdFALSE,  // Don't auto reload timer
-                   NULL,     // Timer ID, unused
-                   report_timer);
+  StaticTimer_t timer_buf;
+  TimerHandle_t timer = xTimerCreateStatic(
+      "report timer", pdMS_TO_TICKS(task_periods.report_period_ms),
+      pdFALSE,  // Don't auto reload timer
+      NULL,     // Timer ID, unused
+      report_timer, &timer_buf);
 
   for (;;) {
     xTimerChangePeriod(timer, task_periods.report_period_ms, portMAX_DELAY);
@@ -494,6 +501,9 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
   }
   if (folder->folder_no == ck_data->reverse_folder->folder_no) {
     return process_reverse_letter(letter);
+  }
+  if (folder->folder_no == ck_data->failsafe_folder->folder_no) {
+    return process_failsafe_letter(letter);
   }
   return APP_OK;
 }

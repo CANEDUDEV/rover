@@ -4,11 +4,13 @@ servo_src = files(
   'src' / 'adc.c',
   'src' / 'ck-data.c',
   'src' / 'ck-rx-letters.c',
+  'src' / 'failsafe.c',
   'src' / 'freertos-tasks.c',
   'src' / 'interrupts.c',
   'src' / 'main.c',
   'src' / 'peripherals.c',
   'src' / 'potentiometer.c',
+  'src' / 'pwm.c',
 )
 
 servo_elf = executable(

@@ -3,6 +3,10 @@
 from canlib import Frame
 from rover import Envelope
 
+FAILSAFE_OFF = 0
+FAILSAFE_ON = 1
+FAILSAFE_KEEP_CURRENT = 0xFF
+
 
 def set_servo_voltage_frame(voltage_mv):
     data = list(voltage_mv.to_bytes(2, "little"))
@@ -56,3 +60,12 @@ def set_report_period_frame(time_ms):
 
 def set_reverse_direction():
     return Frame(id_=Envelope.SERVO_REVERSE_DIRECTION, dlc=0, data=[])
+
+
+def set_failsafe(on, timeout_ms=100, pulse_mus=1500):
+    data = (
+        [on]
+        + list(timeout_ms.to_bytes(2, "little"))
+        + list(pulse_mus.to_bytes(2, "little"))
+    )
+    return Frame(id_=Envelope.SERVO_FAILSAFE, dlc=5, data=data)

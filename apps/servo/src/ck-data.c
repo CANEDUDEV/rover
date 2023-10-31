@@ -72,6 +72,7 @@ void folder_init(void) {
   ck_data.steering_trim_folder = &ck_data.folders[10];
   ck_data.report_freq_folder = &ck_data.folders[11];
   ck_data.reverse_folder = &ck_data.folders[12];
+  ck_data.failsafe_folder = &ck_data.folders[13];
   // NOLINTEND(*-magic-numbers)
 
   // Set up the transmit folders
@@ -99,5 +100,6 @@ void folder_init(void) {
   ck_data.steering_folder->dlc = 3;
   ck_data.report_freq_folder->dlc = 4;
   ck_data.reverse_folder->dlc = 0;
+  ck_data.failsafe_folder->dlc = 5;
   // NOLINTEND(*-magic-numbers)
 }

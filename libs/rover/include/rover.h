@@ -46,6 +46,9 @@ extern "C" {
 #define ROVER_SERVO_REVERSE_ENVELOPE 0x309
 #define ROVER_MOTOR_REVERSE_ENVELOPE 0x30A
 
+#define ROVER_SERVO_FAILSAFE_ENVELOPE 0x30B
+#define ROVER_MOTOR_FAILSAFE_ENVELOPE 0x30C
+
 typedef struct {
   uint8_t city;
   uint16_t envelope;
