@@ -8,7 +8,7 @@ static const int16_t neutral_pulse = 1500;  // 1500 µs pulse
 static int16_t steering_trim = 0;
 static int16_t throttle_trim = 0;
 
-static int16_t sbus_to_pwm(int16_t sbus_value);
+int16_t sbus_to_pwm(int16_t sbus_value);
 
 steering_command_t sbus_packet_to_steering_command(
     const sbus_packet_t *sbus_packet) {
@@ -77,31 +77,13 @@ steering_command_t neutral_steering_command(void) {
   return command;
 }
 
-bool steering_commands_are_equal(const steering_command_t *cmd1,
-                                 const steering_command_t *cmd2) {
-  const int16_t pwm_eq_value = 10;  // Corresponds to 1% of value range
-
-  if (cmd2->steering < cmd1->steering - pwm_eq_value ||
-      cmd2->steering > cmd1->steering + pwm_eq_value ||
-      cmd2->steering_trim < cmd1->steering_trim - pwm_eq_value ||
-      cmd2->steering_trim > cmd1->steering_trim + pwm_eq_value ||
-      cmd2->throttle < cmd1->throttle - pwm_eq_value ||
-      cmd2->throttle > cmd1->throttle + pwm_eq_value ||
-      cmd2->throttle_trim < cmd1->throttle_trim - pwm_eq_value ||
-      cmd2->throttle_trim > cmd1->throttle_trim + pwm_eq_value) {
-    return false;
-  }
-
-  return true;
-}
-
 // y = kx + m
 // m = 1000 // min PWM pulse
 // x = sbus_value
 // k = 1000/2047 ~ 1/2
 // y = x/2 + 1000
 // pwm = sbus_value / 2 + 1000
-static int16_t sbus_to_pwm(int16_t sbus_value) {
+int16_t sbus_to_pwm(int16_t sbus_value) {
   const int16_t pwm = (int16_t)(sbus_value / 2 + 1000);
   return pwm;
 }
