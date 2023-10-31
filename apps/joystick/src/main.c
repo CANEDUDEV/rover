@@ -79,15 +79,16 @@ void io_read(void *argument) {
   uint16_t adcBuf[4];
   uint8_t swData[4];
 
-  TimerHandle_t xTimer =
-      xTimerCreate("io read timer", pdMS_TO_TICKS(IO_READ_TASK_PERIOD_MS),
-                   pdTRUE,  // Auto reload timer
-                   NULL,    // Timer ID, unused
-                   io_read_timer);
+  StaticTimer_t timer_buf;
+  TimerHandle_t timer =
+      xTimerCreateStatic("io read timer", pdMS_TO_TICKS(IO_READ_TASK_PERIOD_MS),
+                         pdTRUE,  // Auto reload timer
+                         NULL,    // Timer ID, unused
+                         io_read_timer, &timer_buf);
 
   HAL_CAN_Start(&peripherals->common_peripherals->hcan);
 
-  xTimerStart(xTimer, portMAX_DELAY);
+  xTimerStart(timer, portMAX_DELAY);
 
   for (;;) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
