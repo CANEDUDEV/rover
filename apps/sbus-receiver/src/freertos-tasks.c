@@ -56,10 +56,7 @@ void sbus_read(void *unused) {
 
   uint8_t sbus_data[SBUS_PACKET_LENGTH];
   sbus_packet_t sbus_packet;
-  steering_command_t steering_command = neutral_steering_command();
-  steering_command_t previous_steering_command = steering_command;
-
-  bool read_fail = false;
+  steering_command_t steering_command;
 
   // Clear receive buffer before we start
   __HAL_UART_FLUSH_DRREGISTER(&peripherals->huart2);
@@ -67,51 +64,39 @@ void sbus_read(void *unused) {
   for (;;) {
     memset(sbus_data, 0, sizeof(sbus_data));
 
-    read_fail = false;
-
     if (sbus_read_header(sbus_data) != APP_OK) {
-      read_fail = true;
-    }
-    if (!read_fail && sbus_read_data(sbus_data) != APP_OK) {
-      read_fail = true;
-    }
-
-    if (read_fail) {
       steering_command = neutral_steering_command();
-    } else {
-      // Parse packet
-      sbus_parse_data(sbus_data, &sbus_packet);
-
-      // The radio receiver sends a neutral command when the failsafe is
-      // activated or a frame is lost, so we still want to send the data over
-      // CAN.
-
-      // Failsafe usually triggers if many frames are lost in a row Indicates
-      // connection loss (heavy). This will be handled by the radio receiver,
-      // so we do nothing.
-      if (sbus_packet.failsafe_activated) {
-        printf("Failsafe activated\r\n");
-      }
-
-      // Indicates slight connection loss or issue with frame.
-      // Also handled by the receiver.
-      if (sbus_packet.frame_lost) {
-        printf("Frame lost\r\n");
-      }
-
-      steering_command = sbus_packet_to_steering_command(&sbus_packet);
-    }
-
-    // Only send steering command if the user changes input.
-    // This allows us to override steering from e.g. a PC.
-    if (!steering_commands_are_equal(&previous_steering_command,
-                                     &steering_command)) {
       send_steering_command(&steering_command);
-
-      // Only update previous command on change, otherwise many small changes
-      // (e.g. moving the radio knob slowly) will not be detected.
-      previous_steering_command = steering_command;
+      continue;
     }
+
+    if (sbus_read_data(sbus_data) != APP_OK) {
+      steering_command = neutral_steering_command();
+      send_steering_command(&steering_command);
+      continue;
+    }
+
+    // Parse packet
+    sbus_parse_data(sbus_data, &sbus_packet);
+
+    // The radio receiver sends a neutral command when the failsafe is activated
+    // or a frame is lost, so we still want to send the data over CAN.
+
+    // Failsafe usually triggers if many frames are lost in a row Indicates
+    // connection loss (heavy). This will be handled by the radio receiver,
+    // so we do nothing.
+    if (sbus_packet.failsafe_activated) {
+      printf("Failsafe activated\r\n");
+    }
+
+    // Indicates slight connection loss or issue with frame.
+    // Also handled by the receiver.
+    if (sbus_packet.frame_lost) {
+      printf("Frame lost\r\n");
+    }
+
+    steering_command = sbus_packet_to_steering_command(&sbus_packet);
+    send_steering_command(&steering_command);
   }
 }
 
