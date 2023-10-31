@@ -39,4 +39,4 @@ Follow these steps to generate code:
 
 ## Flashing Binaries onto the Board
 
-Binaries are flashed onto the board using the [ST-LINK/V2 programmer](https://www.st.com/en/development-tools/st-link-v2.html) along with the [STM32CubeProgrammer software](https://www.st.com/en/development-tools/stm32cubeprog.html).
+Binaries are flashed onto the board using the [STLINK-V3SET programmer](https://www.st.com/en/development-tools/stlink-v3set.html) along with the [STM32CubeProgrammer software](https://www.st.com/en/development-tools/stm32cubeprog.html).
