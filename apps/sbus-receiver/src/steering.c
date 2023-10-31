@@ -8,7 +8,7 @@ static const int16_t neutral_pulse = 1500;  // 1500 µs pulse
 static int16_t steering_trim = 0;
 static int16_t throttle_trim = 0;
 
-int16_t sbus_to_pwm(int16_t sbus_value);
+static int16_t sbus_to_pwm(int16_t sbus_value);
 
 steering_command_t sbus_packet_to_steering_command(
     const sbus_packet_t *sbus_packet) {
@@ -83,7 +83,7 @@ steering_command_t neutral_steering_command(void) {
 // k = 1000/2047 ~ 1/2
 // y = x/2 + 1000
 // pwm = sbus_value / 2 + 1000
-int16_t sbus_to_pwm(int16_t sbus_value) {
+static int16_t sbus_to_pwm(int16_t sbus_value) {
   const int16_t pwm = (int16_t)(sbus_value / 2 + 1000);
   return pwm;
 }
