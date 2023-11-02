@@ -25,14 +25,14 @@ typedef struct {
   ck_list_t *tx_list;
   ck_list_t *rx_list;
 
-  ck_page_t *sensor_power_page;
+  ck_page_t *servo_position_page;
   ck_page_t *servo_current_page;
   ck_page_t *battery_voltage_page;
   ck_page_t *servo_voltage_page;
   ck_page_t *h_bridge_current_page;
 
   // Transmit
-  ck_folder_t *sensor_power_folder;
+  ck_folder_t *servo_position_folder;
   ck_folder_t *servo_current_folder;
   ck_folder_t *battery_voltage_folder;
   ck_folder_t *servo_voltage_folder;

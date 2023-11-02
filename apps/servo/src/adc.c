@@ -1,10 +1,23 @@
 #include "adc.h"
 
+#include "math.h"
+
 #define ADC_REF_VOLTAGE 3300     // mV
 #define ADC_MAX ((1 << 12) - 1)  // 12-bit ADC
 
-// No sensor connected, so we send the raw ADC value.
-uint16_t adc_to_sensor_power(uint16_t adc_value) { return adc_value; }
+/* Convert the measured servo position sensor voltage to an angle.
+ *
+ * 0 mV = 0 deg, 3300 mV = 360 deg. Neutral is 180 deg, so we use it as base.
+ */
+int16_t adc_to_servo_position(uint16_t adc_value) {
+  // There are 361 possible values because both 0 degrees and 360 degrees
+  // are valid readings even though in theory it's the same position.
+  const float k_voltage_to_angle = (360.0F + 1) / ADC_REF_VOLTAGE;
+  float v_out = ADC_REF_VOLTAGE * adc_value / (float)ADC_MAX;  // v_out in mV
+  float angle = v_out * k_voltage_to_angle - 180;  // NOLINT(*-magic-numbers)
+
+  return (int16_t)roundf(angle);
+}
 
 /* The LT6106 current sensor specifies that
  * i_sense = v_out * r_in / (r_sense * r_out).

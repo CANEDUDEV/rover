@@ -257,6 +257,11 @@ void assign_servo_envelopes(void) {
   ck_data->failsafe_folder->envelopes[0].envelope_no =
       ROVER_SERVO_FAILSAFE_ENVELOPE;
   ck_data->failsafe_folder->envelopes[0].enable = true;
+
+  ck_data->servo_position_folder->envelope_count = 1;
+  ck_data->servo_position_folder->envelopes[0].envelope_no =
+      ROVER_SERVO_POSITION_ENVELOPE;
+  ck_data->servo_position_folder->envelopes[0].enable = true;
 }
 
 void assign_envelopes(void) {
@@ -345,7 +350,7 @@ void measure(void *unused) {
   uint16_t adc2_buf[2];
   ck_data_t *ck_data = get_ck_data();
 
-  uint16_t sensor_power = 0;
+  int16_t servo_position = 0;
   uint16_t servo_current = 0;
   uint16_t battery_voltage = 0;
   uint16_t servo_voltage = 0;
@@ -364,13 +369,13 @@ void measure(void *unused) {
     // Wait for DMA
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    sensor_power = adc_to_sensor_power(adc1_buf[0]);
+    servo_position = adc_to_servo_position(adc1_buf[0]);
     servo_current = adc_to_servo_current(adc1_buf[1]);
     battery_voltage = adc_to_battery_voltage(adc1_buf[2]);
     servo_voltage = adc_to_servo_voltage(adc2_buf[0]);
     h_bridge_current = adc_to_h_bridge_current(adc2_buf[1]);
-    memcpy(ck_data->sensor_power_page->lines, &sensor_power,
-           sizeof(sensor_power));
+    memcpy(ck_data->servo_position_page->lines, &servo_position,
+           sizeof(servo_position));
     memcpy(ck_data->servo_current_page->lines, &servo_current,
            sizeof(servo_current));
     memcpy(ck_data->battery_voltage_page->lines, &battery_voltage,
@@ -441,7 +446,7 @@ void report_timer(TimerHandle_t timer) {
 void send_docs(void) {
   ck_data_t *ck_data = get_ck_data();
 
-  if (ck_send_document(ck_data->sensor_power_folder->folder_no) != CK_OK) {
+  if (ck_send_document(ck_data->servo_position_folder->folder_no) != CK_OK) {
     printf("failed to send doc.\r\n");
   }
   if (ck_send_document(ck_data->servo_current_folder->folder_no) != CK_OK) {

@@ -7,7 +7,7 @@ extern "C" {
 
 #include <stdint.h>
 
-uint16_t adc_to_sensor_power(uint16_t adc_value);
+int16_t adc_to_servo_position(uint16_t adc_value);
 uint16_t adc_to_servo_current(uint16_t adc_value);
 uint16_t adc_to_battery_voltage(uint16_t adc_value);
 uint16_t adc_to_servo_voltage(uint16_t adc_value);

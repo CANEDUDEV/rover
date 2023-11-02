@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-#define ASSIGNMENT_COUNT 26
+#define ASSIGNMENT_COUNT 27
 
 static rover_assignment_t assignments[ASSIGNMENT_COUNT];
 static rover_kingdom_t kingdom = {
@@ -115,6 +115,10 @@ void init_assignments(void) {
   assignments[25].city = ROVER_MOTOR_ID;
   assignments[25].envelope = ROVER_MOTOR_FAILSAFE_ENVELOPE;
   assignments[25].folder = 13;
+
+  assignments[26].city = ROVER_SERVO_ID;
+  assignments[26].envelope = ROVER_SERVO_POSITION_ENVELOPE;
+  assignments[26].folder = 2;
 }
 // NOLINTEND(*-magic-numbers)
 
