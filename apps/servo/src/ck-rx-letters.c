@@ -110,10 +110,12 @@ int process_steering_letter(const ck_letter_t *letter) {
   }
 
   int16_t pulse = 0;
+  float pulse_float = 0;
 
   switch (letter->page.lines[0]) {
     case 0:
       memcpy(&pulse, &letter->page.lines[1], sizeof(pulse));
+      pulse_float = pulse;
       break;
 
     case 1: {
@@ -123,9 +125,8 @@ int process_steering_letter(const ck_letter_t *letter) {
         return APP_NOT_OK;
       }
 
-      float pulse_float = (float)angle * k_angle_to_pulse + m_angle_to_pulse;
+      pulse_float = (float)angle * k_angle_to_pulse + m_angle_to_pulse;
 
-      pulse = (int16_t)roundf(pulse_float);
       break;
     }
 
@@ -134,10 +135,10 @@ int process_steering_letter(const ck_letter_t *letter) {
   }
 
   if (reverse) {
-    steering_pulse = (int16_t)((int16_t)(2 * m_angle_to_pulse) - pulse);
-  } else {
-    steering_pulse = pulse;
+    pulse = (int16_t)roundf(2 * m_angle_to_pulse - pulse_float);
   }
+
+  steering_pulse = pulse;
 
   pwm_set_pulse(steering_pulse + steering_trim_pulse);
   failsafe_refresh();

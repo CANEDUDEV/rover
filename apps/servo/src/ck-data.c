@@ -17,7 +17,7 @@ void ck_data_init(void) {
 ck_data_t* get_ck_data(void) { return &ck_data; }
 
 void page_init(void) {
-  ck_data.sensor_power_page = &ck_data.pages[0];
+  ck_data.servo_position_page = &ck_data.pages[0];
   ck_data.servo_current_page = &ck_data.pages[1];
   ck_data.battery_voltage_page = &ck_data.pages[2];
   ck_data.servo_voltage_page = &ck_data.pages[3];
@@ -61,7 +61,7 @@ void list_init(void) {
 
 void folder_init(void) {
   // NOLINTBEGIN(*-magic-numbers)
-  ck_data.sensor_power_folder = &ck_data.folders[2];
+  ck_data.servo_position_folder = &ck_data.folders[2];
   ck_data.servo_current_folder = &ck_data.folders[3];
   ck_data.battery_voltage_folder = &ck_data.folders[4];
   ck_data.servo_voltage_folder = &ck_data.folders[5];
