@@ -5,18 +5,13 @@
 #define ADC_REF_VOLTAGE 3300      // mV
 #define ADC_RESOLUTION (1 << 12)  // 12-bit ADC
 
-/* Convert the measured servo position sensor voltage to an angle.
+/* Convert the measured servo position sensor value to an angle.
  *
  * 0 mV = 0 deg, 3300 mV = 360 deg. Neutral is 180 deg, so we use it as base.
+ * Outputs -180 to 180 degrees.
  */
 int16_t adc_to_servo_position(uint16_t adc_value) {
-  // There are 361 possible values because both 0 degrees and 360 degrees
-  // are valid readings even though in theory it's the same position.
-  const float k_voltage_to_angle = (360.0F + 1) / ADC_REF_VOLTAGE;
-  float v_out =
-      ADC_REF_VOLTAGE * adc_value / (float)ADC_RESOLUTION;  // v_out in mV
-  float angle = v_out * k_voltage_to_angle - 180;  // NOLINT(*-magic-numbers)
-
+  const float angle = 360.0F * (float)adc_value / ADC_RESOLUTION - 180;
   return (int16_t)roundf(angle);
 }
 
