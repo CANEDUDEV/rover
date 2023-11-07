@@ -135,10 +135,10 @@ int process_steering_letter(const ck_letter_t *letter) {
   }
 
   if (reverse) {
-    pulse = (int16_t)roundf(2 * m_angle_to_pulse - pulse_float);
+    pulse_float = 2 * m_angle_to_pulse - pulse_float;
   }
 
-  steering_pulse = pulse;
+  steering_pulse = (int16_t)roundf(pulse_float);
 
   pwm_set_pulse(steering_pulse + steering_trim_pulse);
   failsafe_refresh();
@@ -162,10 +162,12 @@ int process_steering_trim_letter(const ck_letter_t *letter) {
   }
 
   int16_t trim_pulse = 0;
+  float trim_pulse_float = 0;
 
   switch (letter->page.lines[0]) {
     case 0:
       memcpy(&trim_pulse, &letter->page.lines[1], sizeof(trim_pulse));
+      trim_pulse_float = trim_pulse;
       break;
 
     case 1: {
@@ -176,9 +178,8 @@ int process_steering_trim_letter(const ck_letter_t *letter) {
       }
 
       // Ignore m since we're calculating an offset
-      const float trim_pulse_float = (float)angle * k_angle_to_pulse;
+      trim_pulse_float = (float)angle * k_angle_to_pulse;
 
-      trim_pulse = (int16_t)roundf(trim_pulse_float);
       break;
     }
 
@@ -187,10 +188,10 @@ int process_steering_trim_letter(const ck_letter_t *letter) {
   }
 
   if (reverse) {
-    steering_trim_pulse = (int16_t)-trim_pulse;
-  } else {
-    steering_trim_pulse = trim_pulse;
+    trim_pulse_float = -trim_pulse_float;
   }
+
+  steering_trim_pulse = (int16_t)roundf(trim_pulse_float);
 
   pwm_set_pulse(steering_pulse + steering_trim_pulse);
   failsafe_refresh();
