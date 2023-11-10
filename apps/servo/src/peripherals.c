@@ -422,10 +422,10 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     PA2     ------> ADC1_IN3
     PA3     ------> ADC1_IN4
     */
-    gpio_init.Pin = SENSOR_POWER_PIN | SERVO_CURRENT_PIN | BAT_VOLTAGE_PIN;
+    gpio_init.Pin = SENSOR_PIN | SERVO_CURRENT_PIN | BAT_VOLTAGE_PIN;
     gpio_init.Mode = GPIO_MODE_ANALOG;
     gpio_init.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(SENSOR_POWER_GPIO_PORT, &gpio_init);
+    HAL_GPIO_Init(SENSOR_GPIO_PORT, &gpio_init);
     adc1_dma_init(hadc);
 
   } else if (hadc->Instance == ADC2) {
@@ -467,8 +467,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
     PA2     ------> ADC1_IN3
     PA3     ------> ADC1_IN4
     */
-    HAL_GPIO_DeInit(SENSOR_POWER_GPIO_PORT,
-                    SENSOR_POWER_PIN | SERVO_CURRENT_PIN | BAT_VOLTAGE_PIN);
+    HAL_GPIO_DeInit(SENSOR_GPIO_PORT,
+                    SENSOR_PIN | SERVO_CURRENT_PIN | BAT_VOLTAGE_PIN);
 
     /* ADC1 DMA DeInit */
     HAL_DMA_DeInit(hadc->DMA_Handle);
