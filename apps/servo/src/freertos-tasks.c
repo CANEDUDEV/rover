@@ -213,6 +213,8 @@ void send_base_number(void) {
   letter.page = page;
   letter.envelope.envelope_no = ROVER_BASE_NUMBER;
   letter.envelope.has_extended_id = false;
+  letter.envelope.is_remote = false;
+  letter.envelope.is_compressed = false;
   if (ck_process_kings_letter(&letter) != CK_OK) {
     printf("Error receiving our own king's page.\r\n");
     error();
