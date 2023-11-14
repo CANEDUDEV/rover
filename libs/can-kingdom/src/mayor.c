@@ -17,6 +17,8 @@ struct mayor_state {
   bool skip_wait;
   bool skip_listen;
 
+  bool bit_timing_saved;
+
   ck_comm_mode_t comm_mode;
   ck_comm_flags_t comm_flags;
 
@@ -124,6 +126,7 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
   if (ret != CK_OK) {
     return ret;
   }
+  mayor.bit_timing_saved = true;  // Don't save the default bit timing.
 
   init_mayors_pages();
   init_documents();
@@ -402,6 +405,7 @@ ck_err_t ck_default_letter_received(void) {
     return CK_OK;
   }
   mayor.default_letter_received = true;
+  mayor.startup_finished = true;
   return ck_set_comm_mode(CK_COMM_MODE_LISTEN_ONLY);
 }
 
@@ -440,11 +444,28 @@ ck_err_t ck_correct_letter_received(void) {
   if (mayor.user_data.ck_id.city_address == 0) {
     return CK_ERR_NOT_INITIALIZED;
   }
-  if (mayor.correct_letter_received || mayor.startup_finished) {
+
+  if (mayor.startup_finished) {
     return CK_OK;
   }
 
   mayor.correct_letter_received = true;
+
+  if (!mayor.bit_timing_saved) {
+    // If a letter was correctly received, we should save the bit timing
+    // settings to persistent storage.
+    ck_err_t ret = ck_save_bit_timing(&mayor.current_bit_timing);
+    if (ret != CK_OK) {
+      return ret;
+    }
+    mayor.bit_timing_saved = true;
+  }
+
+  // The base number check should only be performed if default letter reception
+  // has timed out.
+  if (!mayor.default_letter_timeout) {
+    return CK_OK;
+  }
 
   if (mayor.user_data.ck_id.base_no_is_known) {
     ck_err_t ret = ck_set_comm_mode(CK_COMM_MODE_COMMUNICATE);
@@ -463,10 +484,6 @@ ck_err_t ck_correct_letter_received(void) {
   }
 
   mayor.startup_finished = true;
-
-  // If a letter was correctly received, we should save the bit timing settings
-  // to persistent storage.
-  ck_save_bit_timing(&mayor.current_bit_timing);
 
   return CK_OK;
 }
@@ -566,25 +583,29 @@ static ck_err_t process_kp0(const ck_page_t *page) {
 
   if (mayor.comm_flags & CK_COMM_RESET) {
     mayor.startup_finished = false;
-    if (mayor.skip_wait) {
-      mayor.default_letter_received = true;
-      mayor.default_letter_timeout = true;
-    } else {
+    mayor.default_letter_received = true;
+    mayor.default_letter_timeout = true;
+    if (!mayor.skip_wait) {
       mayor.default_letter_received = false;
       mayor.default_letter_timeout = false;
       mayor.user_data.start_200ms_timer();
     }
-    if (mayor.skip_listen) {
-      mayor.correct_letter_received = true;
-    } else {
+
+    mayor.correct_letter_received = true;
+    if (!mayor.skip_listen) {
       mayor.correct_letter_received = false;
     }
-    ret = change_bit_timing();
-    if (ret != CK_OK) {
-      // Go into silent mode with the old bit timing parameters since something
-      // is wrong with the new ones.
-      ck_set_comm_mode(CK_COMM_MODE_SILENT);
-      return ret;
+
+    if (memcmp(&mayor.next_bit_timing, &mayor.current_bit_timing,
+               sizeof(ck_can_bit_timing_t)) != 0) {
+      ret = change_bit_timing();
+      if (ret != CK_OK) {
+        // Go into silent mode with the old bit timing parameters since
+        // something is wrong with the new ones.
+        ck_set_comm_mode(CK_COMM_MODE_SILENT);
+        return ret;
+      }
+      mayor.bit_timing_saved = false;
     }
   }
 
