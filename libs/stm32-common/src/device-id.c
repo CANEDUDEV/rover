@@ -7,8 +7,8 @@
 #include "rover.h"
 #include "stm32f3xx_ll_utils.h"
 
-const char *ck_settings_dir = "/ck";
-const char *ck_settings_file = "/ck/settings";
+static const char *ck_settings_dir = "/ck";
+static const char *ck_settings_file = "/ck/settings";
 
 ck_id_t get_default_ck_id(uint8_t city_address) {
   ck_id_t ck_id = {

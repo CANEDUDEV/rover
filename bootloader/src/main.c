@@ -5,7 +5,9 @@
 #include "ck-data.h"
 #include "clock.h"
 #include "common-peripherals.h"
+#include "device-id.h"
 #include "error.h"
+#include "lfs-config.h"
 
 // CK
 #include "mayor.h"
@@ -84,6 +86,11 @@ int main(void) {
       process_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
       LOWEST_TASK_PRIORITY + 1, process_letter_stack, &process_letter_buf);
 
+  if (lfs_init() < 0) {
+    printf("Error initializing littlefs.\r\n");
+    error();
+  }
+
   mayor_init();
 
   // Get values from symbol table
@@ -106,14 +113,18 @@ static void mayor_init(void) {
 
   ck_data_init();
   ck_data_t *ck_data = get_ck_data();
+  ck_id_t ck_id;
 
-  ck_id_t ck_id = {
-      .city_address = 99,  // NOLINT(*-magic-numbers) // TODO: change this
-  };
+  if (read_ck_id(&ck_id) != APP_OK) {
+    printf(
+        "Failed to read ck_id, happens on first boot or corruption. "
+        "Using default ck_id for this boot.\r\n");
+    ck_id = get_default_ck_id(1);  // city_address == 1
+  }
 
   ck_mayor_t mayor = {
-      .ean_no = 100 + ck_id.city_address,     // NOLINT(*-magic-numbers)
-      .serial_no = 200 + ck_id.city_address,  // NOLINT(*-magic-numbers)
+      .ean_no = 100 + ck_id.city_address,  // NOLINT(*-magic-numbers)
+      .serial_no = get_device_serial(),
       .ck_id = ck_id,
       .set_action_mode = set_action_mode,
       .set_city_mode = set_city_mode,
@@ -250,6 +261,12 @@ static void exit_bootloader(const ck_letter_t *letter) {
   }
 
   printf("Exiting bootloader...\r\n");
+
+  // Release any resources used by littlefs
+  int err = lfs_deinit();
+  if (err < 0) {
+    printf("lfs_deinit error: %d\r\n", err);
+  }
 
   // Resets the peripheral buses, so no need for additional deinit.
   HAL_DeInit();
@@ -579,6 +596,18 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef *hcan) {
 void HAL_CAN_MspDeInit(CAN_HandleTypeDef *hcan) {
   if (hcan->Instance == CAN) {
     can_msp_deinit();
+  }
+}
+
+void HAL_CRC_MspInit(CRC_HandleTypeDef *hcrc) {
+  if (hcrc->Instance == CRC) {
+    crc_msp_init();
+  }
+}
+
+void HAL_CRC_MspDeInit(CRC_HandleTypeDef *hcrc) {
+  if (hcrc->Instance == CRC) {
+    crc_msp_deinit();
   }
 }
 
