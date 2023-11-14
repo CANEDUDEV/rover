@@ -599,18 +599,6 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef *hcan) {
   }
 }
 
-void HAL_CRC_MspInit(CRC_HandleTypeDef *hcrc) {
-  if (hcrc->Instance == CRC) {
-    crc_msp_init();
-  }
-}
-
-void HAL_CRC_MspDeInit(CRC_HandleTypeDef *hcrc) {
-  if (hcrc->Instance == CRC) {
-    crc_msp_deinit();
-  }
-}
-
 void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi) {
   if (hspi->Instance == SPI1) {
     spi1_msp_init();

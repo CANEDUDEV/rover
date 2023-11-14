@@ -90,8 +90,8 @@ class Rover:
         id_=2031, data=[0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA]
     )
 
-    # Give base number (0x400) and ask for response page 0
-    give_base_number = Frame(id_=0, dlc=8, data=[0, 1, 0, 0, 0, 4, 0, 0])
+    # Give base number (0x400) and ask for response page 1 (serial number)
+    give_base_number = Frame(id_=0, dlc=8, data=[0, 1, 1, 0, 0, 4, 0, 0])
 
     # Set communication mode to COMMUNICATE
     communicate = Frame(id_=0, dlc=8, data=[0, 0, 0, 0x3, 0, 0, 0, 0])
@@ -119,6 +119,7 @@ class Rover:
             sleep(0.1)
 
         self.channel.writeWait(self.give_base_number, -1)
+        sleep(0.1)  # Allow time to respond
 
         # Assign envelopes
         for assignment in self.__kingdom:

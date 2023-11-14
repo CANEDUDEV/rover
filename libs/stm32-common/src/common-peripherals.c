@@ -180,10 +180,6 @@ void can_msp_deinit(void) {
   HAL_NVIC_DisableIRQ(USB_LP_CAN_RX0_IRQn);
 }
 
-void crc_msp_init(void) { __HAL_RCC_CRC_CLK_ENABLE(); }
-
-void crc_msp_deinit(void) { __HAL_RCC_CRC_CLK_DISABLE(); }
-
 void spi1_msp_init(void) {
   GPIO_InitTypeDef gpio_init;
   /* Peripheral clock enable */
@@ -320,4 +316,14 @@ void HAL_MspInit(void) {
   /* System interrupt init*/
   /* PendSV_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(PendSV_IRQn, PENDSV_IRQ_PRIORITY, 0);
+}
+
+void HAL_CRC_MspInit(CRC_HandleTypeDef* hcrc) {
+  (void)hcrc;
+  __HAL_RCC_CRC_CLK_ENABLE();
+}
+
+void HAL_CRC_MspDeInit(CRC_HandleTypeDef* hcrc) {
+  (void)hcrc;
+  __HAL_RCC_CRC_CLK_DISABLE();
 }

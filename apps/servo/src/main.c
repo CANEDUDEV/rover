@@ -1,8 +1,10 @@
 #include <stdio.h>
 
 #include "ck-data.h"
+#include "device-id.h"
 #include "failsafe.h"
 #include "freertos-tasks.h"
+#include "lfs-config.h"
 #include "peripherals.h"
 #include "potentiometer.h"
 #include "pwm.h"
@@ -39,6 +41,11 @@ int main(void) {
 
   // Initialize all configured peripherals
   peripherals_init();
+
+  if (lfs_init() < 0) {
+    printf("Error initializing littlefs.\r\n");
+    error();
+  }
 
   // Configure potentiometers
   configure_servo_potentiometer(POT_SERVO_DEFAULT);
@@ -79,13 +86,24 @@ void mayor_init(void) {
   city_address = ROVER_MOTOR_ID;
 #endif
 
-  ck_id_t ck_id = {
-      .city_address = city_address,
-  };
+  ck_id_t ck_id;
+
+  // Hard coded ID for each rover city.
+  // Written to flash here to be shared with the bootloader.
+  // We also verify that hard coded city address is correct.
+  int err = read_ck_id(&ck_id);
+  if (err != APP_OK || ck_id.city_address != city_address) {
+    printf("Rewriting ck_id to SPI flash.\r\n");
+    ck_id = get_default_ck_id(city_address);
+    err = write_ck_id(&ck_id);
+    if (err != APP_OK) {
+      printf("Error writing ck_id to SPI flash: 0x%x\r\n", err);
+    }
+  }
 
   ck_mayor_t mayor = {
-      .ean_no = 100 + city_address,     // NOLINT(*-magic-numbers)
-      .serial_no = 200 + city_address,  // NOLINT(*-magic-numbers)
+      .ean_no = 100 + city_address,  // NOLINT(*-magic-numbers)
+      .serial_no = get_device_serial(),
       .ck_id = ck_id,
       .set_action_mode = set_action_mode,
       .set_city_mode = set_city_mode,
