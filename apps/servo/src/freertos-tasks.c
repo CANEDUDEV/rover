@@ -13,6 +13,7 @@
 #include "error.h"
 #include "postmaster-hal.h"
 #include "rover.h"
+#include "spi-flash.h"
 #include "stm32f3xx_hal.h"
 
 // CK
@@ -49,7 +50,9 @@ static StackType_t report_stack[configMINIMAL_STACK_SIZE];
 // CAN Kingdom process received letters task
 static TaskHandle_t process_letter_task;
 static StaticTask_t process_letter_buf;
-static StackType_t process_letter_stack[configMINIMAL_STACK_SIZE];
+// Need at least one page of stack for interacting with the SPI flash.
+static StackType_t
+    process_letter_stack[SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE];
 
 void king(void *unused);
 // King helpers
@@ -79,7 +82,8 @@ void task_init(void) {
                         LOWEST_TASK_PRIORITY + 1, measure_stack, &measure_buf);
 
   process_letter_task = xTaskCreateStatic(
-      process_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
+      process_letter, "process letter",
+      SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE, NULL,
       LOWEST_TASK_PRIORITY + 2, process_letter_stack, &process_letter_buf);
 
   king_task =

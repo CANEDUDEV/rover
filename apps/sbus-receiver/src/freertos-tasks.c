@@ -14,6 +14,7 @@
 // STM32Common
 #include "error.h"
 #include "peripherals.h"
+#include "spi-flash.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"
@@ -28,7 +29,9 @@ static StackType_t sbus_read_stack[configMINIMAL_STACK_SIZE];
 // CAN Kingdom process received letters task
 static TaskHandle_t process_letter_task;
 static StaticTask_t process_letter_buf;
-static StackType_t process_letter_stack[configMINIMAL_STACK_SIZE];
+// Need at least one page of stack for interacting with the SPI flash.
+static StackType_t
+    process_letter_stack[SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE];
 
 void sbus_read(void *unused);
 // SBUS helpers
@@ -45,7 +48,8 @@ void task_init(void) {
                         LOWEST_TASK_PRIORITY, sbus_read_stack, &sbus_read_buf);
 
   process_letter_task = xTaskCreateStatic(
-      process_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
+      process_letter, "process letter",
+      SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE, NULL,
       LOWEST_TASK_PRIORITY + 1, process_letter_stack, &process_letter_buf);
 }
 

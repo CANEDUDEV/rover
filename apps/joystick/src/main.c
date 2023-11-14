@@ -5,7 +5,6 @@
 #include "app.h"
 #include "clock.h"
 #include "error.h"
-#include "flash.h"
 #include "peripherals.h"
 
 // FreeRTOS
