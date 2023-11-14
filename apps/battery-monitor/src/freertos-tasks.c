@@ -15,6 +15,7 @@
 // STM32Common
 #include "error.h"
 #include "postmaster-hal.h"
+#include "spi-flash.h"
 
 // CK
 #include "mayor.h"
@@ -44,7 +45,9 @@ static StackType_t battery_report_stack[configMINIMAL_STACK_SIZE];
 // CAN Kingdom process received letters task
 static TaskHandle_t process_letter_task;
 static StaticTask_t process_letter_buf;
-static StackType_t process_letter_stack[configMINIMAL_STACK_SIZE];
+// Need at least one page of stack for interacting with the SPI flash.
+static StackType_t
+    process_letter_stack[SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE];
 
 void battery_monitor(void *unused);
 void battery_report(void *unused);
@@ -66,7 +69,8 @@ void task_init(void) {
       LOWEST_TASK_PRIORITY, battery_report_stack, &battery_report_buf);
 
   process_letter_task = xTaskCreateStatic(
-      process_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
+      process_letter, "process letter",
+      SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE, NULL,
       LOWEST_TASK_PRIORITY + 2, process_letter_stack, &process_letter_buf);
 }
 

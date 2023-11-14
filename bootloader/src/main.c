@@ -3,11 +3,14 @@
 #include <string.h>
 
 #include "ck-data.h"
+
+// STM32Common
 #include "clock.h"
 #include "common-peripherals.h"
 #include "device-id.h"
 #include "error.h"
 #include "lfs-config.h"
+#include "spi-flash.h"
 
 // CK
 #include "mayor.h"
@@ -43,7 +46,10 @@ static void start_default_letter_timer(void);
 
 static TaskHandle_t process_letter_task;
 static StaticTask_t process_letter_buf;
-static StackType_t process_letter_stack[configMINIMAL_STACK_SIZE];
+// Need at least one page of stack for interacting with the SPI flash.
+static StackType_t
+    process_letter_stack[SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE];
+
 static void process_letter(void *unused);
 static void dispatch_letter(ck_letter_t *letter);
 static int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
@@ -83,7 +89,8 @@ int main(void) {
       LOWEST_TASK_PRIORITY, flash_program_stack, &flash_program_buf);
 
   process_letter_task = xTaskCreateStatic(
-      process_letter, "process letter", configMINIMAL_STACK_SIZE, NULL,
+      process_letter, "process letter",
+      SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE, NULL,
       LOWEST_TASK_PRIORITY + 1, process_letter_stack, &process_letter_buf);
 
   if (lfs_init() < 0) {
