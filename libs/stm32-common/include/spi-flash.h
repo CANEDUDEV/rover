@@ -15,7 +15,7 @@ extern "C" {
 
 // SPI flash driver interface
 int erase(uint32_t sector_address);
-int program(uint32_t page_address, uint8_t *bytes, size_t size);
+int program(uint32_t address, uint8_t *bytes, size_t size);
 int read(uint32_t address, uint8_t *data, size_t size);
 
 #ifdef __cplusplus

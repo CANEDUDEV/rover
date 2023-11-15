@@ -23,6 +23,7 @@
 #define MAX_BLOCK_TIME_MS 100
 
 // Helpers
+static int program_page(uint32_t page_address, uint8_t *bytes, size_t size);
 static int wait_until_ready(void);
 static int write_enable(void);
 static void start_cmd(void);
@@ -70,58 +71,36 @@ int erase(uint32_t sector_address) {
   return wait_until_ready();
 }
 
-// Can program at most 256 bytes at once.
-int program(uint32_t page_address, uint8_t *bytes, size_t size) {
+int program(uint32_t address, uint8_t *bytes, size_t size) {
   // Bounds check
-  if (size > SPI_FLASH_PAGE_SIZE || page_address + size > SPI_FLASH_SIZE) {
+  if (address + size > SPI_FLASH_SIZE) {
     printf("error: page out of bounds\r\n");
     return APP_NOT_OK;
   }
 
-  // Command consists of command number followed by page address in big
-  // endian format. If an entire page should be programmed the last address byte
-  // should be set to 0.
+  // We can program at most 1 page at a time, so we have to program in chunks.
+  size_t bytes_left = size;
+  size_t bytes_written = 0;
 
-  // NOLINTBEGIN(*-magic-numbers)
-  uint8_t cmd[4];
-  cmd[0] = PAGE_PROGRAM_COMMAND;
-  cmd[1] = (page_address >> 2 * 8) & 0xFF;
-  cmd[2] = (page_address >> 1 * 8) & 0xFF;
-  cmd[3] = (page_address >> 0 * 8) & 0xFF;
-  if (size == SPI_FLASH_PAGE_SIZE) {
-    cmd[3] = 0;
-  }
-  // NOLINTEND(*-magic-numbers)
+  while (bytes_left > 0) {
+    uint32_t page_address = address + bytes_written;
+    uint8_t *chunk = &bytes[bytes_written];
+    size_t chunk_size = bytes_left;
 
-  // Set write enable flag before page program
-  if (write_enable() != APP_OK) {
-    return APP_NOT_OK;
-  }
+    if (chunk_size > SPI_FLASH_PAGE_SIZE) {
+      chunk_size = SPI_FLASH_PAGE_SIZE;
+    }
 
-  common_peripherals_t *peripherals = get_common_peripherals();
+    int err = program_page(page_address, chunk, chunk_size);
+    if (err != APP_OK) {
+      return err;
+    }
 
-  // Transmit command
-  start_cmd();
-
-  if (HAL_SPI_Transmit(&peripherals->hspi_flash, cmd, sizeof(cmd),
-                       MAX_BLOCK_TIME_MS) != HAL_OK) {
-    end_cmd();
-    printf("Failed to transmit PAGE_PROGRAM_COMMAND\r\n");
-    return APP_NOT_OK;
+    bytes_written += chunk_size;
+    bytes_left -= chunk_size;
   }
 
-  // Transmit data bytes
-  if (HAL_SPI_Transmit(&peripherals->hspi_flash, bytes, size,
-                       MAX_BLOCK_TIME_MS) != HAL_OK) {
-    end_cmd();
-    printf("Failed to transmit data bytes\r\n");
-    return APP_NOT_OK;
-  }
-
-  end_cmd();
-
-  // Wait for flash
-  return wait_until_ready();
+  return APP_OK;
 }
 
 // Can read whole flash using one command
@@ -183,6 +162,53 @@ int read(uint32_t address, uint8_t *data, size_t size) {
   end_cmd();
 
   return APP_OK;
+}
+
+static int program_page(uint32_t page_address, uint8_t *bytes, size_t size) {
+  // Command consists of command number followed by page address in big
+  // endian format. If an entire page should be programmed the last address byte
+  // should be set to 0.
+
+  // NOLINTBEGIN(*-magic-numbers)
+  uint8_t cmd[4];
+  cmd[0] = PAGE_PROGRAM_COMMAND;
+  cmd[1] = (page_address >> 2 * 8) & 0xFF;
+  cmd[2] = (page_address >> 1 * 8) & 0xFF;
+  cmd[3] = (page_address >> 0 * 8) & 0xFF;
+  if (size == SPI_FLASH_PAGE_SIZE) {
+    cmd[3] = 0;
+  }
+  // NOLINTEND(*-magic-numbers)
+
+  // Set write enable flag before page program
+  if (write_enable() != APP_OK) {
+    return APP_NOT_OK;
+  }
+
+  common_peripherals_t *peripherals = get_common_peripherals();
+
+  // Transmit command
+  start_cmd();
+
+  if (HAL_SPI_Transmit(&peripherals->hspi_flash, cmd, sizeof(cmd),
+                       MAX_BLOCK_TIME_MS) != HAL_OK) {
+    end_cmd();
+    printf("Failed to transmit PAGE_PROGRAM_COMMAND\r\n");
+    return APP_NOT_OK;
+  }
+
+  // Transmit data bytes
+  if (HAL_SPI_Transmit(&peripherals->hspi_flash, bytes, size,
+                       MAX_BLOCK_TIME_MS) != HAL_OK) {
+    end_cmd();
+    printf("Failed to transmit data bytes\r\n");
+    return APP_NOT_OK;
+  }
+
+  end_cmd();
+
+  // Wait for flash
+  return wait_until_ready();
 }
 
 static int wait_until_ready(void) {
