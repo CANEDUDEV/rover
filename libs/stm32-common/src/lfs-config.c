@@ -111,5 +111,6 @@ int lfs_deinit(void) {
   if (err < 0) {
     printf("lfs_unmount error: %d\r\n", err);
   }
+  mounted = false;
   return err;
 }
