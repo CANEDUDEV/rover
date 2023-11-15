@@ -5,9 +5,9 @@
 #include "spi-flash.h"
 
 // Statically allocate buffers for littelfs
-static uint8_t lfs_read_buf[SPI_FLASH_PAGE_SIZE];
-static uint8_t lfs_prog_buf[SPI_FLASH_PAGE_SIZE];
-static uint8_t lfs_lookahead_buf[SPI_FLASH_PAGE_SIZE];
+static uint8_t lfs_read_buf[SPI_FLASH_SECTOR_SIZE];
+static uint8_t lfs_prog_buf[SPI_FLASH_SECTOR_SIZE];
+static uint8_t lfs_lookahead_buf[SPI_FLASH_SECTOR_SIZE];
 
 // Functions required by littlefs
 static int spi_flash_read(const struct lfs_config *config, lfs_block_t block,
@@ -38,9 +38,9 @@ static const struct lfs_config lfs_cfg = {
     .sync = spi_flash_sync,
 
     // Configuration
-    .read_size = 1,
-    .prog_size = 1,
-    .block_size = SPI_FLASH_SECTOR_SIZE,  // Flash is sector-erasable
+    .read_size = SPI_FLASH_SECTOR_SIZE,
+    .prog_size = SPI_FLASH_SECTOR_SIZE,
+    .block_size = SPI_FLASH_SECTOR_SIZE,
     .block_count = SPI_FLASH_SECTOR_COUNT,
     .block_cycles = 100,  // Optimize for wear leveling
 
