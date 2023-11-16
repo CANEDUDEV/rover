@@ -39,14 +39,16 @@ uint16_t adc_to_servo_current(uint16_t adc_value) {
 }
 
 /* Voltage divider with R1 = 47kOhm and R2 = 6.2kOhm
- * v_battery = v_out * (R1 + R2) / R2
+ * v_in = v_out * (R1 + R2) / R2
  * v_out is measured by ADC, v_out = ADC_REF_VOLTAGE * adc_value /
  * ADC_RESOLUTION
+ * To get v_battery we need to add the voltage drop of the Schottky diode,
+ * around 300 mV => v_battery = v_in + 300.
  */
 uint16_t adc_to_battery_voltage(uint16_t adc_value) {
   // Voltages in mV
   float v_out = ADC_REF_VOLTAGE * adc_value / (float)ADC_RESOLUTION;
-  const float v_battery = v_out * (47000 + 6200) / 6200;
+  const float v_battery = v_out * (47000 + 6200) / 6200 + 300;
   return (uint16_t)roundf(v_battery);
 }
 
