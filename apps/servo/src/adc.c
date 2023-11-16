@@ -2,8 +2,8 @@
 
 #include "math.h"
 
-#define ADC_REF_VOLTAGE 3300      // mV
-#define ADC_RESOLUTION (1 << 12)  // 12-bit ADC
+#define ADC_REF_VOLTAGE 3300            // mV
+#define ADC_RESOLUTION ((1 << 12) - 1)  // 12-bit ADC
 
 /* Convert the measured servo position sensor value to an angle.
  *

@@ -4,8 +4,8 @@
 
 #include "battery.h"
 
-#define ADC_REF_VOLTAGE 3300      // in mV
-#define ADC_RESOLUTION (1 << 12)  // 12-bit ADC
+#define ADC_REF_VOLTAGE 3300            // in mV
+#define ADC_RESOLUTION ((1 << 12) - 1)  // 12-bit ADC
 
 static float vbat_sense_r_out;
 
