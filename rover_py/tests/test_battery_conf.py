@@ -1,8 +1,9 @@
-import battery
+from time import sleep
 
 from canlib import canlib
-from time import sleep
-from rover import Rover
+
+from ..rover import battery
+from ..rover.rover import Rover
 
 with canlib.openChannel(
     channel=0,

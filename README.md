@@ -26,7 +26,11 @@ Generate a zip file containing the board binaries by running `meson compile -C b
 
 ## Running Tests
 
-To run all unit tests, execute `meson test -C build`. Additionally, there are integration tests that run against the boards. Note that these tests require hardware that supports canlib, such as the [Kvaser Leaf Light](https://www.kvaser.com/product/kvaser-leaf-light-hs-v2/).
+To run all unit tests, execute `meson test -C build`.
+
+Additionally, there are integration tests that run against the boards. Note that these tests require hardware that supports canlib, such as the [Kvaser Leaf Light](https://www.kvaser.com/product/kvaser-leaf-light-hs-v2/).
+
+The integration tests are found in `rover_py/tests`. To run a test from the repo root directory run `python -m rover_py.tests.<test_name>`. Make sure to omit the `.py` file extension.
 
 ## Using STM32CubeMX to Generate Code
 

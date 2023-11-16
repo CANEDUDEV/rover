@@ -1,5 +1,6 @@
 import sys
-from canlib import canlib, Frame
+
+from canlib import Frame, canlib
 
 # TODO: only address node to be flashed.
 BOOTLOADER_ADDRESS = 0  # Address all nodes

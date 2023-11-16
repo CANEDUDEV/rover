@@ -1,6 +1,7 @@
-from binascii import hexlify
-from canlib import canlib
 import sys
+from binascii import hexlify
+
+from canlib import canlib
 
 flags = canlib.Open.NO_INIT_ACCESS
 if len(sys.argv) > 1 and sys.argv[1] == "set-bitrate":

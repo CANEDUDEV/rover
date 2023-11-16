@@ -1,8 +1,9 @@
-import servo
+from time import sleep
 
 from canlib import canlib
-from time import sleep
-from rover import Rover
+
+from ..rover import servo
+from ..rover.rover import Rover
 
 with canlib.openChannel(
     channel=0,

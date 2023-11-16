@@ -1,7 +1,7 @@
 # Servo board testing frames
-
 from canlib import Frame
-from rover import Envelope
+
+from .rover import Envelope
 
 FAILSAFE_OFF = 0
 FAILSAFE_ON = 1

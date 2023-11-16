@@ -1,7 +1,8 @@
 # Battery board testing frames
 
 from canlib import Frame
-from rover import Envelope
+
+from .rover import Envelope
 
 
 def set_over_current_threshold_frame(current_ma):

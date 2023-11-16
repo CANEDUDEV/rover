@@ -1,8 +1,8 @@
-from canlib import canlib
 import csv  # Import the CSV module
 
-import rover
-import servo
+from canlib import canlib
+
+from ..rover import rover, servo
 
 # Set up data storage for steering signal and servo current signals.
 steering_timestamps = []
