@@ -1,6 +1,7 @@
 from enum import IntEnum
-from canlib import Frame
 from time import sleep
+
+from canlib import Frame
 
 
 # City addresses

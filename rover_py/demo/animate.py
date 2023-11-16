@@ -1,6 +1,7 @@
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 import csv
+
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
 
 
 # Load data from CSV files

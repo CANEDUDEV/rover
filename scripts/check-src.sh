@@ -15,6 +15,7 @@ check_git_index() {
 # Format
 shfmt -w -s .
 .bin/yamlfmt . .clang-tidy .clang-format
+isort --profile black .
 black .
 ninja -C build clang-format
 

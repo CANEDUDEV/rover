@@ -1,18 +1,19 @@
 import collections
-import keyboard
 import os
 import sys
-import time
 import threading
+import time
 import tkinter as tk
 from tkinter import font
-from canlib import canlib, kvadblib
-from rover import Envelope, Rover
-import servo
 
+import keyboard
 import matplotlib.pyplot as plt
+from canlib import canlib, kvadblib
 from matplotlib.animation import FuncAnimation
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+from rover import servo
+from rover.rover import Envelope, Rover
 
 sent_messages = {}
 received_messages = {}
@@ -306,6 +307,5 @@ send_thread = threading.Thread(target=send_can_messages, daemon=True)
 receive_thread.start()
 update_thread.start()
 send_thread.start()
-
 
 root.mainloop()

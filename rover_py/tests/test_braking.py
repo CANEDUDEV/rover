@@ -1,7 +1,9 @@
-from canlib import canlib, Frame
-from rover import Rover, City
-import servo
 from time import sleep
+
+from canlib import Frame, canlib
+
+from ..rover import servo
+from ..rover.rover import City, Rover
 
 
 def set_silent_mode_frame(city):

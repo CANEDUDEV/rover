@@ -1,6 +1,7 @@
 from canlib import canlib
-from rover import Rover
-import servo
+
+from rover import servo
+from rover.rover import Rover
 
 with canlib.openChannel(
     channel=0,

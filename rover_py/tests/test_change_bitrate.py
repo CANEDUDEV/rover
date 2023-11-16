@@ -1,6 +1,8 @@
 from time import sleep
-from canlib import canlib, Frame
-from rover import Rover
+
+from canlib import Frame, canlib
+
+from ..rover.rover import Rover
 
 change_bitrate_125kbit = Frame(
     id_=0, dlc=8, data=[0, 8, 0, 0, 18, 16, 2, 1]

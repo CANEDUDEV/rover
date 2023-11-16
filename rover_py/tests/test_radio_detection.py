@@ -1,8 +1,10 @@
-from canlib import canlib
-from rover import Rover, Envelope
-import servo
-import keyboard
 import time
+
+import keyboard
+from canlib import canlib
+
+from ..rover import servo
+from ..rover.rover import Envelope, Rover
 
 with canlib.openChannel(
     channel=0,

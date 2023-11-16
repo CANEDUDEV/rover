@@ -11,4 +11,4 @@ python.exe -m PyInstaller \
 	--specpath='build' \
 	--distpath='build/rover-demo' \
 	--noconfirm \
-	integration/demo-control.py
+	rover_py/live_demo.py
