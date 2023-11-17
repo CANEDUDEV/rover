@@ -129,9 +129,18 @@ def change_bitrate_500kbit(city=City.ALL_CITIES):
     return change_bit_timing(prescaler=9, tq=8, phase_seg2=1, sjw=1, city=city)
 
 
+def change_bitrate_1mbit(city=City.ALL_CITIES):
+    return change_bit_timing(prescaler=4, tq=9, phase_seg2=1, sjw=1, city=city)
+
+
 # Reset communication and set communication mode to SILENT
-def restart_communication(city=City.ALL_CITIES):
-    return Frame(id_=0, dlc=8, data=[city, 0, 0, 0x55, 0, 0, 0, 0])
+# Optionally skip startup sequence after reset.
+def restart_communication(city=City.ALL_CITIES, skip_startup=False):
+    flags = 0x55
+    if skip_startup:
+        flags = 0x2D
+
+    return Frame(id_=0, dlc=8, data=[city, 0, 0, flags, 0, 0, 0, 0])
 
 
 # Start the kingdom

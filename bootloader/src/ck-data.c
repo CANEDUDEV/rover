@@ -1,5 +1,7 @@
 #include "ck-data.h"
 
+#include <string.h>
+
 static ck_data_t ck_data;
 
 void page_init(void);
@@ -18,7 +20,10 @@ ck_data_t* get_ck_data(void) { return &ck_data; }
 
 void page_init(void) {
   ck_data.bootloader_page = &ck_data.pages[0];
-  ck_data.bootloader_page->line_count = 0;
+  // Needs to have DLC=8 since it's a mayor's page
+  ck_data.bootloader_page->line_count = CK_MAX_LINES_PER_PAGE;
+  memset(ck_data.bootloader_page, 0, ck_data.bootloader_page->line_count);
+  ck_data.bootloader_page->lines[1] = 2;  // Page number 2
 
   // Contains a CAN ID
   ck_data.command_ack_page = &ck_data.pages[1];
