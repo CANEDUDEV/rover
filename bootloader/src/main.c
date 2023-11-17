@@ -243,6 +243,13 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
   if (folder->folder_no == ck_data->exit_bootloader_folder->folder_no) {
     exit_bootloader(letter);
   }
+
+  // If in silent mode, we should not act on the flashing letters. This makes it
+  // possible for a flasher app to selectively flash nodes on a bus.
+  if (ck_get_comm_mode() == CK_COMM_MODE_SILENT) {
+    return APP_OK;
+  }
+
   if (folder->folder_no == ck_data->flash_erase_folder->folder_no) {
     return process_flash_erase_letter(letter);
   }
