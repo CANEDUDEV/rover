@@ -1,15 +1,8 @@
 from time import sleep
 
-from canlib import Frame, canlib
+from canlib import canlib
 
-from ..rover import servo
-from ..rover.rover import City, Rover
-
-
-def set_silent_mode_frame(city):
-    data = [city, 0, 0, 0x2, 0, 0, 0, 0]
-    return Frame(id_=0, dlc=8, data=data)
-
+from ..rover import rover, servo
 
 with canlib.openChannel(
     channel=0,
@@ -19,12 +12,10 @@ with canlib.openChannel(
     ch.setBusOutputControl(canlib.Driver.NORMAL)
     ch.busOn()
 
-    rover = Rover(ch)
-
-    rover.start()
+    rover.start(ch)
 
     # Disable SBUS receiver city's communication
-    ch.writeWait(set_silent_mode_frame(City.SBUS_RECEIVER), -1)
+    ch.writeWait(rover.set_silent_mode(city=rover.City.SBUS_RECEIVER), -1)
     sleep(3)
 
     # Accelerate

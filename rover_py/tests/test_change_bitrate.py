@@ -1,20 +1,8 @@
 from time import sleep
 
-from canlib import Frame, canlib
+from canlib import canlib
 
-from ..rover.rover import Rover
-
-change_bitrate_125kbit = Frame(
-    id_=0, dlc=8, data=[0, 8, 0, 0, 18, 16, 2, 1]
-)  # Set bitrate to 125kbit/s
-
-change_bitrate_500kbit = Frame(
-    id_=0, dlc=8, data=[0, 8, 0, 0, 9, 8, 1, 1]
-)  # Set bitrate to 500kbit/s
-
-reset = Frame(
-    id_=0, dlc=8, data=[0, 0, 0, 0x55, 0, 0, 0, 0]
-)  # Reset communication and set communication mode to SILENT
+from ..rover import rover
 
 # Start with 125 kbit/s
 with canlib.openChannel(
@@ -24,19 +12,18 @@ with canlib.openChannel(
 ) as ch:
     ch.setBusOutputControl(canlib.Driver.NORMAL)
     ch.busOn()
-    rover = Rover(ch)
 
     # Send multiple default letters to make sure every node receives one at startup
     for _ in range(5):
-        ch.writeWait(rover.default_letter, -1)
+        ch.writeWait(rover.default_letter(), -1)
         sleep(0.1)
 
-    ch.writeWait(rover.give_base_number, -1)
+    ch.writeWait(rover.give_base_number(), -1)
     frame = ch.read(timeout=1000)
     sleep(0.5)  # Wait for responses
 
-    ch.writeWait(change_bitrate_500kbit, -1)
-    ch.writeWait(reset, -1)
+    ch.writeWait(rover.change_bitrate_500kbit(), -1)
+    ch.writeWait(rover.restart_communication(), -1)
 
     ch.busOff()
 
@@ -52,15 +39,14 @@ with canlib.openChannel(
 ) as ch:
     ch.setBusOutputControl(canlib.Driver.NORMAL)
     ch.busOn()
-    rover = Rover(ch)
 
-    ch.writeWait(rover.default_letter, 1000)
-    ch.writeWait(rover.give_base_number, -1)
+    ch.writeWait(rover.default_letter(), 1000)
+    ch.writeWait(rover.give_base_number(), -1)
     frame = ch.read(timeout=1000)
     sleep(0.5)  # Wait for responses
 
-    ch.writeWait(change_bitrate_125kbit, -1)
-    ch.writeWait(reset, -1)
+    ch.writeWait(rover.change_bitrate_125kbit(), -1)
+    ch.writeWait(rover.restart_communication(), -1)
 
     ch.busOff()
 
@@ -75,10 +61,9 @@ with canlib.openChannel(
 ) as ch:
     ch.setBusOutputControl(canlib.Driver.NORMAL)
     ch.busOn()
-    rover = Rover(ch)
 
-    ch.writeWait(rover.default_letter, 1000)
-    ch.writeWait(rover.give_base_number, -1)
+    ch.writeWait(rover.default_letter(), 1000)
+    ch.writeWait(rover.give_base_number(), -1)
     frame = ch.read(timeout=1000)
     sleep(0.5)  # Wait for responses
 
