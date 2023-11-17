@@ -378,7 +378,7 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
   if (mode != CK_COMM_MODE_KEEP_CURRENT) {
     mayor.comm_mode = mode;
   }
-  return ck_apply_comm_mode(mayor.comm_mode);
+  return ck_apply_comm_mode(mode);
 }
 
 ck_comm_mode_t ck_get_comm_mode(void) { return mayor.comm_mode; }

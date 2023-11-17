@@ -64,48 +64,46 @@ ck_err_t ck_apply_comm_mode(ck_comm_mode_t mode) {
     return ret;
   }
 
+  if (mode == CK_COMM_MODE_KEEP_CURRENT) {
+    return CK_OK;
+  }
+
+  // CK_COMM_MODE_LISTEN_ONLY and CK_COMM_MODE_COMMUNICATE
+  // should both have CAN_MODE_NORMAL.
+  uint32_t new_can_mode = CAN_MODE_NORMAL;
+
+  if (mode == CK_COMM_MODE_SILENT) {
+    new_can_mode = CAN_MODE_SILENT;
+  }
+
   common_peripherals_t *common_peripherals = get_common_peripherals();
   CAN_HandleTypeDef *hcan = &common_peripherals->hcan;
 
-  switch (mode) {
-    case CK_COMM_MODE_COMMUNICATE:
-    case CK_COMM_MODE_LISTEN_ONLY:
-      if (HAL_CAN_GetState(hcan) == HAL_CAN_STATE_LISTENING) {
-        if (HAL_CAN_Stop(hcan) != HAL_OK) {
-          return CK_ERR_SET_MODE_FAILED;
-        }
-      }
+  HAL_CAN_StateTypeDef can_state = HAL_CAN_GetState(hcan);
 
-      hcan->Init.Mode = CAN_MODE_NORMAL;
-      if (HAL_CAN_Init(hcan) != HAL_OK) {
-        return CK_ERR_SET_MODE_FAILED;
-      }
+  if (can_state == HAL_CAN_STATE_LISTENING) {
+    if (hcan->Init.Mode == new_can_mode) {
+      return CK_OK;
+    }
 
-      if (HAL_CAN_Start(hcan) != HAL_OK) {
-        return CK_ERR_SET_MODE_FAILED;
-      }
-      break;
-
-    case CK_COMM_MODE_SILENT:
-      if (HAL_CAN_GetState(hcan) == HAL_CAN_STATE_LISTENING) {
-        if (HAL_CAN_Stop(hcan) != HAL_OK) {
-          return CK_ERR_SET_MODE_FAILED;
-        }
-      }
-
-      hcan->Init.Mode = CAN_MODE_SILENT;
-      if (HAL_CAN_Init(hcan) != HAL_OK) {
-        return CK_ERR_SET_MODE_FAILED;
-      }
-
-      if (HAL_CAN_Start(hcan) != HAL_OK) {
-        return CK_ERR_SET_MODE_FAILED;
-      }
-      break;
-
-    default:
-      break;
+    // If we're on the bus, we need to go off bus
+    if (HAL_CAN_Stop(hcan) != HAL_OK) {
+      return CK_ERR_SET_MODE_FAILED;
+    }
   }
+
+  hcan->Init.Mode = new_can_mode;
+
+  // Reinitialize with new mode
+  if (HAL_CAN_Init(hcan) != HAL_OK) {
+    return CK_ERR_SET_MODE_FAILED;
+  }
+
+  // Go on bus
+  if (HAL_CAN_Start(hcan) != HAL_OK) {
+    return CK_ERR_SET_MODE_FAILED;
+  }
+
   return CK_OK;
 }
 
