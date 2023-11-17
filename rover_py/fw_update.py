@@ -1,6 +1,10 @@
+import argparse
 import sys
+from pathlib import Path
 
 from canlib import Frame, canlib
+
+from rover import rover
 
 # TODO: only address node to be flashed.
 BOOTLOADER_ADDRESS = 0  # Address all nodes
@@ -28,109 +32,28 @@ assignments = [
 ]
 
 
-default_letter = Frame(id_=2031, data=[0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA])
+def get_target_city(node):
+    if node == "servo":
+        return rover.City.SERVO
+    if node == "motor":
+        return rover.City.MOTOR
+    if node == "battery_monitor":
+        return rover.City.BATTERY_MONITOR
+    if node == "sbus_receiver":
+        return rover.City.SBUS_RECEIVER
 
-# Give base number (0x400) and ask for response page 2
-# All nodes currently in the bootloader will respond,
-# since page 2 is only present in the bootloader.
-give_base_number = Frame(id_=0, dlc=8, data=[0, 1, 2, 0, 0, 4, 0, 0])
-
-# Set communication mode to COMMUNICATE
-communicate = Frame(id_=0, dlc=8, data=[BOOTLOADER_ADDRESS, 0, 0, 0x3, 0, 0, 0, 0])
-
-enter_bootloader = Frame(id_=ENTER_BOOTLOADER_ID, dlc=0, data=[])
-
-# Set bitrate to 1Mbit/s
-change_bitrate_1mbit = Frame(id_=0, dlc=8, data=[0, 8, 0, 0, 4, 9, 1, 1])
-
-# Reset communication. All nodes keep their current communication mode.
-# Startup sequence and wait for default letter are skipped.
-reset = Frame(id_=0, dlc=8, data=[0, 0, 0, 0x2C, 0, 0, 0, 0])
-
-
-def flash_erase(bytes_to_erase):
-    return Frame(
-        id_=FLASH_ERASE_ID,
-        dlc=4,
-        data=list(bytes_to_erase.to_bytes(4, "little")),
-    )
-
-
-def flash_program(ch, binary_data, timeout=100):
-    # init
-    data = [1] + list(len(binary_data).to_bytes(4, "little")) + [0, 0, 0]
-    ch.writeWait(Frame(id_=FLASH_PROGRAM_ID, dlc=8, data=data), -1)
-
-    try:
-        received = ch.read(timeout=timeout)
-    except canlib.exceptions.CanNoMsg:
-        print("No bundle request response (1). Exiting.")
-        sys.exit(1)
-
-    if received.id != FLASH_PROGRAM_ID or received.data[0] != 2:
-        print("Wrong response before programming flash.")
-        sys.exit(1)
-
-    if int.from_bytes(received.data[1:3], byteorder="little") != 0xFFFF:
-        print("Got wrong bundle request, wanted 0xFFFF.")
-        sys.exit(1)
-
-    # Send pages with data.
-    chunk_size = 7  # Bytes per frame
-
-    # Get bytes that need to be padded
-    final_bytes = list(binary_data[-(len(binary_data) % chunk_size) :])
-
-    current_page_number = 3
-
-    # Send bytes in chunks of 7
-    for i in range(0, len(binary_data) - len(final_bytes), chunk_size):
-        chunk = list(binary_data[i : i + chunk_size])
-        data = [current_page_number] + chunk
-        ch.writeWait(Frame(id_=FLASH_PROGRAM_ID, dlc=8, data=data), -1)
-
-        if current_page_number == 3:
-            current_page_number = 4
-        else:
-            current_page_number = 3
-
-    final_data = [current_page_number] + final_bytes
-
-    # Pad if needed
-    for i in range(8 - len(final_data)):
-        final_data.append(0)
-
-    ch.writeWait(Frame(id_=FLASH_PROGRAM_ID, dlc=8, data=final_data), -1)
-
-    try:
-        received = ch.read(timeout=timeout)
-    except canlib.exceptions.CanNoMsg:
-        print("No bundle request response (2). Exiting.")
-        sys.exit(1)
-
-    if received.id != FLASH_PROGRAM_ID or received.data[0] != 2:
-        print("Wrong response after programming flash.")
-        sys.exit(1)
-
-    if int.from_bytes(received.data[1:3], byteorder="little") != 0x0000:
-        print("Got wrong bundle request, wanted 0x0000")
-        sys.exit(1)
-
-
-exit_bootloader = Frame(id_=EXIT_BOOTLOADER_ID, dlc=0, data=[])
+    return rover.City.ALL_CITIES
 
 
 def send_bootloader_command(ch, frame, timeout=100):
-    ch.writeWait(frame, -1)
+    ch.write(frame)
+
     try:
-        received = ch.read(timeout=timeout)
+        ch.readSyncSpecific(COMMAND_ACK_ID, timeout=timeout)
+        received = ch.readSpecificSkip(COMMAND_ACK_ID)
 
     except canlib.exceptions.CanNoMsg:
-        print("No response to command. Exiting.")
-        sys.exit(1)
-
-    if received.id != COMMAND_ACK_ID:
-        print("Not an ACK message")
+        print("No ACK received. Exiting.")
         sys.exit(1)
 
     command_id = int.from_bytes(received.data[1:5], byteorder="little")
@@ -146,15 +69,120 @@ def send_bootloader_command(ch, frame, timeout=100):
         sys.exit(1)
 
 
-# Get filename
-if len(sys.argv) < 2:
-    print(f"Usage: python {sys.argv[0]} <app.bin>")
+def enter_bootloader():
+    return Frame(id_=ENTER_BOOTLOADER_ID, dlc=0, data=[])
+
+
+def exit_bootloader():
+    return Frame(id_=EXIT_BOOTLOADER_ID, dlc=0, data=[])
+
+
+def is_bootloader_mayor(frame):
+    return frame.dlc == 8 and frame.data == bytearray([0, 2, 0, 0, 0, 0, 0, 0])
+
+
+def flash_erase(bytes_to_erase):
+    return Frame(
+        id_=FLASH_ERASE_ID,
+        dlc=4,
+        data=list(bytes_to_erase.to_bytes(4, "little")),
+    )
+
+
+def flash_program(ch, binary_data):
+    # init
+    data = [1] + list(len(binary_data).to_bytes(4, "little")) + [0, 0, 0]
+    ch.write(Frame(id_=FLASH_PROGRAM_ID, dlc=8, data=data))
+
+    try:
+        ch.readSyncSpecific(FLASH_PROGRAM_ID, timeout=1000)
+        received = ch.readSpecificSkip(FLASH_PROGRAM_ID)
+
+    except canlib.exceptions.CanNoMsg:
+        print("No bundle request response (1). Exiting.")
+        sys.exit(1)
+
+    if received.data[0] != 2:
+        print("Wrong response before programming flash.")
+        sys.exit(1)
+
+    if int.from_bytes(received.data[1:3], byteorder="little") != 0xFFFF:
+        print("Got wrong bundle request, wanted 0xFFFF.")
+        sys.exit(1)
+
+    # Chunk and send data
+    chunk_size = 7  # Payload bytes per frame
+
+    chunks = [
+        list(binary_data[i : i + chunk_size])
+        for i in range(0, len(binary_data), chunk_size)
+    ]
+
+    # Pad last chunk if needed
+    last_chunk_length = len(chunks[-1])
+    chunks[-1] += [0] * (chunk_size - last_chunk_length)
+
+    current_page_number = 3
+
+    for chunk in chunks:
+        data = [current_page_number] + chunk
+        ch.writeWait(Frame(id_=FLASH_PROGRAM_ID, dlc=8, data=data), -1)
+
+        if current_page_number == 3:
+            current_page_number = 4
+        else:
+            current_page_number = 3
+
+    try:
+        ch.readSyncSpecific(FLASH_PROGRAM_ID, timeout=1000)
+        received = ch.readSpecificSkip(FLASH_PROGRAM_ID)
+
+    except canlib.exceptions.CanNoMsg:
+        print("No bundle request response (2). Exiting.")
+        sys.exit(1)
+
+    if received.data[0] != 2:
+        print("Wrong response after programming flash.")
+        sys.exit(1)
+
+    if int.from_bytes(received.data[1:3], byteorder="little") != 0x0000:
+        print("Got wrong bundle request, wanted 0x0000")
+        sys.exit(1)
+
+
+parser = argparse.ArgumentParser(description="Flash Rover firmware over CAN.")
+
+parser.add_argument(
+    "target_node",
+    choices=["servo", "motor", "battery_monitor", "sbus_receiver"],
+    help="Which node to flash.",
+)
+
+parser.add_argument("binary_file", help="Binary file to flash.")
+
+args = parser.parse_args()
+
+target_city = get_target_city(args.target_node)
+
+target_file = Path(args.binary_file)
+if target_file.suffix != ".bin":
+    print(
+        f'Incorrect file extension for binary file {target_file}. Please provide a ".bin" file.'
+    )
     sys.exit(1)
 
 # Open file and store contents in binary_data
-with open(sys.argv[1], "rb") as file:
-    binary_data = file.read()
+try:
+    with open(target_file, "rb") as file:
+        binary_data = file.read()
+except:
+    print(f"Couldn't open {args.binary_file}. Exiting...")
+    sys.exit(1)
 
+
+identified_cities = []
+
+print("Setting up CAN...")
 
 with canlib.openChannel(
     channel=0,
@@ -164,27 +192,64 @@ with canlib.openChannel(
     ch.setBusOutputControl(canlib.Driver.NORMAL)
     ch.busOn()
 
-    ch.writeWait(default_letter, -1)
-    ch.writeWait(give_base_number, -1)
+    # TODO: Implement a way to reboot the devices in case we start the script on a running system
 
-    while True:
-        frame = ch.read(timeout=1000)
-        if frame and not (frame.flags & canlib.MessageFlag.ERROR_FRAME):
-            break
+    print("Trying to find nodes in the bootloader...")
+    ch.writeWait(rover.default_letter(), -1)
 
+    # Give base number and ask for response page 2.
+    # All nodes currently in the bootloader will respond,
+    # since page 2 is only present in the bootloader.
+    ch.writeWait(rover.give_base_number(response_page=2), -1)
+
+    # Gather responses
+    try:
+        while True:
+            frame = ch.read(timeout=100)
+
+            if frame.flags & canlib.MessageFlag.ERROR_FRAME:
+                continue
+
+            if is_bootloader_mayor(frame):
+                # Add the city ID to cities
+                identified_cities.append(frame.id - rover.ROVER_BASE_NUMBER)
+
+    except canlib.exceptions.CanNoMsg:
+        pass
+
+    print("Identified nodes in bootloader: ")
+    for i, city in enumerate(identified_cities):
+        try:
+            city_name = f"{rover.City(city).name}"
+        except ValueError:
+            city_name = f"unknown node number ({city})"
+
+        print(f"\t{i}: {city_name}")
+
+    print()
+
+    if target_city.value not in identified_cities:
+        print(f"Couldn't find {args.target_node} node on the bus. Exiting...")
+        sys.exit(1)
+
+    print(f"Starting flash procedure for {target_city.name} node...")
+
+    # All cities should enter bootloader to avoid starting the application
+    # during flash. Therefore, we must assign the envelopes for all cities.
     for assignment in assignments:
-        envelope = list(assignment[0].to_bytes(4, "little"))
+        envelope = assignment[0]
         folder = assignment[1]
-        data = [BOOTLOADER_ADDRESS, 2] + envelope + [folder] + [0x3]
-        ch.writeWait(Frame(id_=0, dlc=8, data=data), -1)
+        ch.writeWait(rover.assign_envelope(rover.City.ALL_CITIES, envelope, folder), -1)
 
-    # TODO: Set all nodes to Silent mode, except node to be flashed
-    ch.writeWait(communicate, -1)
+    # We only set the target city to communicate mode and assume the other
+    # cities have entered the bootloader, without checking their ACK.
+    ch.writeWait(rover.set_communicate(city=target_city), -1)
+    send_bootloader_command(ch, enter_bootloader())
 
-    send_bootloader_command(ch, enter_bootloader)
+    ch.writeWait(rover.change_bitrate_1mbit(), -1)
 
-    ch.writeWait(change_bitrate_1mbit, -1)
-    ch.writeWait(reset, -1)
+    # Restarting communication means all nodes will be put in silent mode.
+    ch.writeWait(rover.restart_communication(skip_startup=True), -1)
 
     ch.busOff()
 
@@ -197,11 +262,37 @@ with canlib.openChannel(
     ch.setBusOutputControl(canlib.Driver.NORMAL)
     ch.busOn()
 
+    # Set only city to flash to communicate mode
+    ch.writeWait(rover.set_communicate(city=target_city), -1)
+
     # Erase as many pages as required to fit the application
+    print("Erasing target flash...")
     send_bootloader_command(ch, flash_erase(len(binary_data)), timeout=10_000)
 
-    flash_program(ch, binary_data, timeout=1000)
+    print("Flashing new binary...")
+    flash_program(ch, binary_data)
 
-    send_bootloader_command(ch, exit_bootloader)
+    ch.writeWait(rover.change_bitrate_125kbit(), -1)
+
+    # Restarting communication means all nodes will be put in silent mode.
+    ch.writeWait(rover.restart_communication(skip_startup=True), -1)
 
     ch.busOff()
+
+# Switch back to 125 kbit/s before exiting bootloader.
+with canlib.openChannel(
+    channel=0,
+    flags=canlib.Open.REQUIRE_INIT_ACCESS,
+    bitrate=canlib.Bitrate.BITRATE_125K,
+) as ch:
+    ch.setBusOutputControl(canlib.Driver.NORMAL)
+    ch.busOn()
+
+    # Set communicate mode so we can receive ACK
+    ch.writeWait(rover.set_communicate(city=target_city), -1)
+
+    send_bootloader_command(ch, exit_bootloader())
+
+    ch.busOff()
+
+print("Finished successfully.")
