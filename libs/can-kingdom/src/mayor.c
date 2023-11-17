@@ -578,7 +578,7 @@ static ck_err_t process_kp0(const ck_page_t *page) {
     mayor.skip_listen = true;
   }
   if (mayor.comm_flags & CK_COMM_DONT_SKIP_LISTEN) {
-    mayor.skip_wait = false;
+    mayor.skip_listen = false;
   }
 
   if (mayor.comm_flags & CK_COMM_RESET) {
@@ -606,6 +606,11 @@ static ck_err_t process_kp0(const ck_page_t *page) {
         return ret;
       }
       mayor.bit_timing_saved = false;
+    }
+
+    // This state indicates a full startup skip.
+    if (mayor.skip_listen && mayor.skip_wait) {
+      mayor.startup_finished = true;
     }
   }
 
