@@ -1,7 +1,6 @@
 from canlib import canlib
 
-from rover import servo
-from rover.rover import Rover
+from rover import rover, servo
 
 with canlib.openChannel(
     channel=0,
@@ -11,9 +10,8 @@ with canlib.openChannel(
     ch.setBusOutputControl(canlib.Driver.NORMAL)
     ch.busOn()
 
-    rover = Rover(ch)
+    rover.start(ch)
 
-    rover.start()
     # Default to reversing servo direction
     ch.writeWait(servo.set_reverse_direction(), -1)
 

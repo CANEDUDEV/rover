@@ -12,8 +12,7 @@ from canlib import canlib, kvadblib
 from matplotlib.animation import FuncAnimation
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from rover import servo
-from rover.rover import Envelope, Rover
+from rover import rover, servo
 
 sent_messages = {}
 received_messages = {}
@@ -56,21 +55,21 @@ def receive_can_messages():
                     continue
 
                 with lock:
-                    if frame.id == Envelope.THROTTLE:
+                    if frame.id == rover.Envelope.THROTTLE:
                         sent_messages[str(frame.id)] = parse_frame(db, frame)
                         throttle_timestamps.append(frame.timestamp)
                         throttle_values.append(
                             int.from_bytes(frame.data[1:], byteorder="little")
                         )
 
-                    elif frame.id == Envelope.STEERING:
+                    elif frame.id == rover.Envelope.STEERING:
                         sent_messages[str(frame.id)] = parse_frame(db, frame)
                         steering_timestamps.append(frame.timestamp)
                         steering_values.append(
                             int.from_bytes(frame.data[1:], byteorder="little")
                         )
 
-                    elif frame.id == Envelope.SERVO_CURRENT:
+                    elif frame.id == rover.Envelope.SERVO_CURRENT:
                         received_messages[str(frame.id)] = parse_frame(db, frame)
                         servo_current_timestamps.append(frame.timestamp)
                         servo_current_values.append(
@@ -128,12 +127,11 @@ def send_can_messages():
         ch.setBusOutputControl(canlib.Driver.NORMAL)
         ch.busOn()
 
-        rover = Rover(ch)
-        rover.start()
+        rover.start(ch)
 
         while True:
             if restart_rover:
-                rover.start()
+                rover.start(ch)
                 restart_rover = False
 
             if keyboard.is_pressed("up"):

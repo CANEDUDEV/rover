@@ -2,8 +2,7 @@ from time import sleep
 
 from canlib import canlib
 
-from ..rover import battery
-from ..rover.rover import Rover
+from ..rover import battery, rover
 
 with canlib.openChannel(
     channel=0,
@@ -12,8 +11,8 @@ with canlib.openChannel(
 ) as ch:
     ch.setBusOutputControl(canlib.Driver.NORMAL)
     ch.busOn()
-    rover = Rover(ch)
-    rover.start()
+
+    rover.start(ch)
 
     # Set regulated output voltage to 5 V
     ch.writeWait(battery.set_reg_out_voltage_frame(5000), -1)

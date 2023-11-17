@@ -2,8 +2,7 @@ from time import sleep
 
 from canlib import canlib
 
-from ..rover import servo
-from ..rover.rover import Rover
+from ..rover import rover, servo
 
 with canlib.openChannel(
     channel=0,
@@ -12,8 +11,8 @@ with canlib.openChannel(
 ) as ch:
     ch.setBusOutputControl(canlib.Driver.NORMAL)
     ch.busOn()
-    rover = Rover(ch)
-    rover.start()
+
+    rover.start(ch)
 
     # Set servo settings
     ch.writeWait(servo.set_failsafe(servo.FAILSAFE_OFF), -1)
