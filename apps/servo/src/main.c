@@ -133,7 +133,12 @@ void start_default_letter_timer(void) {
 }
 
 ck_err_t set_action_mode(ck_action_mode_t mode) {
-  (void)mode;
+  if (mode == CK_ACTION_MODE_RESET) {
+    // This delay is there because otherwise error frames will be generated on
+    // the CAN bus. The root cause is still unknown.
+    vTaskDelay(pdMS_TO_TICKS(10));
+    HAL_NVIC_SystemReset();
+  }
   return CK_OK;
 }
 
