@@ -31,16 +31,13 @@ assignments = [
 
 
 def get_target_city(node):
-    if node == "servo":
-        return rover.City.SERVO
-    if node == "motor":
-        return rover.City.MOTOR
-    if node == "battery_monitor":
-        return rover.City.BATTERY_MONITOR
-    if node == "sbus_receiver":
-        return rover.City.SBUS_RECEIVER
-
-    return rover.City.ALL_CITIES
+    cities = {
+        "servo": rover.City.SERVO,
+        "motor": rover.City.MOTOR,
+        "battery_monitor": rover.City.BATTERY_MONITOR,
+        "sbus_receiver": rover.City.SBUS_RECEIVER,
+    }
+    return cities[node]
 
 
 def send_bootloader_command(ch, frame, timeout=100):
@@ -149,119 +146,173 @@ def flash_program(ch, binary_data):
         sys.exit(1)
 
 
-parser = argparse.ArgumentParser(description="Flash Rover firmware over CAN.")
+def verify_file(file):
+    file_path = Path(file)
+    if not file_path.exists():
+        print(f'error: file "{file}" not found.')
+        sys.exit(1)
 
-parser.add_argument(
-    "target_node",
-    choices=["servo", "motor", "battery_monitor", "sbus_receiver"],
-    help="Which node to flash.",
-)
-
-parser.add_argument("binary_file", help="Binary file to flash.")
-
-args = parser.parse_args()
-
-target_city = get_target_city(args.target_node)
-
-target_file = Path(args.binary_file)
-if target_file.suffix != ".bin":
-    print(
-        f'Incorrect file extension for binary file {target_file}. Please provide a ".bin" file.'
-    )
-    sys.exit(1)
-
-# Open file and store contents in binary_data
-try:
-    with open(target_file, "rb") as file:
-        binary_data = file.read()
-except:
-    print(f"Couldn't open {args.binary_file}. Exiting...")
-    sys.exit(1)
+    if file_path.suffix != ".bin":
+        print(
+            f'Incorrect file extension for binary file {file}. Please provide a ".bin" file.'
+        )
+        sys.exit(1)
 
 
-print("Setting up CAN...")
+def read_file(file):
+    try:
+        with open(Path(file), "rb") as f:
+            return f.read()
+    except:
+        print(f"Couldn't open {file}. Exiting...")
+        sys.exit(1)
 
-with canlib.openChannel(
-    channel=0,
-    flags=canlib.Open.REQUIRE_INIT_ACCESS,
-    bitrate=canlib.Bitrate.BITRATE_125K,
-) as ch:
-    ch.setBusOutputControl(canlib.Driver.NORMAL)
-    ch.busOn()
 
-    print("Restarting nodes...")
-    ch.writeWait(rover.restart(city=rover.City.ALL_CITIES), -1)
+def prepare_flash():
+    with canlib.openChannel(
+        channel=0,
+        flags=canlib.Open.REQUIRE_INIT_ACCESS,
+        bitrate=canlib.Bitrate.BITRATE_125K,
+    ) as ch:
+        ch.setBusOutputControl(canlib.Driver.NORMAL)
+        ch.busOn()
 
-    time.sleep(0.05)  # Wait 50 ms for nodes to restart
+        print("Restarting nodes...")
+        ch.writeWait(rover.restart(), -1)
 
-    ch.writeWait(rover.default_letter(), -1)
+        time.sleep(0.05)  # Wait 50 ms for nodes to restart
 
-    # All cities should enter bootloader to avoid starting the application
-    # during flash. Therefore, we must assign the envelopes for all cities.
-    for assignment in assignments:
-        envelope = assignment[0]
-        folder = assignment[1]
-        ch.writeWait(rover.assign_envelope(rover.City.ALL_CITIES, envelope, folder), -1)
+        ch.writeWait(rover.default_letter(), -1)
 
-    # We only set the target city to communicate mode and assume the other
-    # cities have entered the bootloader, without checking their ACK.
-    ch.writeWait(rover.set_silent_mode(city=rover.City.ALL_CITIES), -1)
-    ch.writeWait(rover.set_communicate(city=target_city), -1)
+        # All cities should enter bootloader to avoid starting the application
+        # during flash. Therefore, we must assign the envelopes for all cities.
+        for assignment in assignments:
+            envelope = assignment[0]
+            folder = assignment[1]
+            ch.writeWait(
+                rover.assign_envelope(rover.City.ALL_CITIES, envelope, folder), -1
+            )
 
-    # Because all nodes except the target are in silent mode, this command will
-    # fail if target node is not found.
-    print("Trying to find target node...")
-    send_bootloader_command(ch, enter_bootloader())
+        # We only set the target city to communicate mode and assume the other
+        # cities have entered the bootloader, without checking their ACK.
+        # ch.writeWait(rover.set_silent_mode(city=rover.City.ALL_CITIES), -1)
+        # ch.writeWait(rover.set_communicate(city=target_city), -1)
 
-    ch.writeWait(rover.change_bitrate_1mbit(), -1)
+        # Set communicate mode so we can receive ACKs
+        ch.writeWait(rover.set_communicate(), -1)
 
-    # Restarting communication means all nodes will be put in silent mode.
-    ch.writeWait(rover.restart_communication(skip_startup=True), -1)
+        # All nodes will ACK, it's OK if at least one ACKs.
+        send_bootloader_command(ch, enter_bootloader())
 
-    ch.busOff()
+        # Switch to 1 Mbit/s for flashing
+        ch.writeWait(rover.change_bitrate_1mbit(), -1)
 
-# Switch to 1 Mbit/s for flashing
-with canlib.openChannel(
-    channel=0,
-    flags=canlib.Open.REQUIRE_INIT_ACCESS,
-    bitrate=canlib.Bitrate.BITRATE_1M,
-) as ch:
-    ch.setBusOutputControl(canlib.Driver.NORMAL)
-    ch.busOn()
+        # Restarting communication means all nodes will be put in silent mode.
+        ch.writeWait(rover.restart_communication(skip_startup=True), -1)
 
-    print(f"Starting flash procedure for {target_city.name} node...")
+        ch.busOff()
 
-    # Set only city to flash to communicate mode
-    ch.writeWait(rover.set_communicate(city=target_city), -1)
+    time.sleep(0.01)  # Give time for bitrate change
 
-    # Erase as many pages as required to fit the application
-    print("Erasing target flash...")
-    send_bootloader_command(ch, flash_erase(len(binary_data)), timeout=10_000)
 
-    print("Flashing new binary...")
-    flash_program(ch, binary_data)
+def flash_node(node, binary_data):
+    with canlib.openChannel(
+        channel=0,
+        flags=canlib.Open.REQUIRE_INIT_ACCESS,
+        bitrate=canlib.Bitrate.BITRATE_1M,
+    ) as ch:
+        ch.setBusOutputControl(canlib.Driver.NORMAL)
+        ch.busOn()
 
-    ch.writeWait(rover.change_bitrate_125kbit(), -1)
+        print(f"Starting flash procedure for {node.name} node...")
 
-    # Restarting communication means all nodes will be put in silent mode.
-    ch.writeWait(rover.restart_communication(skip_startup=True), -1)
+        # Set target to communicate
+        ch.writeWait(rover.set_communicate(city=node), -1)
 
-    ch.busOff()
+        # Erase as many pages as required to fit the application
+        print("Erasing target flash...")
+        send_bootloader_command(ch, flash_erase(len(binary_data)), timeout=10_000)
 
-# Switch back to 125 kbit/s before exiting bootloader.
-with canlib.openChannel(
-    channel=0,
-    flags=canlib.Open.REQUIRE_INIT_ACCESS,
-    bitrate=canlib.Bitrate.BITRATE_125K,
-) as ch:
-    ch.setBusOutputControl(canlib.Driver.NORMAL)
-    ch.busOn()
+        print("Flashing new binary...")
+        flash_program(ch, binary_data)
 
-    # Set communicate mode so we can receive ACK
-    ch.writeWait(rover.set_communicate(city=target_city), -1)
+        # Go back to silent for this target
+        ch.writeWait(rover.set_silent_mode(city=node), -1)
+        ch.busOff()
 
-    send_bootloader_command(ch, exit_bootloader())
 
-    ch.busOff()
+# Switch back to 125 kbit/s, then exit bootloader.
+def finalize_flash():
+    with canlib.openChannel(
+        channel=0,
+        flags=canlib.Open.REQUIRE_INIT_ACCESS,
+        bitrate=canlib.Bitrate.BITRATE_1M,
+    ) as ch:
+        ch.setBusOutputControl(canlib.Driver.NORMAL)
+        ch.busOn()
 
-print("Finished successfully.")
+        # Set all to communicate to avoid error frames
+        ch.writeWait(rover.set_communicate(), -1)
+        ch.writeWait(rover.change_bitrate_125kbit(), -1)
+
+        # Restarting communication means all nodes will be put in silent mode.
+        ch.writeWait(rover.restart_communication(skip_startup=True), -1)
+
+    time.sleep(0.01)  # Give time for bitrate change
+
+    with canlib.openChannel(
+        channel=0,
+        flags=canlib.Open.REQUIRE_INIT_ACCESS,
+        bitrate=canlib.Bitrate.BITRATE_125K,
+    ) as ch:
+        ch.setBusOutputControl(canlib.Driver.NORMAL)
+        ch.busOn()
+
+        # Set communicate mode so we can receive ACK
+        ch.writeWait(rover.set_communicate(), -1)
+
+        send_bootloader_command(ch, exit_bootloader())
+
+        ch.busOff()
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Flash Rover firmware over CAN.")
+
+    node_choices = ["servo", "motor", "battery_monitor", "sbus_receiver"]
+    for node in node_choices:
+        parser.add_argument(
+            f"--{node}",
+            dest=node,
+            metavar=f"{node.upper()}_FILE",
+            help=f"Binary file for {node} node.",
+        )
+
+    args = parser.parse_args()
+
+    print("Checking binaries...")
+    node_binary_map = {}
+    for node in node_choices:
+        file_path = getattr(args, node)
+        if not file_path:
+            continue
+
+        verify_file(file_path)
+        node_binary_map[get_target_city(node)] = read_file(file_path)
+
+    if not node_binary_map:
+        parser.print_usage()
+        sys.exit(0)
+
+    prepare_flash()
+
+    for node, binary in node_binary_map.items():
+        flash_node(node, binary)
+
+    finalize_flash()
+
+    print("Finished successfully.")
+
+
+if __name__ == "__main__":
+    main()
