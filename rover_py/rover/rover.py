@@ -143,6 +143,11 @@ def restart_communication(city=City.ALL_CITIES, skip_startup=False):
     return Frame(id_=0, dlc=8, data=[city, 0, 0, flags, 0, 0, 0, 0])
 
 
+# Perform a software reset of the target CPU
+def restart(city=City.ALL_CITIES):
+    return Frame(id_=0, dlc=8, data=[city, 0, 0x3, 0, 0, 0, 0, 0])
+
+
 # Start the kingdom
 def start(channel):
     if channel is None:
