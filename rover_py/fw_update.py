@@ -1,13 +1,11 @@
 import argparse
 import sys
+import time
 from pathlib import Path
 
 from canlib import Frame, canlib
 
 from rover import rover
-
-# TODO: only address node to be flashed.
-BOOTLOADER_ADDRESS = 0  # Address all nodes
 
 COMMAND_ACK_ID = 0x100
 FLASH_PROGRAM_ID = 0x101
@@ -46,6 +44,7 @@ def get_target_city(node):
 
 
 def send_bootloader_command(ch, frame, timeout=100):
+    ch.iocontrol.flush_rx_buffer()
     ch.write(frame)
 
     try:
@@ -180,8 +179,6 @@ except:
     sys.exit(1)
 
 
-identified_cities = []
-
 print("Setting up CAN...")
 
 with canlib.openChannel(
@@ -192,47 +189,12 @@ with canlib.openChannel(
     ch.setBusOutputControl(canlib.Driver.NORMAL)
     ch.busOn()
 
-    # TODO: Implement a way to reboot the devices in case we start the script on a running system
+    print("Restarting nodes...")
+    ch.writeWait(rover.restart(city=rover.City.ALL_CITIES), -1)
 
-    print("Trying to find nodes in the bootloader...")
+    time.sleep(0.05)  # Wait 50 ms for nodes to restart
+
     ch.writeWait(rover.default_letter(), -1)
-
-    # Give base number and ask for response page 2.
-    # All nodes currently in the bootloader will respond,
-    # since page 2 is only present in the bootloader.
-    ch.writeWait(rover.give_base_number(response_page=2), -1)
-
-    # Gather responses
-    try:
-        while True:
-            frame = ch.read(timeout=100)
-
-            if frame.flags & canlib.MessageFlag.ERROR_FRAME:
-                continue
-
-            if is_bootloader_mayor(frame):
-                # Add the city ID to cities
-                identified_cities.append(frame.id - rover.ROVER_BASE_NUMBER)
-
-    except canlib.exceptions.CanNoMsg:
-        pass
-
-    print("Identified nodes in bootloader: ")
-    for i, city in enumerate(identified_cities):
-        try:
-            city_name = f"{rover.City(city).name}"
-        except ValueError:
-            city_name = f"unknown node number ({city})"
-
-        print(f"\t{i}: {city_name}")
-
-    print()
-
-    if target_city.value not in identified_cities:
-        print(f"Couldn't find {args.target_node} node on the bus. Exiting...")
-        sys.exit(1)
-
-    print(f"Starting flash procedure for {target_city.name} node...")
 
     # All cities should enter bootloader to avoid starting the application
     # during flash. Therefore, we must assign the envelopes for all cities.
@@ -243,7 +205,12 @@ with canlib.openChannel(
 
     # We only set the target city to communicate mode and assume the other
     # cities have entered the bootloader, without checking their ACK.
+    ch.writeWait(rover.set_silent_mode(city=rover.City.ALL_CITIES), -1)
     ch.writeWait(rover.set_communicate(city=target_city), -1)
+
+    # Because all nodes except the target are in silent mode, this command will
+    # fail if target node is not found.
+    print("Trying to find target node...")
     send_bootloader_command(ch, enter_bootloader())
 
     ch.writeWait(rover.change_bitrate_1mbit(), -1)
@@ -261,6 +228,8 @@ with canlib.openChannel(
 ) as ch:
     ch.setBusOutputControl(canlib.Driver.NORMAL)
     ch.busOn()
+
+    print(f"Starting flash procedure for {target_city.name} node...")
 
     # Set only city to flash to communicate mode
     ch.writeWait(rover.set_communicate(city=target_city), -1)
