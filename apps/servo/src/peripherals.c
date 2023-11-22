@@ -40,8 +40,6 @@ void peripherals_init(void) {
   tim1_init();
 }
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim);
-
 void adc1_init(void) {
   ADC_HandleTypeDef* hadc1 = &peripherals.hadc1;
   ADC_MultiModeTypeDef multimode;
@@ -236,9 +234,7 @@ void spi3_init(void) {
 void tim1_init(void) {
   TIM_HandleTypeDef* htim1 = &peripherals.htim1;
   TIM_ClockConfigTypeDef clock_source_config;
-  TIM_MasterConfigTypeDef master_config;
   TIM_OC_InitTypeDef config_oc;
-  TIM_BreakDeadTimeConfigTypeDef break_dead_time_config;
 
   htim1->Instance = TIM1;
   htim1->Init.Prescaler = PWM_PSC_1MHZ;
@@ -250,19 +246,16 @@ void tim1_init(void) {
   if (HAL_TIM_Base_Init(htim1) != HAL_OK) {
     error();
   }
+
   clock_source_config.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   if (HAL_TIM_ConfigClockSource(htim1, &clock_source_config) != HAL_OK) {
     error();
   }
+
   if (HAL_TIM_PWM_Init(htim1) != HAL_OK) {
     error();
   }
-  master_config.MasterOutputTrigger = TIM_TRGO_RESET;
-  master_config.MasterOutputTrigger2 = TIM_TRGO2_RESET;
-  master_config.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(htim1, &master_config) != HAL_OK) {
-    error();
-  }
+
   config_oc.OCMode = TIM_OCMODE_PWM1;
   config_oc.Pulse = PWM_MID_POS_PULSE;
   config_oc.OCPolarity = TIM_OCPOLARITY_HIGH;
@@ -272,22 +265,18 @@ void tim1_init(void) {
   if (HAL_TIM_PWM_ConfigChannel(htim1, &config_oc, TIM_CHANNEL_4) != HAL_OK) {
     error();
   }
-  break_dead_time_config.OffStateRunMode = TIM_OSSR_DISABLE;
-  break_dead_time_config.OffStateIDLEMode = TIM_OSSI_DISABLE;
-  break_dead_time_config.LockLevel = TIM_LOCKLEVEL_OFF;
-  break_dead_time_config.DeadTime = 0;
-  break_dead_time_config.BreakState = TIM_BREAK_DISABLE;
-  break_dead_time_config.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-  break_dead_time_config.BreakFilter = 0;
-  break_dead_time_config.Break2State = TIM_BREAK2_DISABLE;
-  break_dead_time_config.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
-  break_dead_time_config.Break2Filter = 0;
-  break_dead_time_config.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
-  if (HAL_TIMEx_ConfigBreakDeadTime(htim1, &break_dead_time_config) != HAL_OK) {
-    error();
-  }
 
-  HAL_TIM_MspPostInit(htim1);
+  GPIO_InitTypeDef gpio_init;
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  /**TIM1 GPIO Configuration
+  PC3     ------> TIM1_CH4
+  */
+  gpio_init.Pin = SERVO_PWM_PIN;
+  gpio_init.Mode = GPIO_MODE_AF_PP;
+  gpio_init.Pull = GPIO_NOPULL;
+  gpio_init.Speed = GPIO_SPEED_FREQ_HIGH;
+  gpio_init.Alternate = GPIO_AF2_TIM1;
+  HAL_GPIO_Init(SERVO_PWM_GPIO_PORT, &gpio_init);
 }
 
 void dma_init(void) {
@@ -670,21 +659,6 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base) {
   }
 }
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim) {
-  GPIO_InitTypeDef gpio_init;
-  if (htim->Instance == TIM1) {
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-    /**TIM1 GPIO Configuration
-    PC3     ------> TIM1_CH4
-    */
-    gpio_init.Pin = SERVO_PWM_PIN;
-    gpio_init.Mode = GPIO_MODE_AF_PP;
-    gpio_init.Pull = GPIO_NOPULL;
-    gpio_init.Speed = GPIO_SPEED_FREQ_HIGH;
-    gpio_init.Alternate = GPIO_AF2_TIM1;
-    HAL_GPIO_Init(SERVO_PWM_GPIO_PORT, &gpio_init);
-  }
-}
 /**
  * @brief TIM_Base MSP De-Initialization
  * This function freeze the hardware resources used in this example
