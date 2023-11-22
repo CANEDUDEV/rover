@@ -9,6 +9,7 @@ servo_src = files(
   'src' / 'interrupts.c',
   'src' / 'main.c',
   'src' / 'peripherals.c',
+  'src' / 'pid.c',
   'src' / 'potentiometer.c',
   'src' / 'pwm.c',
 )

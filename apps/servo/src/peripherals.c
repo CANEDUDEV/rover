@@ -26,6 +26,7 @@ void i2c3_init(void);
 void spi3_init(void);
 void tim1_init(void);
 void tim16_init(void);
+void h_bridge_init(void);
 
 peripherals_t* get_peripherals(void) { return &peripherals; }
 
@@ -60,7 +61,7 @@ void adc1_init(void) {
   hadc1->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1->Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1->Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1->Init.NbrOfConversion = 3;
+  hadc1->Init.NbrOfConversion = 4;
   hadc1->Init.DMAContinuousRequests = DISABLE;
   hadc1->Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1->Init.LowPowerAutoWait = DISABLE;
@@ -100,6 +101,14 @@ void adc1_init(void) {
    */
   config.Channel = ADC_CHANNEL_4;
   config.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(hadc1, &config) != HAL_OK) {
+    error();
+  }
+
+  /** Configure Regular Channel
+   */
+  config.Channel = ADC_CHANNEL_9;
+  config.Rank = ADC_REGULAR_RANK_4;
   if (HAL_ADC_ConfigChannel(hadc1, &config) != HAL_OK) {
     error();
   }
@@ -463,6 +472,16 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     gpio_init.Mode = GPIO_MODE_ANALOG;
     gpio_init.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(SENSOR_GPIO_PORT, &gpio_init);
+
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    /**ADC1 GPIO Configuration
+    PC3     ------> ADC1_IN9
+    */
+    gpio_init.Pin = SERVO_PWM_PIN;
+    gpio_init.Mode = GPIO_MODE_ANALOG;
+    gpio_init.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(SERVO_PWM_GPIO_PORT, &gpio_init);
+
     adc1_dma_init(hadc);
 
   } else if (hadc->Instance == ADC2) {
@@ -506,6 +525,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
     */
     HAL_GPIO_DeInit(SENSOR_GPIO_PORT,
                     SENSOR_PIN | SERVO_CURRENT_PIN | BAT_VOLTAGE_PIN);
+    HAL_GPIO_DeInit(SERVO_PWM_GPIO_PORT, SERVO_PWM_PIN);
 
     /* ADC1 DMA DeInit */
     HAL_DMA_DeInit(hadc->DMA_Handle);

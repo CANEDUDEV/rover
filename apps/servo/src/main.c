@@ -48,7 +48,8 @@ int main(void) {
   }
 
   // Configure potentiometers
-  configure_both_potentiometers(POT_SERVO_DEFAULT, POT_SENSOR_DEFAULT);
+  // 187 gives 3.3V on servo port
+  configure_both_potentiometers(187, POT_SENSOR_DEFAULT);  // NOLINT
 
   pwm_init();
   pwm_set_pulse(PWM_NEUTRAL_PULSE_MUS);  // Start at neutral

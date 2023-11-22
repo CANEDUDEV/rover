@@ -15,6 +15,10 @@ int16_t adc_to_servo_position(uint16_t adc_value) {
   return (int16_t)roundf(angle);
 }
 
+uint16_t adc_to_servo_pot_voltage(uint16_t adc_value) {
+  return (ADC_REF_VOLTAGE * adc_value) / ADC_RESOLUTION;
+}
+
 /* The LT6106 current sensor specifies that
  * i_sense = v_out * r_in / (r_sense * r_out).
  * v_out is measured by ADC, v_out = ADC_REF_VOLTAGE * adc_value /
@@ -68,8 +72,8 @@ uint16_t adc_to_servo_voltage(uint16_t adc_value) {
  * Specified relationship between VPROPI and Vsense: Vsense = VPROPI / 5
  * Thus, i_sense = Vsense / r_sense = VPROPI / (r_sense * 5)
  * VPROPI is measured by ADC, VPROPI = ADC_REF_VOLTAGE * adc_value /
- * ADC_RESOLUTION r_sense = R33 = 0.2 Ohm (from servo board rev. E schematic) To
- * simplify, i_sense = VPROPI / (0.2*5) = VPROPI
+ * ADC_RESOLUTION r_sense = R33 = 0.2 Ohm (from servo board rev. E schematic)
+ * To simplify, i_sense = VPROPI / (0.2*5) = VPROPI
  */
 uint16_t adc_to_h_bridge_current(uint16_t adc_value) {
   // Currents in mA

@@ -1,5 +1,6 @@
 #include "freertos-tasks.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -7,6 +8,7 @@
 #include "ck-data.h"
 #include "ck-rx-letters.h"
 #include "peripherals.h"
+#include "pid.h"
 #include "ports.h"
 #include "potentiometer.h"
 
@@ -20,6 +22,7 @@
 // CK
 #include "king.h"
 #include "mayor.h"
+#include "stm32f3xx_hal_adc.h"
 #include "types.h"
 
 // FreeRTOS
@@ -27,7 +30,8 @@
 #include "task.h"
 #include "timers.h"
 
-#define MEASURE_DEFAULT_PERIOD_MS 20
+// #define MEASURE_DEFAULT_PERIOD_MS 20
+#define MEASURE_DEFAULT_PERIOD_MS 1
 #define REPORT_DEFAULT_PERIOD_MS 100
 #define LOWEST_TASK_PRIORITY 24
 
@@ -42,7 +46,7 @@ static StackType_t king_stack[configMINIMAL_STACK_SIZE];
 
 static TaskHandle_t measure_task;
 static StaticTask_t measure_buf;
-static StackType_t measure_stack[configMINIMAL_STACK_SIZE];
+static StackType_t measure_stack[2 * configMINIMAL_STACK_SIZE];
 
 static TaskHandle_t report_task;
 static StaticTask_t report_buf;
@@ -79,7 +83,7 @@ void task_init(void) {
                         LOWEST_TASK_PRIORITY, report_stack, &report_buf);
 
   measure_task =
-      xTaskCreateStatic(measure, "measure", configMINIMAL_STACK_SIZE, NULL,
+      xTaskCreateStatic(measure, "measure", 2 * configMINIMAL_STACK_SIZE, NULL,
                         LOWEST_TASK_PRIORITY + 1, measure_stack, &measure_buf);
 
   process_letter_task = xTaskCreateStatic(
@@ -372,6 +376,109 @@ void h_bridge_start(void) {
   }
 }
 
+static float setpoint_min = 0;
+static float setpoint_max = 0;
+static float setpoint = 0;
+
+// NOLINTBEGIN(*-magic-numbers)
+static PIDController pid = {
+    .Kp = 0.0750F,
+    .Ki = 0.0350F,
+    .Kd = 0.0005F,
+
+    .T = (float)MEASURE_DEFAULT_PERIOD_MS / 1000,
+
+    .tau = 0.01F,
+
+    .limMax = 239.0F,
+    .limMin = -239.0F,
+
+    .limMaxInt = 239.0F,
+    .limMinInt = -239.0F,
+};
+// NOLINTEND(*-magic-numbers)
+
+void find_max_brake(void) {
+  peripherals_t *peripherals = get_peripherals();
+  uint16_t adc1_buf[4];
+  uint16_t adc2_buf[2];
+
+  HAL_GPIO_WritePin(H_BRIDGE_PHASE_GPIO_PORT, H_BRIDGE_PHASE_PIN,
+                    GPIO_PIN_RESET);
+
+  __HAL_TIM_SET_COMPARE(&peripherals->htim16, TIM_CHANNEL_1, 150);
+
+  vTaskDelay(pdMS_TO_TICKS(1000));
+
+  // Start both ADCs
+  HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc1_buf,
+                    sizeof(adc1_buf) / sizeof(uint16_t));
+  HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc2_buf,
+                    sizeof(adc2_buf) / sizeof(uint16_t));
+
+  // Wait for DMA
+  ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+  uint16_t servo_pot_voltage = adc_to_servo_pot_voltage(adc1_buf[3]);
+  setpoint_max = roundf((float)servo_pot_voltage / 10);  // NOLINT
+}
+
+void find_min_brake(void) {
+  peripherals_t *peripherals = get_peripherals();
+  uint16_t adc1_buf[4];
+  uint16_t adc2_buf[2];
+  // FIND MIN
+  HAL_GPIO_WritePin(H_BRIDGE_PHASE_GPIO_PORT, H_BRIDGE_PHASE_PIN, GPIO_PIN_SET);
+  vTaskDelay(pdMS_TO_TICKS(1000));
+  // Start both ADCs
+  HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc1_buf,
+                    sizeof(adc1_buf) / sizeof(uint16_t));
+  HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc2_buf,
+                    sizeof(adc2_buf) / sizeof(uint16_t));
+  // Wait for DMA
+  ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+  uint16_t servo_pot_voltage = adc_to_servo_pot_voltage(adc1_buf[3]);
+  setpoint_min = roundf((float)servo_pot_voltage / 10);  // NOLINT
+}
+
+void calibrate_brake(void) {
+  peripherals_t *peripherals = get_peripherals();
+  find_max_brake();
+  find_min_brake();
+  setpoint = setpoint_min;
+  __HAL_TIM_SET_COMPARE(&peripherals->htim16, TIM_CHANNEL_1, 0);
+}
+
+uint16_t update_pid(uint16_t servo_pot_voltage) {
+  pid.T = (float)task_periods.measure_period_ms / 1000;  // NOLINT
+
+  // simple noise filtering
+  float measurement = roundf((float)servo_pot_voltage / 10);  // NOLINT
+
+  if (setpoint > setpoint_max) {
+    setpoint = setpoint_max;
+  }
+  if (setpoint < setpoint_min) {
+    setpoint = setpoint_min;
+  }
+
+  int pwm_value =
+      (int)roundf(PIDController_Update(&pid, setpoint, measurement));
+
+  if (pwm_value > 0) {  // CW rotation needed
+    HAL_GPIO_WritePin(H_BRIDGE_PHASE_GPIO_PORT, H_BRIDGE_PHASE_PIN,
+                      GPIO_PIN_SET);
+  }
+
+  else if (pwm_value < 0) {  // CCW needed
+    HAL_GPIO_WritePin(H_BRIDGE_PHASE_GPIO_PORT, H_BRIDGE_PHASE_PIN,
+                      GPIO_PIN_RESET);
+    pwm_value = -pwm_value;
+  }
+  return (uint16_t)pwm_value;
+}
+
 void measure(void *unused) {
   (void)unused;
 
@@ -384,22 +491,32 @@ void measure(void *unused) {
       NULL,     // Timer ID, unused
       measure_timer, &timer_buf);
 
-  uint16_t adc1_buf[3];
+  uint16_t adc1_buf[4];
   uint16_t adc2_buf[2];
   ck_data_t *ck_data = get_ck_data();
 
   int16_t servo_position = 0;
+  uint16_t servo_pot_voltage = 0;
   uint16_t servo_current = 0;
   uint16_t battery_voltage = 0;
   uint16_t servo_voltage = 0;
   uint16_t h_bridge_current = 0;
 
   h_bridge_start();
+  calibrate_brake();
+
+  PIDController_Init(&pid);
+
+  printf("setpoint min: %d, max: %d\r\n", (int)setpoint_min, (int)setpoint_max);
+
+  xTimerStart(timer, portMAX_DELAY);
 
   for (;;) {
-    xTimerChangePeriod(timer, task_periods.measure_period_ms, portMAX_DELAY);
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
 
+    // Restart timer
+    xTimerChangePeriod(timer, pdMS_TO_TICKS(task_periods.measure_period_ms),
+                       portMAX_DELAY);
     // Start both ADCs
     HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc1_buf,
                       sizeof(adc1_buf) / sizeof(uint16_t));
@@ -412,6 +529,7 @@ void measure(void *unused) {
     servo_position = adc_to_servo_position(adc1_buf[0]);
     servo_current = adc_to_servo_current(adc1_buf[1]);
     battery_voltage = adc_to_battery_voltage(adc1_buf[2]);
+    servo_pot_voltage = adc_to_servo_pot_voltage(adc1_buf[3]);
     servo_voltage = adc_to_servo_voltage(adc2_buf[0]);
     h_bridge_current = adc_to_h_bridge_current(adc2_buf[1]);
     memcpy(ck_data->servo_position_page->lines, &servo_position,
@@ -424,6 +542,9 @@ void measure(void *unused) {
            sizeof(servo_voltage));
     memcpy(ck_data->h_bridge_current_page->lines, &h_bridge_current,
            sizeof(h_bridge_current));
+
+    __HAL_TIM_SET_COMPARE(&peripherals->htim16, TIM_CHANNEL_1,
+                          update_pid(servo_pot_voltage));
   }
 }
 
