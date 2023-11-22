@@ -320,8 +320,8 @@ void gpio_init(void) {
                     GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(H_BRIDDGE_MODE2_GPIO_PORT,
-                    H_BRIDDGE_MODE2_PIN | H_BRIDGE_PHASE_PIN, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(H_BRIDGE_MODE2_GPIO_PORT,
+                    H_BRIDGE_MODE2_PIN | H_BRIDGE_PHASE_PIN, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(H_BRIDGE_nSLEEP_GPIO_PORT, H_BRIDGE_nSLEEP_PIN,
@@ -338,12 +338,12 @@ void gpio_init(void) {
   gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DEBUG_LED_GPIO_PORT, &gpio_init);
 
-  /*Configure GPIO pins : H_BRIDDGE_MODE2_PIN H_BRIDGE_PHASE_PIN */
-  gpio_init.Pin = H_BRIDDGE_MODE2_PIN | H_BRIDGE_PHASE_PIN;
+  /*Configure GPIO pins : H_BRIDGE_MODE2_PIN H_BRIDGE_PHASE_PIN */
+  gpio_init.Pin = H_BRIDGE_MODE2_PIN | H_BRIDGE_PHASE_PIN;
   gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
   gpio_init.Pull = GPIO_NOPULL;
   gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(H_BRIDDGE_MODE2_GPIO_PORT, &gpio_init);
+  HAL_GPIO_Init(H_BRIDGE_MODE2_GPIO_PORT, &gpio_init);
 
   /*Configure GPIO pin : H_BRIDGE_nSLEEP_PIN */
   gpio_init.Pin = H_BRIDGE_nSLEEP_PIN;
