@@ -48,8 +48,7 @@ int main(void) {
   }
 
   // Configure potentiometers
-  configure_servo_potentiometer(POT_SERVO_DEFAULT);
-  configure_sensor_potentiometer(POT_SENSOR_DEFAULT);
+  configure_both_potentiometers(POT_SERVO_DEFAULT, POT_SENSOR_DEFAULT);
 
   pwm_init();
   pwm_set_pulse(PWM_NEUTRAL_PULSE_MUS);  // Start at neutral

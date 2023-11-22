@@ -20,3 +20,10 @@ void configure_sensor_potentiometer(uint8_t pot_value) {
   HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivrb_write,
                           sizeof(ivrb_write), HAL_MAX_DELAY);
 }
+
+void configure_both_potentiometers(uint8_t servo_pot, uint8_t sensor_pot) {
+  peripherals_t *peripherals = get_peripherals();
+  uint8_t ivr_write[3] = {POT_IVRA_ADDR, servo_pot, sensor_pot};
+  HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivr_write,
+                          sizeof(ivr_write), HAL_MAX_DELAY);
+}
