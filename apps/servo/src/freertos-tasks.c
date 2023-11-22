@@ -7,6 +7,7 @@
 #include "ck-data.h"
 #include "ck-rx-letters.h"
 #include "peripherals.h"
+#include "ports.h"
 #include "potentiometer.h"
 
 // STM32Common
@@ -347,6 +348,30 @@ void start_communication(void) {
                        page.lines, &mailbox);
 }
 
+void h_bridge_start(void) {
+  HAL_GPIO_WritePin(H_BRIDGE_MODE1_GPIO_PORT, H_BRIDGE_MODE1_PIN,
+                    GPIO_PIN_RESET);
+
+  HAL_GPIO_WritePin(H_BRIDGE_MODE2_GPIO_PORT, H_BRIDGE_MODE2_PIN,
+                    GPIO_PIN_RESET);
+
+  // PHASE controls direction of servo movement.
+  // PHASE == 0 => counter-clockwise movement (brake)
+  // PHASE == 1 => clockwise movement
+  HAL_GPIO_WritePin(H_BRIDGE_PHASE_GPIO_PORT, H_BRIDGE_PHASE_PIN, GPIO_PIN_SET);
+
+  // Start h-bridge
+  HAL_GPIO_WritePin(H_BRIDGE_nSLEEP_GPIO_PORT, H_BRIDGE_nSLEEP_PIN,
+                    GPIO_PIN_SET);
+
+  // Start PWM on h-bridge ENABLE pin
+  peripherals_t *peripherals = get_peripherals();
+  __HAL_TIM_SET_COMPARE(&peripherals->htim16, TIM_CHANNEL_1, 0);
+  if (HAL_TIM_PWM_Start(&peripherals->htim16, TIM_CHANNEL_1) != HAL_OK) {
+    printf("Failed to start tim16 pwm\r\n");
+  }
+}
+
 void measure(void *unused) {
   (void)unused;
 
@@ -368,6 +393,8 @@ void measure(void *unused) {
   uint16_t battery_voltage = 0;
   uint16_t servo_voltage = 0;
   uint16_t h_bridge_current = 0;
+
+  h_bridge_start();
 
   for (;;) {
     xTimerChangePeriod(timer, task_periods.measure_period_ms, portMAX_DELAY);

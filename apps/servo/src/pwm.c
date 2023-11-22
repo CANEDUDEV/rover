@@ -2,6 +2,7 @@
 #include "peripherals.h"
 
 void pwm_init(void) {
+  return;
   peripherals_t *peripherals = get_peripherals();
   if (HAL_TIM_PWM_Start(&peripherals->htim1, TIM_CHANNEL_4) != HAL_OK) {
     error();
@@ -9,6 +10,7 @@ void pwm_init(void) {
 }
 
 void pwm_set_pulse(uint32_t pulse_mus) {
+  return;
   peripherals_t *peripherals = get_peripherals();
 
   // Write new pulse to timer CCR register
@@ -16,6 +18,7 @@ void pwm_set_pulse(uint32_t pulse_mus) {
 }
 
 void pwm_set_frequency(uint16_t frequency_hz) {
+  return;
   // Timer is prescaled to 1MHz, so a reload value of 1 equals 1 microsecond.
   // Frequency is defined as f = 1/s => s = 1/f => µs = 1 000 000 / f.
   // STM32 timer driver requires value to be subtracted by 1.

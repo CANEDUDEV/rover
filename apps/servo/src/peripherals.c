@@ -8,7 +8,9 @@
 
 // Some definitions for PWM
 #define PWM_PSC_1MHZ (72 - 1)
+#define PWM_PSC_12MHZ (6 - 1)
 #define PWM_PERIOD_50HZ (20000 - 1)
+#define PWM_PERIOD_50KHZ (240 - 1)
 #define PWM_MID_POS_PULSE 1500  // 1500 microseconds
 
 static peripherals_t peripherals;
@@ -23,6 +25,7 @@ void i2c1_init(void);
 void i2c3_init(void);
 void spi3_init(void);
 void tim1_init(void);
+void tim16_init(void);
 
 peripherals_t* get_peripherals(void) { return &peripherals; }
 
@@ -37,7 +40,8 @@ void peripherals_init(void) {
   i2c1_init();
   i2c3_init();
   spi3_init();
-  tim1_init();
+  // tim1_init();
+  tim16_init();
 }
 
 void adc1_init(void) {
@@ -279,6 +283,51 @@ void tim1_init(void) {
   HAL_GPIO_Init(SERVO_PWM_GPIO_PORT, &gpio_init);
 }
 
+void tim16_init(void) {
+  TIM_HandleTypeDef* htim16 = &peripherals.htim16;
+  TIM_ClockConfigTypeDef clock_source_config;
+  TIM_OC_InitTypeDef config_oc;
+
+  htim16->Instance = TIM16;
+  htim16->Init.Prescaler = PWM_PSC_12MHZ;
+  htim16->Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim16->Init.Period = PWM_PERIOD_50KHZ;
+  htim16->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim16->Init.RepetitionCounter = 0;
+  htim16->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(htim16) != HAL_OK) {
+    error();
+  }
+  clock_source_config.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(htim16, &clock_source_config) != HAL_OK) {
+    error();
+  }
+  if (HAL_TIM_PWM_Init(htim16) != HAL_OK) {
+    error();
+  }
+  config_oc.OCMode = TIM_OCMODE_PWM1;
+  config_oc.Pulse = 0;  // Start with no pulse
+  config_oc.OCPolarity = TIM_OCPOLARITY_HIGH;
+  config_oc.OCFastMode = TIM_OCFAST_DISABLE;
+  config_oc.OCIdleState = TIM_OCIDLESTATE_RESET;
+  config_oc.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(htim16, &config_oc, TIM_CHANNEL_1) != HAL_OK) {
+    error();
+  }
+
+  GPIO_InitTypeDef gpio_init;
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  /**TIM16 GPIO Configuration
+  PA6    ------> TIM16_CH1
+  */
+  gpio_init.Pin = H_BRIDGE_ENABLE_PIN;
+  gpio_init.Mode = GPIO_MODE_AF_PP;
+  gpio_init.Pull = GPIO_NOPULL;
+  gpio_init.Speed = GPIO_SPEED_FREQ_HIGH;
+  gpio_init.Alternate = GPIO_AF1_TIM16;
+  HAL_GPIO_Init(H_BRIDGE_ENABLE_GPIO_PORT, &gpio_init);
+}
+
 void dma_init(void) {
   /* DMA controller clock enable */
   __HAL_RCC_DMA2_CLK_ENABLE();
@@ -304,8 +353,7 @@ void gpio_init(void) {
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(DEBUG_LED_GPIO_PORT,
-                    DEBUG_LED_PIN | H_BRIDGE_ENABLE_PIN | H_BRIDGE_MODE1_PIN,
+  HAL_GPIO_WritePin(DEBUG_LED_GPIO_PORT, DEBUG_LED_PIN | H_BRIDGE_MODE1_PIN,
                     GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -316,12 +364,12 @@ void gpio_init(void) {
   HAL_GPIO_WritePin(H_BRIDGE_nSLEEP_GPIO_PORT, H_BRIDGE_nSLEEP_PIN,
                     GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
+  /*Configure GPIO pin Output Lel */
   HAL_GPIO_WritePin(SPI3_NSS_GPIO_PORT, SPI3_NSS_PIN, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : DEBUG_LED_PIN H_BRIDGE_ENABLE_PIN H_BRIDGE_MODE1_PIN
    */
-  gpio_init.Pin = DEBUG_LED_PIN | H_BRIDGE_ENABLE_PIN | H_BRIDGE_MODE1_PIN;
+  gpio_init.Pin = DEBUG_LED_PIN | H_BRIDGE_MODE1_PIN;
   gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
   gpio_init.Pull = GPIO_NOPULL;
   gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
@@ -646,16 +694,12 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi) {
   }
 }
 
-/**
- * @brief TIM_Base MSP Initialization
- * This function configures the hardware resources used in this example
- * @param htim_base: TIM_Base handle pointer
- * @retval None
- */
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base) {
+  /* Peripheral clock enable */
   if (htim_base->Instance == TIM1) {
-    /* Peripheral clock enable */
     __HAL_RCC_TIM1_CLK_ENABLE();
+  } else if (htim_base->Instance == TIM16) {
+    __HAL_RCC_TIM16_CLK_ENABLE();
   }
 }
 
@@ -666,9 +710,11 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base) {
  * @retval None
  */
 void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base) {
+  /* Peripheral clock disable */
   if (htim_base->Instance == TIM1) {
-    /* Peripheral clock disable */
     __HAL_RCC_TIM1_CLK_DISABLE();
+  } else if (htim_base->Instance == TIM16) {
+    __HAL_RCC_TIM16_CLK_DISABLE();
   }
 }
 

@@ -34,11 +34,13 @@ void system_clock_init(void) {
   }
   rcc_periph_clk_init.PeriphClockSelection =
       RCC_PERIPHCLK_ADC12 | RCC_PERIPHCLK_I2C1 | RCC_PERIPHCLK_I2C3 |
-      RCC_PERIPHCLK_TIM1 | RCC_PERIPHCLK_USART1 | RCC_PERIPHCLK_USART2;
+      RCC_PERIPHCLK_TIM1 | RCC_PERIPHCLK_TIM16 | RCC_PERIPHCLK_USART1 |
+      RCC_PERIPHCLK_USART2;
   rcc_periph_clk_init.Adc12ClockSelection = RCC_ADC12PLLCLK_DIV1;
   rcc_periph_clk_init.I2c1ClockSelection = RCC_I2C1CLKSOURCE_SYSCLK;
   rcc_periph_clk_init.I2c3ClockSelection = RCC_I2C3CLKSOURCE_SYSCLK;
   rcc_periph_clk_init.Tim1ClockSelection = RCC_TIM1CLK_HCLK;
+  rcc_periph_clk_init.Tim16ClockSelection = RCC_TIM16CLK_HCLK;
   rcc_periph_clk_init.Usart1ClockSelection = RCC_USART1CLKSOURCE_SYSCLK;
   rcc_periph_clk_init.Usart2ClockSelection = RCC_USART2CLKSOURCE_SYSCLK;
   if (HAL_RCCEx_PeriphCLKConfig(&rcc_periph_clk_init) != HAL_OK) {

@@ -25,6 +25,7 @@ typedef struct {
   I2C_HandleTypeDef hi2c3;
   SPI_HandleTypeDef hspi3;
   TIM_HandleTypeDef htim1;
+  TIM_HandleTypeDef htim16;
 } peripherals_t;
 
 peripherals_t *get_peripherals(void);
