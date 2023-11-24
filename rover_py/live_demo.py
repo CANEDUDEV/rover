@@ -237,7 +237,7 @@ def zoom_out():
 
 
 def set_font_size(size):
-    font_obj = font.Font(size=size + 4)
+    font_obj = font.Font(size=size)
 
     sent_messages_text.configure(font=font_obj)
     sent_messages_label.configure(font=font_obj)
@@ -249,29 +249,42 @@ def set_font_size(size):
     plt.rcParams.update({"font.size": font_size})
 
 
+def get_screen_dpi():
+    width_pixels = root.winfo_fpixels("1i")
+    height_pixels = root.winfo_fpixels("1i")
+    screen_width_pixels = root.winfo_screenwidth()
+    screen_height_pixels = root.winfo_screenheight()
+
+    dpi_width = screen_width_pixels / width_pixels
+    dpi_height = screen_height_pixels / height_pixels
+
+    return dpi_width, dpi_height
+
+
 # Create and configure GUI
 root = tk.Tk()
 root.title("CAN Message Viewer")
 root.protocol("WM_DELETE_WINDOW", on_closing)
-
 root.state("zoomed")
 
-can_messages_frame = tk.Frame(root, height=20)
-can_messages_frame.pack(side="top", fill="both", expand=1, padx="0.5cm", pady="1cm")
+dpi_width, dpi_height = get_screen_dpi()
+
+can_messages_frame = tk.Frame(root)
+can_messages_frame.pack(side="top", fill="both", expand=True, padx=10, pady=5)
 sent_messages_frame = tk.Frame(can_messages_frame)
 received_messages_frame = tk.Frame(can_messages_frame)
-sent_messages_frame.pack(side="left", fill="x", expand=1, padx="0.5cm")
-received_messages_frame.pack(side="left", fill="x", expand=1, padx="0.5cm")
+sent_messages_frame.pack(side="left", fill="x", expand=True, padx=5)
+received_messages_frame.pack(side="left", fill="x", expand=True, padx=5)
 
 sent_messages_label = tk.Label(sent_messages_frame, text="Sent messages")
-sent_messages_text = tk.Text(sent_messages_frame, height=10, width=10)
-sent_messages_label.pack(side="top", expand=1, anchor="w")
-sent_messages_text.pack(side="top", fill="both", expand=1)
+sent_messages_text = tk.Text(sent_messages_frame, height=12, width=10)
+sent_messages_label.pack(side="top", expand=True, anchor="w")
+sent_messages_text.pack(side="top", fill="both", expand=True)
 
 received_messages_label = tk.Label(received_messages_frame, text="Received messages")
-received_messages_text = tk.Text(received_messages_frame, height=10, width=10)
-received_messages_label.pack(side="top", expand=1, anchor="w")
-received_messages_text.pack(side="top", fill="both", expand=1)
+received_messages_text = tk.Text(received_messages_frame, height=12, width=10)
+received_messages_label.pack(side="top", expand=True, anchor="w")
+received_messages_text.pack(side="top", fill="both", expand=True)
 
 # Plotting
 fig = plt.figure()
@@ -282,20 +295,26 @@ ani = FuncAnimation(fig, animate, interval=100, blit=False, save_count=3000)
 
 canvas = FigureCanvasTkAgg(fig, master=root)
 canvas.get_tk_widget().pack(
-    side="top", padx="1cm", expand=1, fill="both", anchor="center"
+    side="top", padx=20, expand=True, fill="both", anchor="center"
 )
 
-restart_button = tk.Button(root, text="Restart", command=restart_button_click)
+button_frame = tk.Frame(root)
+button_frame.pack(side="top", fill="both", expand=True)
+
+restart_button = tk.Button(button_frame, text="Restart", command=restart_button_click)
 restart_button.pack(side="right", pady=10, padx=40, anchor="e")
 
-zoom_in_button = tk.Button(root, text="Zoom in", command=zoom_in)
+zoom_in_button = tk.Button(button_frame, text="Zoom in", command=zoom_in)
 zoom_in_button.pack(side="right", pady=10, padx=10, anchor="e")
 
-zoom_out_button = tk.Button(root, text="Zoom out", command=zoom_out)
+zoom_out_button = tk.Button(button_frame, text="Zoom out", command=zoom_out)
 zoom_out_button.pack(side="right", pady=10, padx=10, anchor="e")
 
 # Set font size
-font_size = 14
+font_size = int(round(max(dpi_width, dpi_height) * 1))
+print(dpi_width, dpi_height)
+print(font_size)
+set_font_size(font_size)
 
 # Create threads for sending and receiving messages
 receive_thread = threading.Thread(target=receive_can_messages, daemon=True)
