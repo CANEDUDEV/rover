@@ -78,7 +78,7 @@ uint16_t adc_to_servo_voltage(uint16_t adc_value) {
 uint16_t adc_to_h_bridge_current(uint16_t adc_value) {
   // Currents in mA
   const uint16_t max_current = 2800;
-  const float i_sense = ADC_REF_VOLTAGE * adc_value / (float)ADC_RESOLUTION;
+  float i_sense = ADC_REF_VOLTAGE * adc_value / (float)ADC_RESOLUTION;
 
   uint16_t current = (uint16_t)roundf(i_sense);
   if (current > max_current) {
