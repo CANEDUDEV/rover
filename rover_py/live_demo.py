@@ -8,27 +8,24 @@ from tkinter import font
 
 import keyboard
 import matplotlib.pyplot as plt
-from canlib import canlib, kvadblib
+from canlib import Frame, canlib, kvadblib
 from matplotlib.animation import FuncAnimation
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
-from rover import rover, servo
 
 sent_messages = {}
 received_messages = {}
 lock = threading.Lock()
 
-restart_rover = False
+brake = False
 
 # Graphs
 max_items_sent = 400
 max_items_received = 100
 servo_current_timestamps = collections.deque(maxlen=max_items_received)
 servo_current_values = collections.deque(maxlen=max_items_received)
-steering_timestamps = collections.deque(maxlen=max_items_sent)
-steering_values = collections.deque(maxlen=max_items_sent)
-throttle_timestamps = collections.deque(maxlen=max_items_sent)
-throttle_values = collections.deque(maxlen=max_items_sent)
+
+servo_position_timestamps = collections.deque(maxlen=max_items_received)
+servo_position_values = collections.deque(maxlen=max_items_received)
 
 
 def receive_can_messages():
@@ -55,29 +52,25 @@ def receive_can_messages():
                     continue
 
                 with lock:
-                    if frame.id == rover.Envelope.THROTTLE:
+                    if frame.id == 0x104:
                         sent_messages[str(frame.id)] = parse_frame(db, frame)
-                        throttle_timestamps.append(frame.timestamp)
-                        throttle_values.append(
-                            int.from_bytes(frame.data[1:], byteorder="little")
-                        )
 
-                    elif frame.id == rover.Envelope.STEERING:
+                    elif frame.id == 0x105:
                         sent_messages[str(frame.id)] = parse_frame(db, frame)
-                        steering_timestamps.append(frame.timestamp)
-                        steering_values.append(
-                            int.from_bytes(frame.data[1:], byteorder="little")
-                        )
 
-                    elif frame.id == rover.Envelope.SERVO_CURRENT:
+                    elif frame.id == 0x205:
                         received_messages[str(frame.id)] = parse_frame(db, frame)
                         servo_current_timestamps.append(frame.timestamp)
                         servo_current_values.append(
                             int.from_bytes(frame.data, byteorder="little")
                         )
 
-                    else:
+                    elif frame.id == 0x30D:
                         received_messages[str(frame.id)] = parse_frame(db, frame)
+                        servo_position_timestamps.append(frame.timestamp)
+                        servo_position_values.append(
+                            int.from_bytes(frame.data, byteorder="little")
+                        )
 
             except canlib.exceptions.CanNoMsg:
                 continue
@@ -116,8 +109,6 @@ def send_can_messages():
 
     step = 10
 
-    global restart_rover
-
     # Initialize CAN channel
     with canlib.openChannel(
         channel=0,
@@ -127,12 +118,11 @@ def send_can_messages():
         ch.setBusOutputControl(canlib.Driver.NORMAL)
         ch.busOn()
 
-        rover.start(ch)
-
         while True:
-            if restart_rover:
-                rover.start(ch)
-                restart_rover = False
+            if brake:
+                ch.writeWait(Frame(id_=0x104, dlc=0, data=[]), -1)
+            else:
+                ch.writeWait(Frame(id_=0x105, dlc=0, data=[]), -1)
 
             if keyboard.is_pressed("up"):
                 if throttle < throttle_max:
@@ -150,8 +140,8 @@ def send_can_messages():
                 if steering < steering_max:
                     steering += step
 
-            ch.writeWait(servo.set_throttle_pulse_frame(throttle), -1)
-            ch.writeWait(servo.set_steering_pulse_frame(steering), -1)
+            # ch.writeWait(servo.set_throttle_pulse_frame(throttle), -1)
+            # ch.writeWait(servo.set_steering_pulse_frame(steering), -1)
             time.sleep(0.01)
 
 
@@ -191,27 +181,22 @@ def parse_frame(db, frame):
 
 
 def animate(_):
-    ax1, ax2, ax3 = fig.get_axes()
+    ax1, ax2 = fig.get_axes()
 
     # Clear current data
     ax1.cla()
     ax2.cla()
-    ax3.cla()
 
     ax1.set_title("Servo Current Draw (mA)")
-    ax1.set_ylim(0, 250)
+    ax1.set_ylim(0, 2000)
 
-    ax2.set_title("Throttle Pulse Width (µs)")
-    ax2.set_ylim(950, 2050)
-
-    ax3.set_title("Steering Pulse Width (µs)")
-    ax3.set_ylim(950, 2050)
+    ax2.set_title("Servo position (degrees)")
+    ax2.set_ylim(0, 90)
 
     # Plot new data
     with lock:
         ax1.plot(servo_current_timestamps, servo_current_values)
-        ax2.plot(throttle_timestamps, throttle_values)
-        ax3.plot(steering_timestamps, steering_values)
+        ax2.plot(servo_position_timestamps, servo_position_values)
 
 
 def on_closing():
@@ -219,9 +204,14 @@ def on_closing():
     sys.exit(0)
 
 
-def restart_button_click():
-    global restart_rover
-    restart_rover = True
+def brake_button_click():
+    global brake
+    brake = True
+
+
+def release_brake_button_click():
+    global brake
+    brake = False
 
 
 def zoom_in():
@@ -243,7 +233,8 @@ def set_font_size(size):
     sent_messages_label.configure(font=font_obj)
     received_messages_text.configure(font=font_obj)
     received_messages_label.configure(font=font_obj)
-    restart_button.configure(font=font_obj)
+    brake_button.configure(font=font_obj)
+    release_brake_button.configure(font=font_obj)
     zoom_in_button.configure(font=font_obj)
     zoom_out_button.configure(font=font_obj)
     plt.rcParams.update({"font.size": font_size})
@@ -288,7 +279,7 @@ received_messages_text.pack(side="top", fill="both", expand=True)
 
 # Plotting
 fig = plt.figure()
-subplots = fig.subplots(1, 3)
+subplots = fig.subplots(1, 2)
 fig.subplots_adjust(left=0.05, right=0.95, wspace=0.2)
 
 ani = FuncAnimation(fig, animate, interval=100, blit=False, save_count=3000)
@@ -301,11 +292,16 @@ canvas.get_tk_widget().pack(
 button_frame = tk.Frame(root)
 button_frame.pack(side="top", fill="both", expand=True)
 
-restart_button = tk.Button(button_frame, text="Restart", command=restart_button_click)
-restart_button.pack(side="right", pady=10, padx=40, anchor="e")
+brake_button = tk.Button(button_frame, text="Brake", command=brake_button_click)
+brake_button.pack(side="right", pady=10, padx=40, anchor="e")
+
+release_brake_button = tk.Button(
+    button_frame, text="Release brake", command=release_brake_button_click
+)
+release_brake_button.pack(side="right", pady=10, padx=10, anchor="e")
 
 zoom_in_button = tk.Button(button_frame, text="Zoom in", command=zoom_in)
-zoom_in_button.pack(side="right", pady=10, padx=10, anchor="e")
+zoom_in_button.pack(side="right", pady=10, padx=40, anchor="e")
 
 zoom_out_button = tk.Button(button_frame, text="Zoom out", command=zoom_out)
 zoom_out_button.pack(side="right", pady=10, padx=10, anchor="e")
