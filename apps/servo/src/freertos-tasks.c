@@ -445,7 +445,7 @@ void find_brake_pos(void) {
 
 void calibrate_brake(void) {
   find_brake_pos();
-  release_pos = brake_pos - 50; // NOLINT
+  release_pos = brake_pos - 50;  // NOLINT
   setpoint = release_pos;
   standstill();
 }
@@ -661,13 +661,14 @@ void dispatch_letter(ck_letter_t *letter) {
     }
   }
 
+  // Brake
   if (letter->envelope.envelope_no == 0x104) {
-    printf("received\r\n");
-    if (pos_equal(setpoint, release_pos)) {
-      setpoint = brake_pos;
-    } else {
-      setpoint = release_pos;
-    }
+    setpoint = brake_pos;
+  }
+
+  // Release brake
+  if (letter->envelope.envelope_no == 0x105) {
+    setpoint = release_pos;
   }
 }
 
