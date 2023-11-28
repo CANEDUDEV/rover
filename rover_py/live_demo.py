@@ -4,9 +4,8 @@ import sys
 import threading
 import time
 import tkinter as tk
-from tkinter import font
+from tkinter import font, ttk
 
-import keyboard
 import matplotlib.pyplot as plt
 from canlib import Frame, canlib, kvadblib
 from matplotlib.animation import FuncAnimation
@@ -69,7 +68,7 @@ def receive_can_messages():
                         received_messages[str(frame.id)] = parse_frame(db, frame)
                         servo_position_timestamps.append(frame.timestamp)
                         servo_position_values.append(
-                            int.from_bytes(frame.data, byteorder="little")
+                            int.from_bytes(frame.data, byteorder="little", signed=True)
                         )
 
             except canlib.exceptions.CanNoMsg:
@@ -98,17 +97,6 @@ def update_ui():
 
 
 def send_can_messages():
-    throttle = 1500
-    steering = 1500
-
-    throttle_max = 2000
-    throttle_min = 1000
-
-    steering_max = 2000
-    steering_min = 1000
-
-    step = 10
-
     # Initialize CAN channel
     with canlib.openChannel(
         channel=0,
@@ -119,26 +107,14 @@ def send_can_messages():
         ch.busOn()
 
         while True:
-            if brake:
-                ch.writeWait(Frame(id_=0x104, dlc=0, data=[]), -1)
-            else:
-                ch.writeWait(Frame(id_=0x105, dlc=0, data=[]), -1)
+            pos = list(int(position_slider.get()).to_bytes(2, "little", signed=True))
+            power = list(int(power_slider.get()).to_bytes(1, "little", signed=True))
 
-            if keyboard.is_pressed("up"):
-                if throttle < throttle_max:
-                    throttle += step
+            if reg_mode.get() == 0: # Power regulation
+                ch.writeWait(Frame(id_=0x104, dlc=1, data=power), -1)
+            else: # Position regulation
+                ch.writeWait(Frame(id_=0x105, dlc=2, data=pos), -1)
 
-            elif keyboard.is_pressed("down"):
-                if throttle > throttle_min:
-                    throttle -= step
-
-            elif keyboard.is_pressed("left"):
-                if steering > steering_min:
-                    steering -= step
-
-            elif keyboard.is_pressed("right"):
-                if steering < steering_max:
-                    steering += step
 
             # ch.writeWait(servo.set_throttle_pulse_frame(throttle), -1)
             # ch.writeWait(servo.set_steering_pulse_frame(steering), -1)
@@ -188,10 +164,10 @@ def animate(_):
     ax2.cla()
 
     ax1.set_title("Servo Current Draw (mA)")
-    ax1.set_ylim(0, 2000)
+    ax1.set_ylim(0, 1500)
 
     ax2.set_title("Servo position (degrees)")
-    ax2.set_ylim(0, 90)
+    ax2.set_ylim(-30, 90)
 
     # Plot new data
     with lock:
@@ -228,6 +204,7 @@ def zoom_out():
 
 def set_font_size(size):
     font_obj = font.Font(size=size)
+    slider_font_obj = font.Font(size=size-4)
 
     sent_messages_text.configure(font=font_obj)
     sent_messages_label.configure(font=font_obj)
@@ -235,6 +212,10 @@ def set_font_size(size):
     received_messages_label.configure(font=font_obj)
     brake_button.configure(font=font_obj)
     release_brake_button.configure(font=font_obj)
+    power_reg_radio_button.configure(font=font_obj)
+    pos_reg_radio_button.configure(font=font_obj)
+    position_slider.configure(font=slider_font_obj)
+    power_slider.configure(font=slider_font_obj)
     zoom_in_button.configure(font=font_obj)
     zoom_out_button.configure(font=font_obj)
     plt.rcParams.update({"font.size": font_size})
@@ -293,12 +274,33 @@ button_frame = tk.Frame(root)
 button_frame.pack(side="top", fill="both", expand=True)
 
 brake_button = tk.Button(button_frame, text="Brake", command=brake_button_click)
-brake_button.pack(side="right", pady=10, padx=40, anchor="e")
+#brake_button.pack(side="right", pady=10, padx=40, anchor="e")
 
 release_brake_button = tk.Button(
     button_frame, text="Release brake", command=release_brake_button_click
 )
-release_brake_button.pack(side="right", pady=10, padx=10, anchor="e")
+#release_brake_button.pack(side="right", pady=10, padx=10, anchor="e")
+
+# Create a variable to track checkbox state
+reg_mode = tk.IntVar()
+radio_button_frame = tk.Frame(button_frame)
+
+power_reg_radio_button = tk.Radiobutton(radio_button_frame, text="Power regulation", variable=reg_mode, value=0)
+power_reg_radio_button.pack()
+
+
+pos_reg_radio_button = tk.Radiobutton(radio_button_frame, text="Position regulation", variable=reg_mode, value=1)
+pos_reg_radio_button.pack()
+
+radio_button_frame.pack(side="right", padx=40, anchor="e")
+
+power_slider = tk.Scale(button_frame, from_=-100 , to=100, orient=tk.HORIZONTAL, label="Power", length=200)
+power_slider.set(0)
+power_slider.pack(side="right", pady=10, padx=10, anchor="e")
+
+position_slider = tk.Scale(button_frame, from_=-30 , to=90, orient=tk.HORIZONTAL, label="Position", length=200)
+position_slider.set(40)
+position_slider.pack(side="right", pady=10, padx=10, anchor="e")
 
 zoom_in_button = tk.Button(button_frame, text="Zoom in", command=zoom_in)
 zoom_in_button.pack(side="right", pady=10, padx=40, anchor="e")

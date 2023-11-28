@@ -382,25 +382,28 @@ void h_bridge_start(void) {
   }
 }
 
-static float brake_pos = 0;
-static float release_pos = 0;
+// static float brake_pos = 0;
 static float setpoint = 0;
+static uint8_t reg_mode = 0;  // 0=power, 1=pos
+// For power reg
+static uint8_t h_bridge_pwm = 0;
+static GPIO_PinState h_bridge_state = 0;
 
 // NOLINTBEGIN(*-magic-numbers)
 static PIDController pid = {
-    .Kp = 0.0750F,
-    .Ki = 0.0350F,
-    .Kd = 0.0005F,
+    .Kp = 9.0F,
+    .Ki = 1.0F,
+    .Kd = 0.05F,
 
     .T = (float)MEASURE_DEFAULT_PERIOD_MS / 1000,
 
     .tau = 0.01F,
 
-    .limMax = 239.0F,
-    .limMin = -239.0F,
+    .limMax = 200.0F,
+    .limMin = -200.0F,
 
-    .limMaxInt = 239.0F,
-    .limMinInt = -239.0F,
+    .limMaxInt = 50.0F,
+    .limMinInt = -50.0F,
 };
 // NOLINTEND(*-magic-numbers)
 
@@ -422,49 +425,48 @@ void standstill(void) {
   __HAL_TIM_SET_COMPARE(&peripherals->htim16, TIM_CHANNEL_1, 0);
 }
 
-void find_brake_pos(void) {
-  peripherals_t *peripherals = get_peripherals();
-  uint16_t adc1_buf[4];
-  uint16_t adc2_buf[2];
+// void find_brake_pos(void) {
+//   peripherals_t *peripherals = get_peripherals();
+//   uint16_t adc1_buf[4];
+//   uint16_t adc2_buf[2];
+//
+//   // Releasing brake is larger pos value
+//   brake(150);
+//   vTaskDelay(pdMS_TO_TICKS(1000));
+//
+//   // Start both ADCs
+//   HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc1_buf,
+//                     sizeof(adc1_buf) / sizeof(uint16_t));
+//   HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc2_buf,
+//                     sizeof(adc2_buf) / sizeof(uint16_t));
+//   // Wait for DMA
+//   ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+//
+//   uint16_t servo_pot_voltage = adc_to_servo_pot_voltage(adc1_buf[3]);
+//   brake_pos = roundf((float)servo_pot_voltage / 10);  // NOLINT
+// }
+//
+// void calibrate_brake(void) {
+//   find_brake_pos();
+//   setpoint = brake_pos - 80;
+//   standstill();
+// }
 
-  // Releasing brake is larger pos value
-  brake(150);
-  vTaskDelay(pdMS_TO_TICKS(1000));
+// bool pos_equal(float pos1, float pos2) {
+//   if (pos1 < pos2 + 5 && pos1 > pos2 - 5) {
+//     return true;
+//   }
+//   return false;
+// }
 
-  // Start both ADCs
-  HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc1_buf,
-                    sizeof(adc1_buf) / sizeof(uint16_t));
-  HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc2_buf,
-                    sizeof(adc2_buf) / sizeof(uint16_t));
-  // Wait for DMA
-  ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-  uint16_t servo_pot_voltage = adc_to_servo_pot_voltage(adc1_buf[3]);
-  brake_pos = roundf((float)servo_pot_voltage / 10);  // NOLINT
-}
-
-void calibrate_brake(void) {
-  find_brake_pos();
-  release_pos = brake_pos - 50;  // NOLINT
-  setpoint = release_pos;
-  standstill();
-}
-
-bool pos_equal(float pos1, float pos2) {
-  if (pos1 < pos2 + 10 && pos1 > pos2 - 10) {
-    return true;
-  }
-  return false;
-}
-
-uint16_t update_pwm(uint16_t servo_pot_voltage) {
+uint16_t update_pwm(int16_t servo_position) {
   pid.T = (float)task_periods.measure_period_ms / 1000;  // NOLINT
 
   // simple noise filtering
-  float measurement = roundf((float)servo_pot_voltage / 10);  // NOLINT
+  // float measurement = roundf((float)servo_pot_voltage / 10);  // NOLINT
 
   int pwm_value =
-      (int)roundf(PIDController_Update(&pid, setpoint, measurement));
+      (int)roundf(PIDController_Update(&pid, setpoint, servo_position));
 
   if (pwm_value > 0) {  // CCW rotation needed
     HAL_GPIO_WritePin(H_BRIDGE_PHASE_GPIO_PORT, H_BRIDGE_PHASE_PIN,
@@ -477,6 +479,13 @@ uint16_t update_pwm(uint16_t servo_pot_voltage) {
     pwm_value = -pwm_value;
   }
   return (uint16_t)pwm_value;
+}
+
+uint8_t power_to_pwm(int8_t power) {
+  if (power < 0) {
+    return 2 * -power;
+  }
+  return 2 * power;
 }
 
 void measure(void *unused) {
@@ -496,7 +505,7 @@ void measure(void *unused) {
   ck_data_t *ck_data = get_ck_data();
 
   int16_t servo_position = 0;
-  uint16_t servo_pot_voltage = 0;
+  // uint16_t servo_pot_voltage = 0;
   uint16_t servo_current = 0;
   uint16_t battery_voltage = 0;
   uint16_t servo_voltage = 0;
@@ -508,12 +517,11 @@ void measure(void *unused) {
   assign_servo_envelopes();
 
   h_bridge_start();
-  calibrate_brake();
+  // calibrate_brake();
 
-  // PIDController_Init(&pid);
+  PIDController_Init(&pid);
 
-  printf("brake_pos: %d, release_pos: %d\r\n", (int)brake_pos,
-         (int)release_pos);
+  // printf("brake_pos: %d\r\n", (int)brake_pos);
 
   xTimerStart(timer, portMAX_DELAY);
 
@@ -536,7 +544,7 @@ void measure(void *unused) {
     servo_position = adc_to_servo_position(adc1_buf[3]);
     servo_current = adc_to_servo_current(adc1_buf[1]);
     battery_voltage = adc_to_battery_voltage(adc1_buf[2]);
-    servo_pot_voltage = adc_to_servo_pot_voltage(adc1_buf[3]);
+    // servo_pot_voltage = adc_to_servo_pot_voltage(adc1_buf[3]);
     servo_voltage = adc_to_servo_voltage(adc2_buf[0]);
     h_bridge_current = adc_to_h_bridge_current(adc2_buf[1]);
     memcpy(ck_data->servo_position_page->lines, &servo_position,
@@ -550,16 +558,26 @@ void measure(void *unused) {
     memcpy(ck_data->h_bridge_current_page->lines, &h_bridge_current,
            sizeof(h_bridge_current));
 
-    float measurement = roundf((float)servo_pot_voltage / 10);  // NOLINT
-    if (pos_equal(setpoint, measurement)) {
-      standstill();
-    } else if (setpoint > measurement) {
-      brake(200);
+    // float measurement = roundf((float)servo_pot_voltage / 10);  // NOLINT
+    //  if (pos_equal(setpoint, measurement)) {
+    //    if (pos_equal(setpoint, brake_pos)) {
+    //      brake(h_bridge_pwm);
+    //    } else {
+    //      standstill();
+    //    }
+    //  } else if (setpoint > measurement) {
+    //    brake(h_bridge_pwm);
+    //  } else {
+    //    release_brake(h_bridge_pwm);
+    //  }
+    if (reg_mode == 1) {
+      __HAL_TIM_SET_COMPARE(&peripherals->htim16, TIM_CHANNEL_1,
+                            update_pwm(servo_position));
     } else {
-      release_brake(200);
+      HAL_GPIO_WritePin(H_BRIDGE_PHASE_GPIO_PORT, H_BRIDGE_PHASE_PIN,
+                        h_bridge_state);
+      __HAL_TIM_SET_COMPARE(&peripherals->htim16, TIM_CHANNEL_1, h_bridge_pwm);
     }
-    //__HAL_TIM_SET_COMPARE(&peripherals->htim16, TIM_CHANNEL_1,
-    //                      update_pwm(servo_pot_voltage));
   }
 }
 
@@ -661,14 +679,16 @@ void dispatch_letter(ck_letter_t *letter) {
     }
   }
 
-  // Brake
-  if (letter->envelope.envelope_no == 0x104) {
-    setpoint = brake_pos;
+  if (letter->envelope.envelope_no == 0x104 && letter->page.line_count == 1) {
+    reg_mode = 0;
+    int8_t power = (int8_t)letter->page.lines[0];
+    h_bridge_pwm = power_to_pwm(power);
+    h_bridge_state = power < 0 ? GPIO_PIN_SET : GPIO_PIN_RESET;
   }
-
-  // Release brake
-  if (letter->envelope.envelope_no == 0x105) {
-    setpoint = release_pos;
+  if (letter->envelope.envelope_no == 0x105 && letter->page.line_count == 2) {
+    reg_mode = 1;
+    int16_t position = *(int16_t *)letter->page.lines;
+    setpoint = position;
   }
 }
 
