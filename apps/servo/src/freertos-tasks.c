@@ -284,7 +284,7 @@ void assign_servo_envelopes(void) {
   ck_data->servo_position_folder->envelopes[0].enable = true;
 
   ck_data->h_bridge_current_folder->envelope_count = 1;
-  ck_data->h_bridge_current_folder->envelopes[0].envelope_no = 0x205;
+  ck_data->h_bridge_current_folder->envelopes[0].envelope_no = 0x205;  // NOLINT
   ck_data->h_bridge_current_folder->envelopes[0].enable = true;
 }
 
@@ -391,9 +391,29 @@ static GPIO_PinState h_bridge_state = 0;
 
 // NOLINTBEGIN(*-magic-numbers)
 static PIDController pid = {
-    .Kp = 9.0F,
-    .Ki = 1.0F,
-    .Kd = 0.05F,
+    // Start with 0
+    .Kp = 0.0F,
+    .Ki = 0.0F,
+    .Kd = 0.0F,
+
+    // Best yet (10 V)
+    //.Kp = 2.0F,
+    //.Ki = 0.0F,
+    //.Kd = 0.08F,
+
+    // Best yet (8 V)
+    //.Kp = 3.0F,
+    //.Ki = 0.0F,
+    //.Kd = 0.1F,
+
+    // Best yet (6V)
+    //.Kp = 4.0F,
+    //.Ki = 0.0F,
+    //.Kd = 0.12F,
+
+    // Approximate Kp and Kd, using the battery voltage in volts.
+    // Kp = -0.5 * battery_voltage + 7
+    // Kd = -0.01 * battery_voltage + (9/50)
 
     .T = (float)MEASURE_DEFAULT_PERIOD_MS / 1000,
 
@@ -425,45 +445,8 @@ void standstill(void) {
   __HAL_TIM_SET_COMPARE(&peripherals->htim16, TIM_CHANNEL_1, 0);
 }
 
-// void find_brake_pos(void) {
-//   peripherals_t *peripherals = get_peripherals();
-//   uint16_t adc1_buf[4];
-//   uint16_t adc2_buf[2];
-//
-//   // Releasing brake is larger pos value
-//   brake(150);
-//   vTaskDelay(pdMS_TO_TICKS(1000));
-//
-//   // Start both ADCs
-//   HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc1_buf,
-//                     sizeof(adc1_buf) / sizeof(uint16_t));
-//   HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc2_buf,
-//                     sizeof(adc2_buf) / sizeof(uint16_t));
-//   // Wait for DMA
-//   ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-//
-//   uint16_t servo_pot_voltage = adc_to_servo_pot_voltage(adc1_buf[3]);
-//   brake_pos = roundf((float)servo_pot_voltage / 10);  // NOLINT
-// }
-//
-// void calibrate_brake(void) {
-//   find_brake_pos();
-//   setpoint = brake_pos - 80;
-//   standstill();
-// }
-
-// bool pos_equal(float pos1, float pos2) {
-//   if (pos1 < pos2 + 5 && pos1 > pos2 - 5) {
-//     return true;
-//   }
-//   return false;
-// }
-
 uint16_t update_pwm(int16_t servo_position) {
   pid.T = (float)task_periods.measure_period_ms / 1000;  // NOLINT
-
-  // simple noise filtering
-  // float measurement = roundf((float)servo_pot_voltage / 10);  // NOLINT
 
   int pwm_value =
       (int)roundf(PIDController_Update(&pid, setpoint, servo_position));
@@ -488,6 +471,7 @@ uint8_t power_to_pwm(int8_t power) {
   return 2 * power;
 }
 
+// NOLINTNEXTLINE(*-complexity)
 void measure(void *unused) {
   (void)unused;
 
@@ -505,7 +489,6 @@ void measure(void *unused) {
   ck_data_t *ck_data = get_ck_data();
 
   int16_t servo_position = 0;
-  // uint16_t servo_pot_voltage = 0;
   uint16_t servo_current = 0;
   uint16_t battery_voltage = 0;
   uint16_t servo_voltage = 0;
@@ -517,11 +500,8 @@ void measure(void *unused) {
   assign_servo_envelopes();
 
   h_bridge_start();
-  // calibrate_brake();
 
   PIDController_Init(&pid);
-
-  // printf("brake_pos: %d\r\n", (int)brake_pos);
 
   xTimerStart(timer, portMAX_DELAY);
 
@@ -540,11 +520,9 @@ void measure(void *unused) {
     // Wait for DMA
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    // servo_position = adc_to_servo_position(adc1_buf[0]);
     servo_position = adc_to_servo_position(adc1_buf[3]);
     servo_current = adc_to_servo_current(adc1_buf[1]);
     battery_voltage = adc_to_battery_voltage(adc1_buf[2]);
-    // servo_pot_voltage = adc_to_servo_pot_voltage(adc1_buf[3]);
     servo_voltage = adc_to_servo_voltage(adc2_buf[0]);
     h_bridge_current = adc_to_h_bridge_current(adc2_buf[1]);
     memcpy(ck_data->servo_position_page->lines, &servo_position,
@@ -558,18 +536,12 @@ void measure(void *unused) {
     memcpy(ck_data->h_bridge_current_page->lines, &h_bridge_current,
            sizeof(h_bridge_current));
 
-    // float measurement = roundf((float)servo_pot_voltage / 10);  // NOLINT
-    //  if (pos_equal(setpoint, measurement)) {
-    //    if (pos_equal(setpoint, brake_pos)) {
-    //      brake(h_bridge_pwm);
-    //    } else {
-    //      standstill();
-    //    }
-    //  } else if (setpoint > measurement) {
-    //    brake(h_bridge_pwm);
-    //  } else {
-    //    release_brake(h_bridge_pwm);
-    //  }
+    // NOLINTBEGIN(*-magic-numbers)
+    // Update regulator parameters based on voltage in Volts.
+    pid.Kp = -0.5F * (float)battery_voltage / 1000 + 7;
+    pid.Kd = -0.01F * (float)battery_voltage / 1000 + 0.18F;
+    // NOLINTEND(*-magic-numbers)
+
     if (reg_mode == 1) {
       __HAL_TIM_SET_COMPARE(&peripherals->htim16, TIM_CHANNEL_1,
                             update_pwm(servo_position));
@@ -679,6 +651,8 @@ void dispatch_letter(ck_letter_t *letter) {
     }
   }
 
+  // TODO: these should be implemented as CK documents.
+  // NOLINTBEGIN(*-magic-numbers)
   if (letter->envelope.envelope_no == 0x104 && letter->page.line_count == 1) {
     reg_mode = 0;
     int8_t power = (int8_t)letter->page.lines[0];
@@ -690,6 +664,7 @@ void dispatch_letter(ck_letter_t *letter) {
     int16_t position = *(int16_t *)letter->page.lines;
     setpoint = position;
   }
+  // NOLINTEND(*-magic-numbers)
 }
 
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
