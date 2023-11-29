@@ -26,6 +26,9 @@ servo_current_values = collections.deque(maxlen=max_items_received)
 servo_position_timestamps = collections.deque(maxlen=max_items_received)
 servo_position_values = collections.deque(maxlen=max_items_received)
 
+servo_position_reference_timestamps = collections.deque(maxlen=max_items_received)
+servo_position_reference_values = collections.deque(maxlen=max_items_received)
+
 
 def receive_can_messages():
     # If packaged as one binary using pyinstaller,
@@ -44,11 +47,15 @@ def receive_can_messages():
     ) as ch:
         ch.busOn()
 
+        last_slider_pos = int(position_slider.get())
+
         while True:
             try:
                 frame = ch.read(timeout=1000)
                 if not frame:
                     continue
+
+                last_slider_pos = int(position_slider.get())
 
                 with lock:
                     if frame.id == 0x104:
@@ -70,6 +77,9 @@ def receive_can_messages():
                         servo_position_values.append(
                             int.from_bytes(frame.data, byteorder="little", signed=True)
                         )
+
+                        servo_position_reference_timestamps.append(frame.timestamp)
+                        servo_position_reference_values.append(last_slider_pos)
 
             except canlib.exceptions.CanNoMsg:
                 continue
@@ -110,11 +120,10 @@ def send_can_messages():
             pos = list(int(position_slider.get()).to_bytes(2, "little", signed=True))
             power = list(int(power_slider.get()).to_bytes(1, "little", signed=True))
 
-            if reg_mode.get() == 0: # Power regulation
+            if reg_mode.get() == 0:  # Power regulation
                 ch.writeWait(Frame(id_=0x104, dlc=1, data=power), -1)
-            else: # Position regulation
+            else:  # Position regulation
                 ch.writeWait(Frame(id_=0x105, dlc=2, data=pos), -1)
-
 
             # ch.writeWait(servo.set_throttle_pulse_frame(throttle), -1)
             # ch.writeWait(servo.set_steering_pulse_frame(steering), -1)
@@ -167,12 +176,13 @@ def animate(_):
     ax1.set_ylim(0, 1500)
 
     ax2.set_title("Servo position (degrees)")
-    ax2.set_ylim(-30, 90)
+    ax2.set_ylim(-30, 150)
 
     # Plot new data
     with lock:
         ax1.plot(servo_current_timestamps, servo_current_values)
         ax2.plot(servo_position_timestamps, servo_position_values)
+        ax2.plot(servo_position_reference_timestamps, servo_position_reference_values)
 
 
 def on_closing():
@@ -204,7 +214,7 @@ def zoom_out():
 
 def set_font_size(size):
     font_obj = font.Font(size=size)
-    slider_font_obj = font.Font(size=size-4)
+    slider_font_obj = font.Font(size=size - 4)
 
     sent_messages_text.configure(font=font_obj)
     sent_messages_label.configure(font=font_obj)
@@ -274,31 +284,39 @@ button_frame = tk.Frame(root)
 button_frame.pack(side="top", fill="both", expand=True)
 
 brake_button = tk.Button(button_frame, text="Brake", command=brake_button_click)
-#brake_button.pack(side="right", pady=10, padx=40, anchor="e")
+# brake_button.pack(side="right", pady=10, padx=40, anchor="e")
 
 release_brake_button = tk.Button(
     button_frame, text="Release brake", command=release_brake_button_click
 )
-#release_brake_button.pack(side="right", pady=10, padx=10, anchor="e")
+# release_brake_button.pack(side="right", pady=10, padx=10, anchor="e")
 
 # Create a variable to track checkbox state
 reg_mode = tk.IntVar()
 radio_button_frame = tk.Frame(button_frame)
 
-power_reg_radio_button = tk.Radiobutton(radio_button_frame, text="Power regulation", variable=reg_mode, value=0)
+power_reg_radio_button = tk.Radiobutton(
+    radio_button_frame, text="Power regulation", variable=reg_mode, value=0
+)
 power_reg_radio_button.pack()
 
 
-pos_reg_radio_button = tk.Radiobutton(radio_button_frame, text="Position regulation", variable=reg_mode, value=1)
+pos_reg_radio_button = tk.Radiobutton(
+    radio_button_frame, text="Position regulation", variable=reg_mode, value=1
+)
 pos_reg_radio_button.pack()
 
 radio_button_frame.pack(side="right", padx=40, anchor="e")
 
-power_slider = tk.Scale(button_frame, from_=-100 , to=100, orient=tk.HORIZONTAL, label="Power", length=200)
+power_slider = tk.Scale(
+    button_frame, from_=-100, to=100, orient=tk.HORIZONTAL, label="Power", length=200
+)
 power_slider.set(0)
 power_slider.pack(side="right", pady=10, padx=10, anchor="e")
 
-position_slider = tk.Scale(button_frame, from_=-30 , to=90, orient=tk.HORIZONTAL, label="Position", length=200)
+position_slider = tk.Scale(
+    button_frame, from_=-30, to=150, orient=tk.HORIZONTAL, label="Position", length=200
+)
 position_slider.set(40)
 position_slider.pack(side="right", pady=10, padx=10, anchor="e")
 
