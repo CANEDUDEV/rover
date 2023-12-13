@@ -7,14 +7,12 @@
 #include "ck-data.h"
 #include "ck-rx-letters.h"
 #include "peripherals.h"
-#include "potentiometer.h"
 
 // STM32Common
 #include "error.h"
 #include "postmaster-hal.h"
 #include "rover.h"
 #include "spi-flash.h"
-#include "stm32f3xx_hal.h"
 
 // CK
 #include "king.h"
@@ -241,6 +239,11 @@ void assign_servo_envelopes(void) {
       ROVER_SERVO_CURRENT_ENVELOPE;
   ck_data->servo_current_folder->envelopes[0].enable = true;
 
+  ck_data->battery_voltage_folder->envelope_count = 1;
+  ck_data->battery_voltage_folder->envelopes[0].envelope_no =
+      ROVER_BATTERY_VOLTAGE_ENVELOPE;
+  ck_data->battery_voltage_folder->envelopes[0].enable = true;
+
   ck_data->servo_voltage_folder->envelope_count = 1;
   ck_data->servo_voltage_folder->envelopes[0].envelope_no =
       ROVER_SERVO_VOLTAGE_ENVELOPE;
@@ -271,10 +274,11 @@ void assign_servo_envelopes(void) {
       ROVER_SERVO_FAILSAFE_ENVELOPE;
   ck_data->failsafe_folder->envelopes[0].enable = true;
 
-  ck_data->servo_position_folder->envelope_count = 1;
-  ck_data->servo_position_folder->envelopes[0].envelope_no =
-      ROVER_SERVO_POSITION_ENVELOPE;
-  ck_data->servo_position_folder->envelopes[0].enable = true;
+  // Don't report position by default, it's a work in progress.
+  // ck_data->servo_position_folder->envelope_count = 1;
+  // ck_data->servo_position_folder->envelopes[0].envelope_no =
+  //     ROVER_SERVO_POSITION_ENVELOPE;
+  // ck_data->servo_position_folder->envelopes[0].enable = true;
 }
 
 void assign_envelopes(void) {
