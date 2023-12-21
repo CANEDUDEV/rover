@@ -1,5 +1,6 @@
 subdir('battery-monitor')
 subdir('joystick')
+subdir('joystick-adapter')
 subdir('sbus-receiver')
 subdir('servo')
 
@@ -8,6 +9,7 @@ subdir('servo')
 app_binaries = {
   'battery-monitor': [battery_monitor_bin],
   'joystick': [joystick_bin],
+  'joystick-adapter': [joystick_adapter_bin],
   'motor': [motor_bin], # Built from servo app
   'sbus-receiver': [sbus_receiver_bin],
   'servo': [servo_bin],
@@ -28,6 +30,7 @@ endforeach
 apps_tidy_files = [
   battery_monitor_tidy_files,
   joystick_tidy_files,
+  joystick_adapter_tidy_files,
   sbus_receiver_tidy_files,
   servo_tidy_files,
 ]
