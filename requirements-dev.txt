@@ -2,7 +2,7 @@ altgraph==0.17.3
 canlib==1.23.804
 contourpy==1.1.0
 cycler==0.11.0
-fonttools==4.42.1
+fonttools==4.43.0
 keyboard==0.13.5
 kiwisolver==1.4.4
 matplotlib==3.7.2
