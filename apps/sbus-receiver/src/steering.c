@@ -2,64 +2,33 @@
 
 #define STEERING_CHANNEL 0
 #define THROTTLE_CHANNEL 1
+#define TRIM_CHANNEL 6
 
 static const int16_t neutral_pulse = 1500;  // 1500 µs pulse
+static const uint16_t switch_on_threshold = 1700;
 
 static int16_t steering_trim = 0;
 static int16_t throttle_trim = 0;
 
+static int16_t calculate_trim(int16_t pulse);
 static int16_t sbus_to_pwm(int16_t sbus_value);
 
 steering_command_t sbus_packet_to_steering_command(
     const sbus_packet_t *sbus_packet) {
-  // Don't interpret value as trim if it's above or below these values.
-  const int32_t max_trim_pulse = 250;
-  const int32_t min_trim_pulse = -250;
-  // Receiving this many messages in a row indicates there's been some trim.
-  const uint16_t counter_threshold = 100;
+  int16_t steering =
+      sbus_to_pwm((int16_t)sbus_packet->channels[STEERING_CHANNEL]);
+  int16_t throttle =
+      sbus_to_pwm((int16_t)sbus_packet->channels[THROTTLE_CHANNEL]);
 
-  static uint8_t steering_count = 0;
-  static uint8_t throttle_count = 0;
-
-  static int16_t previous_steering = 0;
-  static int16_t previous_throttle = 0;
-
-  int16_t steering = (int16_t)sbus_packet->channels[STEERING_CHANNEL];
-  int16_t throttle = (int16_t)sbus_packet->channels[THROTTLE_CHANNEL];
-
-  // Count how many same messages were received in a row
-  if (steering == previous_steering) {
-    steering_count++;
-  } else {
-    steering_count = 0;
-  }
-  if (throttle == previous_throttle) {
-    throttle_count++;
-  } else {
-    throttle_count = 0;
-  }
-
-  previous_steering = steering;
-  previous_throttle = throttle;
-
-  if (steering_count >= counter_threshold) {
-    int16_t trim = (int16_t)(sbus_to_pwm(steering) - neutral_pulse);
-    if (trim < max_trim_pulse && trim > min_trim_pulse) {
-      steering_trim = trim;
-    }
-  }
-
-  if (throttle_count >= counter_threshold) {
-    int16_t trim = (int16_t)(sbus_to_pwm(throttle) - neutral_pulse);
-    if (trim < max_trim_pulse && trim > min_trim_pulse) {
-      throttle_trim = trim;
-    }
+  if (sbus_packet->channels[TRIM_CHANNEL] > switch_on_threshold) {
+    steering_trim = calculate_trim(steering);
+    throttle_trim = calculate_trim(throttle);
   }
 
   steering_command_t command = {
-      .steering = (uint16_t)(sbus_to_pwm(steering) - steering_trim),
+      .steering = (uint16_t)(steering - steering_trim),
       .steering_trim = steering_trim,
-      .throttle = (uint16_t)(sbus_to_pwm(throttle) - throttle_trim),
+      .throttle = (uint16_t)(throttle - throttle_trim),
       .throttle_trim = throttle_trim,
   };
 
@@ -75,6 +44,24 @@ steering_command_t neutral_steering_command(void) {
       .throttle_trim = throttle_trim,
   };
   return command;
+}
+
+static int16_t calculate_trim(int16_t pulse) {
+  // Don't interpret value as trim if it's above or below these values.
+  const int16_t max_trim_pulse = 250;
+  const int16_t min_trim_pulse = -250;
+
+  int32_t pulse_offset = pulse - neutral_pulse;
+
+  if (pulse_offset < min_trim_pulse) {
+    return min_trim_pulse;
+  }
+
+  if (pulse_offset > max_trim_pulse) {
+    return max_trim_pulse;
+  }
+
+  return (int16_t)pulse_offset;
 }
 
 // y = kx + m

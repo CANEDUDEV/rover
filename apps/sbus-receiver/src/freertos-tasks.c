@@ -64,62 +64,59 @@ void sbus_read(void *unused) {
 
   // Steering can be turned on or off using a switch on the transmitter. The
   // switch value is on when the value of the channel is above the threshold.
-  bool steering_on = false;
+  bool steering_is_on = false;
   const uint8_t steering_on_switch_channel = 4;
   const uint16_t steering_on_threshold = 1500;
 
-  // Clear receive buffer before we start
-  __HAL_UART_FLUSH_DRREGISTER(&peripherals->huart2);
+  bool read_failed = true;
 
   for (;;) {
     memset(sbus_data, 0, sizeof(sbus_data));
 
-    bool read_fail = false;
+    if (read_failed) {
+      // Clear receive buffer if read fails for some reason
+      __HAL_UART_FLUSH_DRREGISTER(&peripherals->huart2);
+      read_failed = false;
+    }
 
     if (sbus_read_header(sbus_data) != APP_OK) {
-      read_fail = true;
+      read_failed = true;
     }
 
-    if (!read_fail && sbus_read_data(sbus_data) != APP_OK) {
-      read_fail = true;
+    if (!read_failed && sbus_read_data(sbus_data) != APP_OK) {
+      read_failed = true;
     }
 
-    if (read_fail) {
-      steering_command = neutral_steering_command();
-    } else {
+    if (!read_failed) {
       // Parse packet
       sbus_parse_data(sbus_data, &sbus_packet);
 
-      // Failsafe usually triggers if many frames are lost in a row Indicates
-      // connection loss (heavy). This will be handled by the radio receiver,
+      // Failsafe usually triggers if many frames are lost in a row. Indicates
+      // heavy connection loss. This will be handled by the radio receiver,
       // so we do nothing.
       if (sbus_packet.failsafe_activated) {
-        read_fail = true;
+        read_failed = true;
         printf("Failsafe activated\r\n");
       }
 
       // Indicates slight connection loss or issue with frame.
       // Also handled by the receiver.
       if (sbus_packet.frame_lost) {
-        read_fail = true;
+        read_failed = true;
         printf("Frame lost\r\n");
       }
-
-      // Check the "steering on" switch only on successful frame read.
-      if (!read_fail && sbus_packet.channels[steering_on_switch_channel] >
-                            steering_on_threshold) {
-        steering_on = true;
-      } else if (!read_fail) {
-        steering_on = false;
-      }
-
-      // The radio receiver sends a neutral command when the failsafe is
-      // activated or a frame is lost, so we always record the steering
-      // command.
-      steering_command = sbus_packet_to_steering_command(&sbus_packet);
     }
 
-    if (steering_on) {
+    // Check the "steering on" switch only on successful frame read.
+    if (!read_failed) {
+      steering_is_on = sbus_packet.channels[steering_on_switch_channel] >
+                       steering_on_threshold;
+      steering_command = sbus_packet_to_steering_command(&sbus_packet);
+    } else {
+      steering_command = neutral_steering_command();
+    }
+
+    if (steering_is_on) {
       send_steering_command(&steering_command);
     }
   }
@@ -147,10 +144,6 @@ int sbus_read_header(uint8_t *sbus_data) {
     uart_error = HAL_UART_GetError(&peripherals->huart2);
     if (uart_error != HAL_UART_ERROR_NONE) {
       printf("UART error in SBUS header: 0x%x\r\n", uart_error);
-      // Handle overrun by clearing receive register
-      if (uart_error == HAL_UART_ERROR_ORE) {
-        __HAL_UART_FLUSH_DRREGISTER(&peripherals->huart2);
-      }
       status = APP_NOT_OK;
     }
 
@@ -185,10 +178,6 @@ int sbus_read_data(uint8_t *sbus_data) {
   uart_error = HAL_UART_GetError(&peripherals->huart2);
   if (uart_error != HAL_UART_ERROR_NONE) {
     printf("UART error in SBUS data: 0x%x\r\n", uart_error);
-    // Handle overrun by clearing receive register
-    if (uart_error == HAL_UART_ERROR_ORE) {
-      __HAL_UART_FLUSH_DRREGISTER(&peripherals->huart2);
-    }
     status = APP_NOT_OK;
   }
 

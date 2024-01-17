@@ -9,7 +9,6 @@
 
 // CK
 #include "mayor.h"
-#include "postmaster-hal.h"
 
 // STM32Common
 #include "clock.h"
