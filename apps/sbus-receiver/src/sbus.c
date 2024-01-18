@@ -2,15 +2,11 @@
 
 #include <string.h>
 
-#include "error.h"
-#include "peripherals.h"
-#include "stm32f3xx_hal.h"
-
 /*
  * The SBUS packet is 25 bytes long consisting of:
  *
  * Byte[0]: SBUS header, 0x0F
- * Byte[1 -22]: 16 servo channels, 11 bits each
+ * Byte[1-22]: 16 servo channels, 11 bits each
  * Byte[23]
  *     Bit 0: channel 17 (0x01)
  *     Bit 1: channel 18 (0x02)
