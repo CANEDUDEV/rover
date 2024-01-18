@@ -229,11 +229,6 @@ void assign_servo_envelopes(void) {
   ck_data->steering_folder->envelopes[0].envelope_no = ROVER_STEERING_ENVELOPE;
   ck_data->steering_folder->envelopes[0].enable = true;
 
-  ck_data->steering_trim_folder->envelope_count = 1;
-  ck_data->steering_trim_folder->envelopes[0].envelope_no =
-      ROVER_STEERING_TRIM_ENVELOPE;
-  ck_data->steering_trim_folder->envelopes[0].enable = true;
-
   ck_data->servo_current_folder->envelope_count = 1;
   ck_data->servo_current_folder->envelopes[0].envelope_no =
       ROVER_SERVO_CURRENT_ENVELOPE;

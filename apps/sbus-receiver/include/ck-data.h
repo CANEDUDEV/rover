@@ -7,10 +7,10 @@ extern "C" {
 
 #include "types.h"
 
-#define CK_DATA_TX_PAGE_COUNT 4
-#define CK_DATA_TX_DOC_COUNT 4
+#define CK_DATA_TX_PAGE_COUNT 2
+#define CK_DATA_TX_DOC_COUNT 2
 #define CK_DATA_LIST_COUNT 2
-#define CK_DATA_TX_FOLDER_COUNT 4
+#define CK_DATA_TX_FOLDER_COUNT 2
 #define CK_DATA_RX_FOLDER_COUNT 0
 #define CK_DATA_FOLDER_COUNT \
   (2 + CK_DATA_TX_FOLDER_COUNT + CK_DATA_RX_FOLDER_COUNT)
@@ -26,15 +26,11 @@ typedef struct {
   ck_list_t *rx_list;
 
   ck_page_t *steering_page;
-  ck_page_t *steering_trim_page;
   ck_page_t *throttle_page;
-  ck_page_t *throttle_trim_page;
 
   // Transmit
   ck_folder_t *steering_folder;
-  ck_folder_t *steering_trim_folder;
   ck_folder_t *throttle_folder;
-  ck_folder_t *throttle_trim_folder;
 
 } ck_data_t;
 

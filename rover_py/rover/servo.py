@@ -28,24 +28,9 @@ def set_steering_angle_frame(angle_deg):
     return Frame(id_=Envelope.STEERING, dlc=3, data=data)
 
 
-def set_steering_trim_pulse_frame(pulse_mus):
-    data = [0] + list(pulse_mus.to_bytes(2, "little", signed=True))
-    return Frame(id_=Envelope.STEERING_TRIM, dlc=3, data=data)
-
-
-def set_steering_trim_angle_frame(angle_deg):
-    data = [1] + list(angle_deg.to_bytes(2, "little", signed=True))
-    return Frame(id_=Envelope.STEERING_TRIM, dlc=3, data=data)
-
-
 def set_throttle_pulse_frame(pulse_mus):
     data = [0] + list(pulse_mus.to_bytes(2, "little", signed=True))
     return Frame(id_=Envelope.THROTTLE, dlc=3, data=data)
-
-
-def set_throttle_trim_pulse_frame(pulse_mus):
-    data = [0] + list(pulse_mus.to_bytes(2, "little", signed=True))
-    return Frame(id_=Envelope.THROTTLE_TRIM, dlc=3, data=data)
 
 
 def set_measure_period_frame(time_ms):

@@ -9,12 +9,9 @@ extern "C" {
 
 #include "sbus.h"
 
-// The values correspond to PWM pulses, i.e. 1000 is min and 2000 is max.
 typedef struct {
-  uint16_t steering;
-  int16_t steering_trim;
-  uint16_t throttle;
-  int16_t throttle_trim;
+  int16_t steering_angle;
+  int16_t throttle;
 } steering_command_t;
 
 steering_command_t sbus_packet_to_steering_command(
