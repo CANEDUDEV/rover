@@ -19,22 +19,6 @@ with canlib.openChannel(
     ch.writeWait(servo.set_servo_voltage_frame(7400), -1)
     ch.writeWait(servo.set_pwm_frequency_frame(333), -1)
 
-    # Set trim using pulse
-    ch.writeWait(servo.set_steering_trim_pulse_frame(200), -1)
-    sleep(2)
-    ch.writeWait(servo.set_steering_trim_pulse_frame(-200), -1)
-    sleep(2)
-
-    # Set trim using angle
-    ch.writeWait(servo.set_steering_trim_angle_frame(15), -1)
-    sleep(2)
-    ch.writeWait(servo.set_steering_trim_angle_frame(-15), -1)
-    sleep(2)
-
-    # Reset trim
-    ch.writeWait(servo.set_steering_trim_pulse_frame(0), -1)
-    sleep(2)
-
     # Steer using pulse
     ch.writeWait(servo.set_steering_pulse_frame(2000), -1)
     sleep(2)

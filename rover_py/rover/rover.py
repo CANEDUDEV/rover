@@ -18,8 +18,6 @@ class Envelope(IntEnum):
     # Control messages
     STEERING = 0x100
     THROTTLE = 0x101
-    STEERING_TRIM = 0x102
-    THROTTLE_TRIM = 0x103
 
     # Report messages
     BATTERY_CELL_VOLTAGES = 0x200
@@ -57,13 +55,9 @@ ROVER_BASE_NUMBER = 0x400
 KINGDOM_ASSIGNMENTS = [
     # Control messages
     (City.SERVO, Envelope.STEERING, 9),
-    (City.SERVO, Envelope.STEERING_TRIM, 10),
     (City.MOTOR, Envelope.THROTTLE, 9),
-    (City.MOTOR, Envelope.THROTTLE_TRIM, 10),
     (City.SBUS_RECEIVER, Envelope.STEERING, 2),
-    (City.SBUS_RECEIVER, Envelope.STEERING_TRIM, 3),
-    (City.SBUS_RECEIVER, Envelope.THROTTLE, 4),
-    (City.SBUS_RECEIVER, Envelope.THROTTLE_TRIM, 5),
+    (City.SBUS_RECEIVER, Envelope.THROTTLE, 3),
     # Report messages
     (City.BATTERY_MONITOR, Envelope.BATTERY_CELL_VOLTAGES, 2),
     (City.BATTERY_MONITOR, Envelope.BATTERY_REG_OUT_CURRENT, 3),

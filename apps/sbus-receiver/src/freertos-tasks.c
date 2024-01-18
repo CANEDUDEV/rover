@@ -187,25 +187,15 @@ int sbus_read_data(uint8_t *sbus_data) {
 void send_steering_command(steering_command_t *command) {
   ck_data_t *ck_data = get_ck_data();
 
-  memcpy(&ck_data->steering_page->lines[1], &command->steering,
-         sizeof(command->steering));
-  memcpy(&ck_data->steering_trim_page->lines[1], &command->steering_trim,
-         sizeof(command->steering_trim));
+  memcpy(&ck_data->steering_page->lines[1], &command->steering_angle,
+         sizeof(command->steering_angle));
   memcpy(&ck_data->throttle_page->lines[1], &command->throttle,
          sizeof(command->throttle));
-  memcpy(&ck_data->throttle_trim_page->lines[1], &command->throttle_trim,
-         sizeof(command->throttle_trim));
 
   if (ck_send_document(ck_data->steering_folder->folder_no) != CK_OK) {
     printf("failed to send doc.\r\n");
   }
-  if (ck_send_document(ck_data->steering_trim_folder->folder_no) != CK_OK) {
-    printf("failed to send doc.\r\n");
-  }
   if (ck_send_document(ck_data->throttle_folder->folder_no) != CK_OK) {
-    printf("failed to send doc.\r\n");
-  }
-  if (ck_send_document(ck_data->throttle_trim_folder->folder_no) != CK_OK) {
     printf("failed to send doc.\r\n");
   }
 }

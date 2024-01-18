@@ -18,17 +18,13 @@ ck_data_t* get_ck_data(void) { return &ck_data; }
 
 void page_init(void) {
   ck_data.steering_page = &ck_data.pages[0];
-  ck_data.steering_trim_page = &ck_data.pages[1];
-  ck_data.throttle_page = &ck_data.pages[2];
-  ck_data.throttle_trim_page = &ck_data.pages[3];
+  ck_data.throttle_page = &ck_data.pages[1];
 
-  // Set up the pages
-  for (uint8_t i = 0; i < CK_DATA_TX_PAGE_COUNT; i++) {
-    // 1 line for specifying pulse width or angle,
-    // 2 lines for the value. We always send pulse width.
-    ck_data.pages[i].line_count = 3;
-    ck_data.pages[i].lines[0] = 0;
-  }
+  ck_data.steering_page->lines[0] = 1;
+  ck_data.throttle_page->lines[0] = 0;
+
+  ck_data.steering_page->line_count = 3;
+  ck_data.throttle_page->line_count = 3;
 }
 
 void doc_init(void) {
@@ -62,12 +58,8 @@ void list_init(void) {
 }
 
 void folder_init(void) {
-  // NOLINTBEGIN(*-magic-numbers)
   ck_data.steering_folder = &ck_data.folders[2];
-  ck_data.steering_trim_folder = &ck_data.folders[3];
-  ck_data.throttle_folder = &ck_data.folders[4];
-  ck_data.throttle_trim_folder = &ck_data.folders[5];
-  // NOLINTEND(*-magic-numbers)
+  ck_data.throttle_folder = &ck_data.folders[3];
 
   // Set up the transmit folders
   for (int i = 2; i < 2 + CK_DATA_TX_FOLDER_COUNT; i++) {
