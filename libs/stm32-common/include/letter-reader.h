@@ -16,7 +16,7 @@ typedef struct {
 
 } letter_reader_cfg_t;
 
-int init_letter_reader_task(letter_reader_cfg_t task);
+int init_letter_reader_task(letter_reader_cfg_t config);
 
 #ifdef __cplusplus
 }
