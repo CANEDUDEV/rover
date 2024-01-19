@@ -37,11 +37,11 @@ static ck_letter_t frame_to_letter(CAN_RxHeaderTypeDef *header, uint8_t *data);
 
 static letter_reader_cfg_t task_cfg;
 
-int init_letter_reader_task(letter_reader_cfg_t task) {
-  if (task.priority == 0) {
+int init_letter_reader_task(letter_reader_cfg_t config) {
+  if (config.priority == 0) {
     return APP_NOT_OK;
   }
-  if (task.app_letter_handler_func == NULL) {
+  if (config.app_letter_handler_func == NULL) {
     return APP_NOT_OK;
   }
 
@@ -50,9 +50,9 @@ int init_letter_reader_task(letter_reader_cfg_t task) {
 
   xTaskCreateStatic(process_letter, "process letter",
                     SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE, NULL,
-                    task.priority, process_letter_stack, &process_letter_buf);
+                    config.priority, process_letter_stack, &process_letter_buf);
 
-  task_cfg = task;
+  task_cfg = config;
 
   return APP_OK;
 }
