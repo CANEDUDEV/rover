@@ -1,9 +1,7 @@
 #include "postmaster.h"
 
 #include "common-peripherals.h"
-#include "error.h"
 #include "lfs-config.h"
-#include "postmaster-hal.h"
 
 static const char *ck_bit_timing_dir = "/ck";
 static const char *ck_bit_timing_file = "/ck/bit_timing";

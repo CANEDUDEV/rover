@@ -9,12 +9,11 @@
 
 // CK
 #include "mayor.h"
-#include "postmaster-hal.h"
 
 // STM32Common
 #include "error.h"
+#include "letter-reader.h"
 #include "peripherals.h"
-#include "spi-flash.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"
@@ -26,31 +25,27 @@ static TaskHandle_t sbus_read_task;
 static StaticTask_t sbus_read_buf;
 static StackType_t sbus_read_stack[configMINIMAL_STACK_SIZE];
 
-// CAN Kingdom process received letters task
-static TaskHandle_t process_letter_task;
-static StaticTask_t process_letter_buf;
-// Need at least one page of stack for interacting with the SPI flash.
-static StackType_t
-    process_letter_stack[SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE];
-
 void sbus_read(void *unused);
 // SBUS helpers
 int sbus_read_header(uint8_t *sbus_data);
 int sbus_read_data(uint8_t *sbus_data);
 void send_steering_command(steering_command_t *command);
 
-void process_letter(void *unused);
-void dispatch_letter(ck_letter_t *letter);
+int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
 
 void task_init(void) {
   sbus_read_task =
       xTaskCreateStatic(sbus_read, "sbus read", configMINIMAL_STACK_SIZE, NULL,
                         LOWEST_TASK_PRIORITY, sbus_read_stack, &sbus_read_buf);
 
-  process_letter_task = xTaskCreateStatic(
-      process_letter, "process letter",
-      SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY + 1, process_letter_stack, &process_letter_buf);
+  letter_reader_cfg_t letter_reader_cfg = {
+      .priority = LOWEST_TASK_PRIORITY + 1,
+      .app_letter_handler_func = handle_letter,
+  };
+
+  if (init_letter_reader_task(letter_reader_cfg) != APP_OK) {
+    error();
+  }
 }
 
 void sbus_read(void *unused) {
@@ -200,50 +195,10 @@ void send_steering_command(steering_command_t *command) {
   }
 }
 
-void process_letter(void *unused) {
-  (void)unused;
-
-  peripherals_t *peripherals = get_peripherals();
-
-  CAN_RxHeaderTypeDef header;
-  uint8_t data[CK_CAN_MAX_DLC];
-  ck_letter_t letter;
-
-  for (;;) {
-    if (HAL_CAN_ActivateNotification(&peripherals->common_peripherals->hcan,
-                                     CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) {
-      printf("Error activating interrupt.\r\n");
-      error();
-    }
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-    // Process all messages
-    while (HAL_CAN_GetRxMessage(&peripherals->common_peripherals->hcan,
-                                CAN_RX_FIFO0, &header, data) == HAL_OK) {
-      if (ck_correct_letter_received() != CK_OK) {
-        printf("CAN Kingdom error in ck_correct_letter_received().\r\n");
-      }
-      letter = frame_to_letter(&header, data);
-      dispatch_letter(&letter);
-    }
-  }
-}
-
-void dispatch_letter(ck_letter_t *letter) {
-  // Check for default letter
-  if (ck_is_default_letter(letter) == CK_OK) {
-    if (ck_default_letter_received() != CK_OK) {
-      printf("CAN Kingdom error in ck_default_letter_received().\r\n");
-    }
-  }
-  // Check for king's letter
-  else if (ck_is_kings_envelope(&letter->envelope) == CK_OK) {
-    if (ck_process_kings_letter(letter) != CK_OK) {
-      printf("failed to process king's letter.\r\n");
-    }
-  }
-  // Check for any other letter
-  // TODO
+int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
+  (void)folder;
+  (void)letter;
+  return APP_OK;
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
@@ -252,15 +207,5 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
   }
   BaseType_t higher_priority_task_woken = pdFALSE;
   vTaskNotifyGiveFromISR(sbus_read_task, &higher_priority_task_woken);
-  portYIELD_FROM_ISR(higher_priority_task_woken);
-}
-
-// Deactivate interrupt, then signal task. Let the task reactivate the
-// interrupt.
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
-  HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
-
-  BaseType_t higher_priority_task_woken = pdFALSE;
-  vTaskNotifyGiveFromISR(process_letter_task, &higher_priority_task_woken);
   portYIELD_FROM_ISR(higher_priority_task_woken);
 }
