@@ -9,7 +9,6 @@
 
 // CK
 #include "mayor.h"
-#include "postmaster-hal.h"
 #include "types.h"
 
 // STM32Common

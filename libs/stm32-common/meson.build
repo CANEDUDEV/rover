@@ -7,9 +7,9 @@ stm32_lib_src = files(
   'src' / 'common-peripherals.c',
   'src' / 'device-id.c',
   'src' / 'error.c',
+  'src' / 'letter-reader.c',
   'src' / 'lfs-config.c',
   'src' / 'postmaster.c',
-  'src' / 'postmaster-hal.c',
   'src' / 'print.c',
   'src' / 'spi-flash.c',
 )

@@ -9,12 +9,11 @@
 #include "common-peripherals.h"
 #include "device-id.h"
 #include "error.h"
+#include "letter-reader.h"
 #include "lfs-config.h"
-#include "spi-flash.h"
 
 // CK
 #include "mayor.h"
-#include "postmaster-hal.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"
@@ -44,14 +43,6 @@ static TimerHandle_t default_letter_timer;
 static void default_letter_timer_callback(TimerHandle_t timer);
 static void start_default_letter_timer(void);
 
-static TaskHandle_t process_letter_task;
-static StaticTask_t process_letter_buf;
-// Need at least one page of stack for interacting with the SPI flash.
-static StackType_t
-    process_letter_stack[SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE];
-
-static void process_letter(void *unused);
-static void dispatch_letter(ck_letter_t *letter);
 static int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
 
 // Bootloader
@@ -88,10 +79,14 @@ int main(void) {
       flash_program, "flash program", configMINIMAL_STACK_SIZE, NULL,
       LOWEST_TASK_PRIORITY, flash_program_stack, &flash_program_buf);
 
-  process_letter_task = xTaskCreateStatic(
-      process_letter, "process letter",
-      SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY + 1, process_letter_stack, &process_letter_buf);
+  letter_reader_cfg_t letter_reader_cfg = {
+      .priority = LOWEST_TASK_PRIORITY + 1,
+      .app_letter_handler_func = handle_letter,
+  };
+
+  if (init_letter_reader_task(letter_reader_cfg) != APP_OK) {
+    error();
+  }
 
   if (lfs_init() < 0) {
     printf("Error initializing littlefs.\r\n");
@@ -183,60 +178,6 @@ ck_err_t set_action_mode(ck_action_mode_t mode) {
 static ck_err_t set_city_mode(ck_city_mode_t mode) {
   (void)mode;
   return CK_OK;
-}
-
-static void process_letter(void *unused) {
-  (void)unused;
-
-  common_peripherals_t *peripherals = get_common_peripherals();
-
-  CAN_RxHeaderTypeDef header;
-  uint8_t data[CK_CAN_MAX_DLC];
-  ck_letter_t letter;
-
-  for (;;) {
-    if (HAL_CAN_ActivateNotification(&peripherals->hcan,
-                                     CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) {
-      printf("Error activating interrupt.\r\n");
-      error();
-    }
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-    // Process all messages
-    while (HAL_CAN_GetRxMessage(&peripherals->hcan, CAN_RX_FIFO0, &header,
-                                data) == HAL_OK) {
-      if (ck_correct_letter_received() != CK_OK) {
-        printf("CAN Kingdom error in ck_correct_letter_received().\r\n");
-      }
-      letter = frame_to_letter(&header, data);
-      dispatch_letter(&letter);
-    }
-  }
-}
-
-static void dispatch_letter(ck_letter_t *letter) {
-  ck_folder_t *folder = NULL;
-
-  // Check for default letter
-  if (ck_is_default_letter(letter) == CK_OK) {
-    if (ck_default_letter_received() != CK_OK) {
-      printf("CAN Kingdom error in ck_default_letter_received().\r\n");
-    }
-  }
-
-  // Check for king's letter
-  else if (ck_is_kings_envelope(&letter->envelope) == CK_OK) {
-    if (ck_process_kings_letter(letter) != CK_OK) {
-      printf("failed to process king's letter.\r\n");
-    }
-  }
-
-  // Check for any other letter
-  else if (ck_get_envelopes_folder(&letter->envelope, &folder) == CK_OK) {
-    if (handle_letter(folder, letter) != APP_OK) {
-      printf("failed to process page.\r\n");
-    }
-  }
 }
 
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
@@ -594,16 +535,6 @@ static void start_app(uint32_t pc, uint32_t sp) {
       "mov pc, %[pc]  /* load pc into PC register */\n"
       :
       : [sp] "r"(sp), [pc] "r"(pc));  // Replace [sp] by sp, and [pc] by pc.
-}
-
-// Deactivate interrupt, then signal task. Let the task reactivate the
-// interrupt.
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
-  HAL_CAN_DeactivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
-
-  BaseType_t higher_priority_task_woken = pdFALSE;
-  vTaskNotifyGiveFromISR(process_letter_task, &higher_priority_task_woken);
-  portYIELD_FROM_ISR(higher_priority_task_woken);
 }
 
 void HAL_CAN_MspInit(CAN_HandleTypeDef *hcan) {
