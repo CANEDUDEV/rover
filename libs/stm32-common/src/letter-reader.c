@@ -5,7 +5,6 @@
 
 #include "common-peripherals.h"
 #include "error.h"
-#include "spi-flash.h"
 #include "stm32f3xx_hal_can.h"
 
 // CK
@@ -27,9 +26,7 @@ static uint8_t
 
 static StaticTask_t process_letter_buf;
 
-// Need at least one page of stack for interacting with the SPI flash.
-static StackType_t
-    process_letter_stack[SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE];
+static StackType_t process_letter_stack[configMINIMAL_STACK_SIZE];
 
 static void process_letter(void *unused);
 static void dispatch_letter(ck_letter_t *letter);
@@ -48,9 +45,9 @@ int init_letter_reader_task(letter_reader_cfg_t config) {
   letter_queue = xQueueCreateStatic(LETTER_QUEUE_LENGTH, LETTER_QUEUE_ITEM_SIZE,
                                     letter_queue_storage, &static_letter_queue);
 
-  xTaskCreateStatic(process_letter, "process letter",
-                    SPI_FLASH_PAGE_SIZE + configMINIMAL_STACK_SIZE, NULL,
-                    config.priority, process_letter_stack, &process_letter_buf);
+  xTaskCreateStatic(process_letter, "process letter", configMINIMAL_STACK_SIZE,
+                    NULL, config.priority, process_letter_stack,
+                    &process_letter_buf);
 
   task_cfg = config;
 

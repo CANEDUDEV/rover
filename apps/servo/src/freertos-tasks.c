@@ -11,6 +11,7 @@
 // STM32Common
 #include "error.h"
 #include "letter-reader.h"
+#include "lfs-wrapper.h"
 #include "rover.h"
 
 // CK
@@ -25,7 +26,6 @@
 
 #define MEASURE_DEFAULT_PERIOD_MS 20
 #define REPORT_DEFAULT_PERIOD_MS 100
-#define LOWEST_TASK_PRIORITY 24
 
 task_periods_t task_periods = {
     .measure_period_ms = MEASURE_DEFAULT_PERIOD_MS,
@@ -61,16 +61,21 @@ void send_docs(void);
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
 
 void task_init(void) {
-  report_task =
-      xTaskCreateStatic(report, "report", configMINIMAL_STACK_SIZE, NULL,
-                        LOWEST_TASK_PRIORITY, report_stack, &report_buf);
+  uint8_t priority = LOWEST_TASK_PRIORITY;
+
+  if (init_lfs_task(priority++) < 0) {
+    error();
+  }
+
+  report_task = xTaskCreateStatic(report, "report", configMINIMAL_STACK_SIZE,
+                                  NULL, priority++, report_stack, &report_buf);
 
   measure_task =
       xTaskCreateStatic(measure, "measure", configMINIMAL_STACK_SIZE, NULL,
-                        LOWEST_TASK_PRIORITY + 1, measure_stack, &measure_buf);
+                        priority++, measure_stack, &measure_buf);
 
   letter_reader_cfg_t letter_reader_cfg = {
-      .priority = LOWEST_TASK_PRIORITY + 2,
+      .priority = priority++,
       .app_letter_handler_func = handle_letter,
   };
 
@@ -78,9 +83,8 @@ void task_init(void) {
     error();
   }
 
-  king_task =
-      xTaskCreateStatic(king, "king", configMINIMAL_STACK_SIZE, NULL,
-                        LOWEST_TASK_PRIORITY + 3, king_stack, &king_buf);
+  king_task = xTaskCreateStatic(king, "king", configMINIMAL_STACK_SIZE, NULL,
+                                priority++, king_stack, &king_buf);
 }
 
 void set_task_periods(task_periods_t *periods) {

@@ -22,7 +22,7 @@ int read_ck_id(ck_id_t *ck_id);
  * Writes given #ck_id to SPI flash.
  * Returns APP_OK on success, APP_NOT_OK or littlefs error codes otherwise.
  */
-int write_ck_id(const ck_id_t *ck_id);
+int write_ck_id(ck_id_t *ck_id);
 
 /**
  * Returns a HW device unique serial number.

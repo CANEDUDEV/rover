@@ -1,9 +1,7 @@
 #include <stdio.h>
 
 #include "ck-data.h"
-#include "device-id.h"
 #include "freertos-tasks.h"
-#include "lfs-config.h"
 #include "peripherals.h"
 #include "rover.h"
 
@@ -13,6 +11,7 @@
 
 // STM32Common
 #include "clock.h"
+#include "device-id.h"
 #include "error.h"
 
 // FreeRTOS
@@ -37,11 +36,6 @@ int main(void) {
 
   // Initialize all configured peripherals
   peripherals_init();
-
-  if (lfs_init() < 0) {
-    printf("Error initializing littlefs.\r\n");
-    error();
-  }
 
   task_init();
   mayor_init();

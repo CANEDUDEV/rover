@@ -13,13 +13,12 @@
 // STM32Common
 #include "error.h"
 #include "letter-reader.h"
+#include "lfs-wrapper.h"
 #include "peripherals.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"
 #include "task.h"
-
-#define LOWEST_TASK_PRIORITY 24
 
 static TaskHandle_t sbus_read_task;
 static StaticTask_t sbus_read_buf;
@@ -34,12 +33,18 @@ void send_steering_command(steering_command_t *command);
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
 
 void task_init(void) {
+  uint8_t priority = LOWEST_TASK_PRIORITY;
+
+  if (init_lfs_task(priority++) < 0) {
+    error();
+  }
+
   sbus_read_task =
       xTaskCreateStatic(sbus_read, "sbus read", configMINIMAL_STACK_SIZE, NULL,
-                        LOWEST_TASK_PRIORITY, sbus_read_stack, &sbus_read_buf);
+                        priority++, sbus_read_stack, &sbus_read_buf);
 
   letter_reader_cfg_t letter_reader_cfg = {
-      .priority = LOWEST_TASK_PRIORITY + 1,
+      .priority = priority++,
       .app_letter_handler_func = handle_letter,
   };
 
