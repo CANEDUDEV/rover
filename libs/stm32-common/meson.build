@@ -7,6 +7,7 @@ stm32_lib_src = files(
   'src' / 'common-peripherals.c',
   'src' / 'device-id.c',
   'src' / 'error.c',
+  'src' / 'freertos-config.c',
   'src' / 'letter-reader.c',
   'src' / 'lfs-config.c',
   'src' / 'postmaster.c',
