@@ -58,7 +58,15 @@ void xPortSysTickHandler(void);
 #define configUSE_TICK_HOOK 0
 #define configCPU_CLOCK_HZ (SystemCoreClock)
 #define configTICK_RATE_HZ 1000
+
+/* CMSIS-RTOSv2 defines 56 levels of priorities.
+ * To be able to use them all and avoid application misbehavior,
+ * configUSE_PORT_OPTIMISED_TASK_SELECTION must be set to 0
+ * and configMAX_PRIORITIES must be set to 56.
+ */
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION 0
 #define configMAX_PRIORITIES 56
+
 #define configMINIMAL_STACK_SIZE 128
 #define configTOTAL_HEAP_SIZE 10240
 #define configMAX_TASK_NAME_LEN 16
@@ -68,7 +76,6 @@ void xPortSysTickHandler(void);
 #define configQUEUE_REGISTRY_SIZE 8
 #define configUSE_RECURSIVE_MUTEXES 1
 #define configUSE_COUNTING_SEMAPHORES 1
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION 0
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES 0
@@ -151,5 +158,7 @@ standard names. */
 
 /* Section where parameter definitions can be added (for instance, to override
  * default ones in FreeRTOS.h) */
+
+#define LOWEST_TASK_PRIORITY 16
 
 #endif /* FREERTOS_CONFIG_H */

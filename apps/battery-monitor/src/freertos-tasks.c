@@ -14,6 +14,7 @@
 // STM32Common
 #include "error.h"
 #include "letter-reader.h"
+#include "lfs-wrapper.h"
 
 // CK
 #include "mayor.h"
@@ -25,7 +26,6 @@
 
 #define BATTERY_MONITOR_DEFAULT_PERIOD_MS 20
 #define BATTERY_REPORT_DEFAULT_PERIOD_MS 200
-#define LOWEST_TASK_PRIORITY 24
 
 static task_periods_t task_periods = {
     .battery_monitor_period_ms = BATTERY_MONITOR_DEFAULT_PERIOD_MS,
@@ -49,16 +49,22 @@ void send_docs(void);
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
 
 void task_init(void) {
+  uint8_t priority = LOWEST_TASK_PRIORITY;
+
+  if (init_lfs_task(priority++) < 0) {
+    error();
+  }
+
   battery_report_task = xTaskCreateStatic(
       battery_report, "battery report", configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY, battery_report_stack, &battery_report_buf);
+      priority++, battery_report_stack, &battery_report_buf);
 
   battery_monitor_task = xTaskCreateStatic(
       battery_monitor, "battery monitor", configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY + 1, battery_monitor_stack, &battery_monitor_buf);
+      priority++, battery_monitor_stack, &battery_monitor_buf);
 
   letter_reader_cfg_t letter_reader_cfg = {
-      .priority = LOWEST_TASK_PRIORITY + 2,
+      .priority = priority++,
       .app_letter_handler_func = handle_letter,
   };
 

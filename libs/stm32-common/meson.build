@@ -9,7 +9,7 @@ stm32_lib_src = files(
   'src' / 'error.c',
   'src' / 'freertos-config.c',
   'src' / 'letter-reader.c',
-  'src' / 'lfs-config.c',
+  'src' / 'lfs-wrapper.c',
   'src' / 'postmaster.c',
   'src' / 'print.c',
   'src' / 'spi-flash.c',

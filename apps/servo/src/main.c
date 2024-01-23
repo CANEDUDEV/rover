@@ -1,10 +1,8 @@
 #include <stdio.h>
 
 #include "ck-data.h"
-#include "device-id.h"
 #include "failsafe.h"
 #include "freertos-tasks.h"
-#include "lfs-config.h"
 #include "peripherals.h"
 #include "potentiometer.h"
 #include "pwm.h"
@@ -15,6 +13,7 @@
 
 // STM32Common
 #include "clock.h"
+#include "device-id.h"
 #include "error.h"
 
 // FreeRTOS
@@ -40,11 +39,6 @@ int main(void) {
 
   // Initialize all configured peripherals
   peripherals_init();
-
-  if (lfs_init() < 0) {
-    printf("Error initializing littlefs.\r\n");
-    error();
-  }
 
   // Configure potentiometers
   configure_both_potentiometers(POT_SERVO_DEFAULT, POT_SENSOR_DEFAULT);

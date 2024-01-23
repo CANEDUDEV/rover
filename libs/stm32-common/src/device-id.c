@@ -1,14 +1,20 @@
 #include "device-id.h"
 
+#include <stdio.h>
+#include <string.h>
+
 #include "common-peripherals.h"
-#include "error.h"
-#include "lfs-config.h"
-#include "lfs.h"
+#include "lfs-wrapper.h"
 #include "rover.h"
 #include "stm32f3xx_ll_utils.h"
 
-static const char *ck_settings_dir = "/ck";
-static const char *ck_settings_file = "/ck/settings";
+// FreeRTOS
+#include "FreeRTOS.h"
+#include "task.h"
+
+static const char *ck_id_filename = "/ck_id";
+
+static ck_id_t ck_id_storage;
 
 ck_id_t get_default_ck_id(uint8_t city_address) {
   ck_id_t ck_id = {
@@ -22,67 +28,36 @@ ck_id_t get_default_ck_id(uint8_t city_address) {
 }
 
 int read_ck_id(ck_id_t *ck_id) {
-  lfs_config_t lfs = get_lfs_config();
-  lfs_file_t file;
-
   memset(ck_id, 0, sizeof(ck_id_t));
 
-  int err = lfs_file_open(lfs.lfs, &file, ck_settings_file, LFS_O_RDONLY);
+  file_t file = {
+      .name = ck_id_filename,
+      .data = ck_id,
+      .size = sizeof(ck_id_t),
+  };
+
+  int err = read_file(&file);
   if (err < 0) {
-    if (err == LFS_ERR_NOENT) {
-      printf("Couldn't find CK settings file.\r\n");
-    } else {
-      printf("lfs_file_open error: %d\r\n", err);
-    }
-    return err;
+    printf("Error: couldn't read file %s. error: %d\r\n", ck_id_filename, err);
   }
 
-  err = lfs_file_read(lfs.lfs, &file, ck_id, sizeof(ck_id_t));
-  if (err < 0) {
-    printf("Couldn't read CK settings file, error: %d", err);
-    lfs_file_close(lfs.lfs, &file);
-    return err;
-  }
-
-  err = lfs_file_close(lfs.lfs, &file);
-  if (err < 0) {
-    printf("lfs_file_close error: %d\r\n", err);
-    return err;
-  }
-
-  return APP_OK;
+  return err;
 }
 
-int write_ck_id(const ck_id_t *ck_id) {
-  lfs_config_t lfs = get_lfs_config();
+int write_ck_id(ck_id_t *ck_id) {
+  ck_id_storage = *ck_id;  // Store it for async write
 
-  int err = lfs_mkdir(lfs.lfs, ck_settings_dir);
-  if (err < 0 && err != LFS_ERR_EXIST) {
-    printf("lfs_mkdir error: %d\r\n", err);
-    return err;
+  file_t file = {
+      .name = ck_id_filename,
+      .data = &ck_id_storage,
+      .size = sizeof(ck_id_t),
+  };
+
+  if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+    return write_file_async(&file);
   }
 
-  lfs_file_t file;
-  err = lfs_file_open(lfs.lfs, &file, ck_settings_file,
-                      LFS_O_CREAT | LFS_O_WRONLY);
-  if (err < 0) {
-    printf("lfs_file_open error: %d\r\n", err);
-    return err;
-  }
-
-  err = lfs_file_write(lfs.lfs, &file, ck_id, sizeof(ck_id_t));
-  if (err < 0) {
-    printf("lfs_file_write error: %d\r\n", err);
-    return err;
-  }
-
-  err = lfs_file_close(lfs.lfs, &file);
-  if (err < 0) {
-    printf("lfs_file_close error: %d\r\n", err);
-    return err;
-  }
-
-  return APP_OK;
+  return write_file(&file);
 }
 
 uint32_t get_device_serial(void) {

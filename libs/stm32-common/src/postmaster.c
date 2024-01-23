@@ -1,10 +1,13 @@
 #include "postmaster.h"
 
-#include "common-peripherals.h"
-#include "lfs-config.h"
+#include <stdio.h>
 
-static const char *ck_bit_timing_dir = "/ck";
-static const char *ck_bit_timing_file = "/ck/bit_timing";
+#include "common-peripherals.h"
+#include "lfs-wrapper.h"
+
+static const char *bit_timing_file = "/ck_bit_timing";
+
+static ck_can_bit_timing_t bit_timing_storage;
 
 // Helpers
 static ck_err_t check_bit_timing(const ck_can_bit_timing_t *bit_timing);
@@ -148,31 +151,17 @@ ck_err_t ck_set_bit_timing(const ck_can_bit_timing_t *bit_timing) {
 }
 
 ck_err_t ck_save_bit_timing(const ck_can_bit_timing_t *bit_timing) {
-  lfs_config_t lfs = get_lfs_config();
+  bit_timing_storage = *bit_timing;
 
-  int err = lfs_mkdir(lfs.lfs, ck_bit_timing_dir);
-  if (err < 0 && err != LFS_ERR_EXIST) {
-    printf("lfs_mkdir error: %d\r\n", err);
-    return CK_ERR_PERIPHERAL;
-  }
+  file_t file = {
+      .name = bit_timing_file,
+      .data = &bit_timing_storage,
+      .size = sizeof(ck_can_bit_timing_t),
+  };
 
-  lfs_file_t file;
-  err = lfs_file_open(lfs.lfs, &file, ck_bit_timing_file,
-                      LFS_O_CREAT | LFS_O_WRONLY);
+  int err = write_file_async(&file);
   if (err < 0) {
-    printf("lfs_file_open error: %d\r\n", err);
-    return CK_ERR_PERIPHERAL;
-  }
-
-  err = lfs_file_write(lfs.lfs, &file, bit_timing, sizeof(ck_can_bit_timing_t));
-  if (err < 0) {
-    printf("lfs_file_write error: %d\r\n", err);
-    return CK_ERR_PERIPHERAL;
-  }
-
-  err = lfs_file_close(lfs.lfs, &file);
-  if (err < 0) {
-    printf("lfs_file_close error: %d\r\n", err);
+    printf("Error: couldn't write CK bit timing file: %d\r\n", err);
     return CK_ERR_PERIPHERAL;
   }
 
@@ -180,31 +169,15 @@ ck_err_t ck_save_bit_timing(const ck_can_bit_timing_t *bit_timing) {
 }
 
 ck_err_t ck_load_bit_timing(ck_can_bit_timing_t *bit_timing) {
-  lfs_config_t lfs = get_lfs_config();
-  lfs_file_t file;
+  file_t file = {
+      .name = bit_timing_file,
+      .data = bit_timing,
+      .size = sizeof(ck_can_bit_timing_t),
+  };
 
-  memset(bit_timing, 0, sizeof(ck_id_t));
-
-  int err = lfs_file_open(lfs.lfs, &file, ck_bit_timing_file, LFS_O_RDONLY);
+  int err = read_file(&file);
   if (err < 0) {
-    if (err == LFS_ERR_NOENT) {
-      printf("Couldn't find CK bit timing file.\r\n");
-    } else {
-      printf("lfs_file_open error: %d\r\n", err);
-    }
-    return CK_ERR_PERIPHERAL;
-  }
-
-  err = lfs_file_read(lfs.lfs, &file, bit_timing, sizeof(ck_can_bit_timing_t));
-  if (err < 0) {
-    printf("Couldn't read CK bit timing file, error: %d", err);
-    lfs_file_close(lfs.lfs, &file);
-    return CK_ERR_PERIPHERAL;
-  }
-
-  err = lfs_file_close(lfs.lfs, &file);
-  if (err < 0) {
-    printf("lfs_file_close error: %d\r\n", err);
+    printf("Error: couldn't read CK bit timing file: %d\r\n", err);
     return CK_ERR_PERIPHERAL;
   }
 

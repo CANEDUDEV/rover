@@ -10,7 +10,7 @@
 #include "device-id.h"
 #include "error.h"
 #include "letter-reader.h"
-#include "lfs-config.h"
+#include "lfs-wrapper.h"
 
 // CK
 #include "mayor.h"
@@ -19,8 +19,6 @@
 #include "FreeRTOS.h"
 #include "stream_buffer.h"
 #include "timers.h"
-
-#define LOWEST_TASK_PRIORITY 24
 
 // CK
 #define CK_FOLDER_COUNT 2
@@ -75,21 +73,22 @@ int main(void) {
   system_clock_init();
   common_peripherals_init();
 
+  uint8_t priority = LOWEST_TASK_PRIORITY;
+
+  if (init_lfs_task(priority++) < 0) {
+    error();
+  }
+
   flash_program_task = xTaskCreateStatic(
       flash_program, "flash program", configMINIMAL_STACK_SIZE, NULL,
-      LOWEST_TASK_PRIORITY, flash_program_stack, &flash_program_buf);
+      priority++, flash_program_stack, &flash_program_buf);
 
   letter_reader_cfg_t letter_reader_cfg = {
-      .priority = LOWEST_TASK_PRIORITY + 1,
+      .priority = priority++,
       .app_letter_handler_func = handle_letter,
   };
 
   if (init_letter_reader_task(letter_reader_cfg) != APP_OK) {
-    error();
-  }
-
-  if (lfs_init() < 0) {
-    printf("Error initializing littlefs.\r\n");
     error();
   }
 
@@ -223,10 +222,7 @@ static void exit_bootloader(const ck_letter_t *letter) {
   printf("Exiting bootloader...\r\n");
 
   // Release any resources used by littlefs
-  int err = lfs_deinit();
-  if (err < 0) {
-    printf("lfs_deinit error: %d\r\n", err);
-  }
+  lfs_deinit();
 
   // Resets the peripheral buses, so no need for additional deinit.
   HAL_DeInit();
