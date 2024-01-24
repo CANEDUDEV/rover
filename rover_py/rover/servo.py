@@ -1,4 +1,6 @@
 # Servo board testing frames
+import struct
+
 from canlib import Frame
 
 from .rover import Envelope
@@ -20,12 +22,12 @@ def set_pwm_frequency_frame(frequency_hz):
 
 def set_steering_pulse_frame(pulse_mus):
     data = [0] + list(pulse_mus.to_bytes(2, "little", signed=True))
-    return Frame(id_=Envelope.STEERING, dlc=3, data=data)
+    return Frame(id_=Envelope.STEERING, dlc=5, data=data)
 
 
 def set_steering_angle_frame(angle_deg):
-    data = [1] + list(angle_deg.to_bytes(2, "little", signed=True))
-    return Frame(id_=Envelope.STEERING, dlc=3, data=data)
+    data = [1] + list(struct.pack("f", angle_deg))
+    return Frame(id_=Envelope.STEERING, dlc=5, data=data)
 
 
 def set_throttle_pulse_frame(pulse_mus):

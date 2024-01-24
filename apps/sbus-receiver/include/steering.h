@@ -12,7 +12,7 @@ extern "C" {
 typedef struct {
   // Steering can be turned on or off using a switch on the transmitter.
   bool steering_is_on;
-  int16_t steering_angle;
+  float steering_angle;
   int16_t throttle;
 } steering_command_t;
 

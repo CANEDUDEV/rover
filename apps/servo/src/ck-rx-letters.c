@@ -3,12 +3,9 @@
 #include <math.h>
 #include <string.h>
 
-#include "adc.h"
 #include "error.h"
 #include "failsafe.h"
 #include "freertos-tasks.h"
-#include "peripherals.h"
-#include "ports.h"
 #include "potentiometer.h"
 #include "pwm.h"
 
@@ -79,7 +76,7 @@ int process_set_servo_voltage_letter(const ck_letter_t *letter) {
 
 // 2 bytes in page, the PWM frequency in Hz. At most 333 Hz.
 int process_pwm_conf_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 2) {  // NOLINT
+  if (letter->page.line_count != 2) {
     return APP_NOT_OK;
   }
 
@@ -95,17 +92,19 @@ int process_pwm_conf_letter(const ck_letter_t *letter) {
   return APP_OK;
 }
 
-// 3 bytes in page
+// 5 bytes in page
 // byte 0: can either be 0 or 1.
 //
-// If 0, interpret bytes 1-2 as a pulse-width in microseconds. If 1, interpret
-// bytes 1-2 as a signed value representing a steering angle, with a range of
-// -90 to 90 degrees.
+// If byte0 == 0, interpret bytes 1-2 as a pulse-width in microseconds.
+// Bytes 3-4 are ignored.
+//
+// If byte0 == 1, interpret bytes 1-4 as a float representing a
+// steering angle, with a range of -90 to 90 degrees.
 //
 // -90 degrees pulse width: 500 microseconds.
 // +90 degrees pulse width: 2500 microseconds.
 int process_steering_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 3) {
+  if (letter->page.line_count != 5) {  // NOLINT
     return APP_NOT_OK;
   }
 
@@ -119,13 +118,13 @@ int process_steering_letter(const ck_letter_t *letter) {
       break;
 
     case 1: {
-      int16_t angle = 0;
+      float angle = 0;
       memcpy(&angle, &letter->page.lines[1], sizeof(angle));
       if (angle < -90 || angle > 90) {  // NOLINT
         return APP_NOT_OK;
       }
 
-      pulse_float = (float)angle * k_angle_to_pulse + m_angle_to_pulse;
+      pulse_float = angle * k_angle_to_pulse + m_angle_to_pulse;
 
       break;
     }

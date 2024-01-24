@@ -23,7 +23,7 @@ void page_init(void) {
   ck_data.steering_page->lines[0] = 1;
   ck_data.throttle_page->lines[0] = 0;
 
-  ck_data.steering_page->line_count = 3;
+  ck_data.steering_page->line_count = 5;  // NOLINT
   ck_data.throttle_page->line_count = 3;
 }
 
@@ -68,6 +68,7 @@ void folder_init(void) {
     ck_data.folders[i].doc_list_no = 0;
     ck_data.folders[i].doc_no = i - 1;  // 0 reserved by mayor's doc
     ck_data.folders[i].enable = true;
-    ck_data.folders[i].dlc = 3;
   }
+  ck_data.steering_folder->dlc = 5;  // NOLINT
+  ck_data.throttle_folder->dlc = 3;
 }

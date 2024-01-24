@@ -15,7 +15,7 @@
 #define SBUS_MID 1023
 #define SBUS_MAX_OFFSET 400
 
-static int16_t sbus_to_steering_angle(float sbus_value);
+static float sbus_to_steering_angle(float sbus_value);
 static int16_t sbus_to_throttle(float sbus_value);
 static void update_calibration(const sbus_message_t *sbus_packet);
 static bool switch_is_active(uint16_t switch_value);
@@ -86,7 +86,7 @@ steering_command_t neutral_steering_command(void) {
 }
 
 // Steering range varies between -45 and 45 deg.
-static int16_t sbus_to_steering_angle(float sbus_value) {
+static float sbus_to_steering_angle(float sbus_value) {
   if (sbus_value < calibration_values.steering_min) {
     calibration_values.steering_min = sbus_value;
   }
@@ -98,7 +98,7 @@ static int16_t sbus_to_steering_angle(float sbus_value) {
       calibration_values.steering_max + calibration_values.steering_min;
 
   const float angle = 90 * sbus_value / sbus_range - 45;
-  return (int16_t)roundf(angle);
+  return angle;
 }
 
 // Throttle pulse width ranges between 1000 and 2000.
