@@ -17,7 +17,7 @@
 
 static int16_t sbus_to_steering_angle(float sbus_value);
 static int16_t sbus_to_throttle(float sbus_value);
-static void update_calibration(const sbus_packet_t *sbus_packet);
+static void update_calibration(const sbus_message_t *sbus_packet);
 static bool switch_is_active(uint16_t switch_value);
 static void save_calibration_data(void);
 static uint16_t get_press_time_in_seconds(uint16_t switch_message_count);
@@ -59,8 +59,8 @@ void init_steering(void) {
   }
 }
 
-steering_command_t sbus_packet_to_steering_command(
-    const sbus_packet_t *sbus_packet) {
+steering_command_t sbus_message_to_steering_command(
+    const sbus_message_t *sbus_packet) {
   int16_t steering = (int16_t)sbus_packet->channels[STEERING_CHANNEL];
   int16_t throttle = (int16_t)sbus_packet->channels[THROTTLE_CHANNEL];
   uint16_t steering_switch = sbus_packet->channels[STEERING_SWITCH_CHANNEL];
@@ -118,7 +118,7 @@ static int16_t sbus_to_throttle(float sbus_value) {
   return (int16_t)roundf(pwm);
 }
 
-static void update_calibration(const sbus_packet_t *sbus_packet) {
+static void update_calibration(const sbus_message_t *sbus_packet) {
   static uint16_t switch_pressed_count = 0;
 
   if (switch_is_active(sbus_packet->channels[CALIBRATION_SWITCH_CHANNEL])) {
