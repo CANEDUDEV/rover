@@ -8,17 +8,15 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-#define SBUS_HEADER 0x0F
 #define SBUS_CHANNEL_COUNT 18
-#define SBUS_PACKET_LENGTH 25
 
 typedef struct {
   uint16_t channels[SBUS_CHANNEL_COUNT];
   bool frame_lost;
   bool failsafe_activated;
-} sbus_packet_t;
+} sbus_message_t;
 
-void sbus_parse_data(const uint8_t *data, sbus_packet_t *sbus_packet);
+int sbus_read_message(sbus_message_t *message);
 
 #ifdef __cplusplus
 }
