@@ -30,145 +30,45 @@ assignments = [
 ]
 
 
-def get_target_city(node):
-    cities = {
-        "servo": rover.City.SERVO,
-        "motor": rover.City.MOTOR,
-        "battery_monitor": rover.City.BATTERY_MONITOR,
-        "sbus_receiver": rover.City.SBUS_RECEIVER,
-    }
-    return cities[node]
+def main():
+    parser = argparse.ArgumentParser(description="Flash Rover firmware over CAN.")
 
-
-def send_bootloader_command(ch, frame, timeout=100):
-    ch.iocontrol.flush_rx_buffer()
-    ch.write(frame)
-
-    try:
-        ch.readSyncSpecific(COMMAND_ACK_ID, timeout=timeout)
-        received = ch.readSpecificSkip(COMMAND_ACK_ID)
-
-    except canlib.exceptions.CanNoMsg:
-        print("No ACK received. Exiting.")
-        sys.exit(1)
-
-    command_id = int.from_bytes(received.data[1:5], byteorder="little")
-
-    if received.data[0] == 1:  # NACK value
-        print(f"NACK received for command {hex(command_id)}")
-        sys.exit(1)
-
-    if command_id != frame.id:
-        print(
-            f"Wrong ACK for command, expected: {hex(frame.id)}, got {hex(command_id)}"
+    node_choices = ["servo", "motor", "battery_monitor", "sbus_receiver"]
+    for node in node_choices:
+        parser.add_argument(
+            f"--{node}",
+            dest=node,
+            metavar=f"{node.upper()}_FILE",
+            help=f"Binary file for {node} node.",
         )
-        sys.exit(1)
+
+    args = parser.parse_args()
+
+    print("Checking binaries...")
+    node_binary_map = {}
+    for node in node_choices:
+        file_path = getattr(args, node)
+        if not file_path:
+            continue
+
+        verify_file(file_path)
+        node_binary_map[get_node_id(node)] = read_file(file_path)
+
+    if not node_binary_map:
+        parser.print_usage()
+        sys.exit(0)
+
+    prepare_flash(node_binary_map.keys())
+
+    for node, binary in node_binary_map.items():
+        flash_node(node, binary)
+
+    finalize_flash()
+
+    print("Finished successfully.")
 
 
-def enter_bootloader():
-    return Frame(id_=ENTER_BOOTLOADER_ID, dlc=0, data=[])
-
-
-def exit_bootloader():
-    return Frame(id_=EXIT_BOOTLOADER_ID, dlc=0, data=[])
-
-
-def is_bootloader_mayor(frame):
-    return frame.dlc == 8 and frame.data == bytearray([0, 2, 0, 0, 0, 0, 0, 0])
-
-
-def flash_erase(bytes_to_erase):
-    return Frame(
-        id_=FLASH_ERASE_ID,
-        dlc=4,
-        data=list(bytes_to_erase.to_bytes(4, "little")),
-    )
-
-
-def flash_program(ch, binary_data):
-    # init
-    data = [1] + list(len(binary_data).to_bytes(4, "little")) + [0, 0, 0]
-    ch.write(Frame(id_=FLASH_PROGRAM_ID, dlc=8, data=data))
-
-    try:
-        ch.readSyncSpecific(FLASH_PROGRAM_ID, timeout=1000)
-        received = ch.readSpecificSkip(FLASH_PROGRAM_ID)
-
-    except canlib.exceptions.CanNoMsg:
-        print("No bundle request response (1). Exiting.")
-        sys.exit(1)
-
-    if received.data[0] != 2:
-        print("Wrong response before programming flash.")
-        sys.exit(1)
-
-    if int.from_bytes(received.data[1:3], byteorder="little") != 0xFFFF:
-        print("Got wrong bundle request, wanted 0xFFFF.")
-        sys.exit(1)
-
-    # Chunk and send data
-    chunk_size = 7  # Payload bytes per frame
-
-    chunks = [
-        list(binary_data[i : i + chunk_size])
-        for i in range(0, len(binary_data), chunk_size)
-    ]
-
-    # Pad last chunk if needed
-    last_chunk_length = len(chunks[-1])
-    chunks[-1] += [0] * (chunk_size - last_chunk_length)
-
-    current_page_number = 3
-
-    for chunk in chunks:
-        data = [current_page_number] + chunk
-        ch.writeWait(Frame(id_=FLASH_PROGRAM_ID, dlc=8, data=data), -1)
-
-        if current_page_number == 3:
-            current_page_number = 4
-        else:
-            current_page_number = 3
-
-    try:
-        ch.readSyncSpecific(FLASH_PROGRAM_ID, timeout=1000)
-        received = ch.readSpecificSkip(FLASH_PROGRAM_ID)
-
-    except canlib.exceptions.CanNoMsg:
-        print("No bundle request response (2). Exiting.")
-        sys.exit(1)
-
-    if received.data[0] != 2:
-        print("Wrong response after programming flash.")
-        sys.exit(1)
-
-    if int.from_bytes(received.data[1:3], byteorder="little") != 0x0000:
-        print("Got wrong bundle request, wanted 0x0000")
-        sys.exit(1)
-
-
-def verify_file(file):
-    file_path = Path(file)
-    if not file_path.exists():
-        print(f'error: file "{file}" not found.')
-        sys.exit(1)
-
-    if file_path.suffix != ".bin":
-        print(
-            f'Incorrect file extension for binary file {file}. Please provide a ".bin" file.'
-        )
-        sys.exit(1)
-
-
-def read_file(file):
-    try:
-        with open(Path(file), "rb") as f:
-            return f.read()
-    except:
-        print(f"Couldn't open {file}. Exiting...")
-        sys.exit(1)
-
-
-def prepare_flash():
+def prepare_flash(node_ids):
     with canlib.openChannel(
         channel=0,
         flags=canlib.Open.REQUIRE_INIT_ACCESS,
@@ -180,28 +80,21 @@ def prepare_flash():
         print("Restarting nodes...")
         ch.writeWait(rover.restart(), -1)
 
-        time.sleep(0.05)  # Wait 50 ms for nodes to restart
+        time.sleep(0.01)  # Wait 10 ms for restart
 
-        ch.writeWait(rover.default_letter(), -1)
+        # Send several default letters to make sure every node has had time to start up and receives at least one
+        for _ in range(5):
+            ch.writeWait(rover.default_letter(), -1)
+            time.sleep(0.01)
 
-        # All cities should enter bootloader to avoid starting the application
-        # during flash. Therefore, we must assign the envelopes for all cities.
-        for assignment in assignments:
-            envelope = assignment[0]
-            folder = assignment[1]
-            ch.writeWait(
-                rover.assign_envelope(rover.City.ALL_CITIES, envelope, folder), -1
-            )
+        check_online_nodes(ch, node_ids)
 
-        # We only set the target city to communicate mode and assume the other
-        # cities have entered the bootloader, without checking their ACK.
-        # ch.writeWait(rover.set_silent_mode(city=rover.City.ALL_CITIES), -1)
-        # ch.writeWait(rover.set_communicate(city=target_city), -1)
+        assign_bootloader_envelopes(ch)
 
         # Set communicate mode so we can receive ACKs
         ch.writeWait(rover.set_communicate(), -1)
 
-        # All nodes will ACK, it's OK if at least one ACKs.
+        # All nodes will try to ACK on the same ID. It's OK if at least one ACK is received.
         send_bootloader_command(ch, enter_bootloader())
 
         # Switch to 1 Mbit/s for flashing
@@ -276,42 +169,176 @@ def finalize_flash():
         ch.busOff()
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Flash Rover firmware over CAN.")
+def flash_program(ch, binary_data):
+    # init
+    data = [1] + list(len(binary_data).to_bytes(4, "little")) + [0, 0, 0]
+    ch.write(Frame(id_=FLASH_PROGRAM_ID, dlc=8, data=data))
 
-    node_choices = ["servo", "motor", "battery_monitor", "sbus_receiver"]
-    for node in node_choices:
-        parser.add_argument(
-            f"--{node}",
-            dest=node,
-            metavar=f"{node.upper()}_FILE",
-            help=f"Binary file for {node} node.",
+    try:
+        ch.readSyncSpecific(FLASH_PROGRAM_ID, timeout=1000)
+        received = ch.readSpecificSkip(FLASH_PROGRAM_ID)
+
+    except canlib.exceptions.CanNoMsg:
+        print("No bundle request response (1). Exiting.")
+        sys.exit(1)
+
+    if received.data[0] != 2:
+        print("Wrong response before programming flash.")
+        sys.exit(1)
+
+    if int.from_bytes(received.data[1:3], byteorder="little") != 0xFFFF:
+        print("Got wrong bundle request, wanted 0xFFFF.")
+        sys.exit(1)
+
+    # Chunk and send data
+    chunk_size = 7  # Payload bytes per frame
+
+    chunks = [
+        list(binary_data[i : i + chunk_size])
+        for i in range(0, len(binary_data), chunk_size)
+    ]
+
+    # Pad last chunk if needed
+    last_chunk_length = len(chunks[-1])
+    chunks[-1] += [0] * (chunk_size - last_chunk_length)
+
+    current_page_number = 3
+
+    for chunk in chunks:
+        data = [current_page_number] + chunk
+        ch.writeWait(Frame(id_=FLASH_PROGRAM_ID, dlc=8, data=data), -1)
+
+        if current_page_number == 3:
+            current_page_number = 4
+        else:
+            current_page_number = 3
+
+    try:
+        ch.readSyncSpecific(FLASH_PROGRAM_ID, timeout=1000)
+        received = ch.readSpecificSkip(FLASH_PROGRAM_ID)
+
+    except canlib.exceptions.CanNoMsg:
+        print("No bundle request response (2). Exiting.")
+        sys.exit(1)
+
+    if received.data[0] != 2:
+        print("Wrong response after programming flash.")
+        sys.exit(1)
+
+    if int.from_bytes(received.data[1:3], byteorder="little") != 0x0000:
+        print("Got wrong bundle request, wanted 0x0000")
+        sys.exit(1)
+
+
+def check_online_nodes(ch, node_ids):
+    ch.iocontrol.flush_rx_buffer()
+    ch.writeWait(rover.give_base_number(response_page=1), -1)
+    time.sleep(0.01)  # Allow time to respond
+
+    # Check responses. Do not procede with flash if the requested nodes have not responded.
+    response_ids = []
+
+    while True:
+        try:
+            frame = ch.read(timeout=10)
+            if frame:
+                response_ids.append(frame.id - rover.ROVER_BASE_NUMBER)
+
+        except (canlib.exceptions.CanTimeout, canlib.exceptions.CanNoMsg):
+            break
+
+    for id in node_ids:
+        if id not in response_ids:
+            print(
+                f"Error: {rover.City(id).name} node's ID ({id}) was not found in responses: {response_ids}"
+            )
+            sys.exit(1)
+
+
+def assign_bootloader_envelopes(ch):
+    # All cities should enter bootloader to avoid starting the application
+    # during flash. Therefore, we must assign the envelopes for all cities.
+    for assignment in assignments:
+        envelope = assignment[0]
+        folder = assignment[1]
+        ch.writeWait(rover.assign_envelope(rover.City.ALL_CITIES, envelope, folder), -1)
+
+
+def send_bootloader_command(ch, frame, timeout=100):
+    ch.iocontrol.flush_rx_buffer()
+    ch.write(frame)
+
+    try:
+        ch.readSyncSpecific(COMMAND_ACK_ID, timeout=timeout)
+        received = ch.readSpecificSkip(COMMAND_ACK_ID)
+
+    except canlib.exceptions.CanNoMsg:
+        print("No ACK received. Exiting.")
+        sys.exit(1)
+
+    command_id = int.from_bytes(received.data[1:5], byteorder="little")
+
+    if received.data[0] == 1:  # NACK value
+        print(f"NACK received for command {hex(command_id)}")
+        sys.exit(1)
+
+    if command_id != frame.id:
+        print(
+            f"Wrong ACK for command, expected: {hex(frame.id)}, got {hex(command_id)}"
         )
+        sys.exit(1)
 
-    args = parser.parse_args()
 
-    print("Checking binaries...")
-    node_binary_map = {}
-    for node in node_choices:
-        file_path = getattr(args, node)
-        if not file_path:
-            continue
+def enter_bootloader():
+    return Frame(id_=ENTER_BOOTLOADER_ID, dlc=0, data=[])
 
-        verify_file(file_path)
-        node_binary_map[get_target_city(node)] = read_file(file_path)
 
-    if not node_binary_map:
-        parser.print_usage()
-        sys.exit(0)
+def exit_bootloader():
+    return Frame(id_=EXIT_BOOTLOADER_ID, dlc=0, data=[])
 
-    prepare_flash()
 
-    for node, binary in node_binary_map.items():
-        flash_node(node, binary)
+def is_bootloader_mayor(frame):
+    return frame.dlc == 8 and frame.data == bytearray([0, 2, 0, 0, 0, 0, 0, 0])
 
-    finalize_flash()
 
-    print("Finished successfully.")
+def flash_erase(bytes_to_erase):
+    return Frame(
+        id_=FLASH_ERASE_ID,
+        dlc=4,
+        data=list(bytes_to_erase.to_bytes(4, "little")),
+    )
+
+
+def get_node_id(node):
+    cities = {
+        "servo": rover.City.SERVO,
+        "motor": rover.City.MOTOR,
+        "battery_monitor": rover.City.BATTERY_MONITOR,
+        "sbus_receiver": rover.City.SBUS_RECEIVER,
+    }
+    return cities[node]
+
+
+def verify_file(file):
+    file_path = Path(file)
+    if not file_path.exists():
+        print(f'error: file "{file}" not found.')
+        sys.exit(1)
+
+    if file_path.suffix != ".bin":
+        print(
+            f'Incorrect file extension for binary file {file}. Please provide a ".bin" file.'
+        )
+        sys.exit(1)
+
+
+def read_file(file):
+    try:
+        with open(Path(file), "rb") as f:
+            return f.read()
+    except:
+        print(f"Couldn't open {file}. Exiting...")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
