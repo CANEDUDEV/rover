@@ -227,6 +227,11 @@ void assign_servo_envelopes(void) {
   ck_data->steering_folder->envelopes[0].envelope_no = ROVER_STEERING_ENVELOPE;
   ck_data->steering_folder->envelopes[0].enable = true;
 
+  ck_data->subtrim_folder->envelope_count = 1;
+  ck_data->subtrim_folder->envelopes[0].envelope_no =
+      ROVER_SERVO_SET_SUBTRIM_ENVELOPE;
+  ck_data->subtrim_folder->envelopes[0].enable = true;
+
   ck_data->servo_current_folder->envelope_count = 1;
   ck_data->servo_current_folder->envelopes[0].envelope_no =
       ROVER_SERVO_CURRENT_ENVELOPE;
@@ -456,8 +461,8 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
   if (folder->folder_no == ck_data->steering_folder->folder_no) {
     return process_steering_letter(letter);
   }
-  if (folder->folder_no == ck_data->steering_trim_folder->folder_no) {
-    return process_steering_trim_letter(letter);
+  if (folder->folder_no == ck_data->subtrim_folder->folder_no) {
+    return process_subtrim_letter(letter);
   }
   if (folder->folder_no == ck_data->report_freq_folder->folder_no) {
     return process_report_freq_letter(letter);

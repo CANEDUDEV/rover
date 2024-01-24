@@ -14,8 +14,7 @@
 static const float k_angle_to_pulse = 500 / 45.0F;
 static const float m_angle_to_pulse = PWM_NEUTRAL_PULSE_MUS;
 
-static int16_t steering_pulse = (int16_t)m_angle_to_pulse;
-static int16_t steering_trim_pulse = 0;
+static int16_t steering_pulse = PWM_NEUTRAL_PULSE_MUS;
 
 // Whether to reverse steering direction
 static bool reverse = false;
@@ -139,61 +138,27 @@ int process_steering_letter(const ck_letter_t *letter) {
 
   steering_pulse = (int16_t)roundf(pulse_float);
 
-  pwm_set_pulse(steering_pulse + steering_trim_pulse);
+  pwm_set_pulse(steering_pulse);
   failsafe_refresh();
 
   return APP_OK;
 }
 
-// 3 bytes in page
-// byte 0: can either be 0 or 1.
-//
-// bytes 1-2: a signed integer representing a steering trim either as a
-// pulse-width in microseconds or an angle in degrees. If byte 0 is 0, interpret
-// bytes 1-2 as a pulse-width. If byte 0 is 1, interpret bytes 1-2 as an angle
-// with a range of -45 to 45 degrees.
-//
-// -45 degrees pulse width: -500 microseconds.
-// +45 degrees pulse width: +500 microseconds.
-int process_steering_trim_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 3) {
+// 2 bytes in page.
+// Signed integer representing a subtrim value as a pulse width in microseconds.
+int process_subtrim_letter(const ck_letter_t *letter) {
+  if (letter->page.line_count != 2) {
     return APP_NOT_OK;
   }
 
   int16_t trim_pulse = 0;
-  float trim_pulse_float = 0;
-
-  switch (letter->page.lines[0]) {
-    case 0:
-      memcpy(&trim_pulse, &letter->page.lines[1], sizeof(trim_pulse));
-      trim_pulse_float = trim_pulse;
-      break;
-
-    case 1: {
-      int16_t angle = 0;
-      memcpy(&angle, &letter->page.lines[1], sizeof(angle));
-      if (angle < -45 || angle > 45) {  // NOLINT
-        return APP_NOT_OK;
-      }
-
-      // Ignore m since we're calculating an offset
-      trim_pulse_float = (float)angle * k_angle_to_pulse;
-
-      break;
-    }
-
-    default:
-      return APP_NOT_OK;
-  }
+  memcpy(&trim_pulse, letter->page.lines, sizeof(trim_pulse));
 
   if (reverse) {
-    trim_pulse_float = -trim_pulse_float;
+    trim_pulse = (int16_t)-trim_pulse;
   }
 
-  steering_trim_pulse = (int16_t)roundf(trim_pulse_float);
-
-  pwm_set_pulse(steering_pulse + steering_trim_pulse);
-  failsafe_refresh();
+  pwm_set_subtrim_pulse(trim_pulse);
 
   return APP_OK;
 }
