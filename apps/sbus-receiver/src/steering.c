@@ -2,9 +2,12 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 
+#include "ck-data.h"
 #include "error.h"
 #include "lfs-wrapper.h"
+#include "mayor.h"
 
 // Radio channels in use. Most radios have 7 or more channels.
 #define STEERING_CHANNEL 0
@@ -15,12 +18,19 @@
 #define SBUS_MID 1023
 #define SBUS_MAX_OFFSET 400
 
+#define PWM_MID_PULSE 1500
+
 static float sbus_to_steering_angle(float sbus_value);
 static int16_t sbus_to_throttle(float sbus_value);
 static void update_calibration(const sbus_message_t *sbus_packet);
+static void send_subtrim_commands(void);
 static bool switch_is_active(uint16_t switch_value);
 static void save_calibration_data(void);
 static uint16_t get_press_time_in_seconds(uint16_t switch_message_count);
+static int16_t sbus_to_pwm(float value, float range);
+
+static int16_t steering_subtrim;
+static int16_t throttle_subtrim;
 
 typedef struct {
   float steering_min;
@@ -97,6 +107,11 @@ static float sbus_to_steering_angle(float sbus_value) {
   float sbus_range =
       calibration_values.steering_max + calibration_values.steering_min;
 
+  // Always update subtrim and assume it will be correct when user triggers
+  // calibration save.
+  steering_subtrim =
+      (int16_t)(sbus_to_pwm(sbus_value, sbus_range) - PWM_MID_PULSE);
+
   const float angle = 90 * sbus_value / sbus_range - 45;
   return angle;
 }
@@ -114,8 +129,13 @@ static int16_t sbus_to_throttle(float sbus_value) {
   float sbus_range =
       calibration_values.throttle_max + calibration_values.throttle_min;
 
-  const float pwm = 1000 * sbus_value / sbus_range + 1000;
-  return (int16_t)roundf(pwm);
+  int16_t pwm = sbus_to_pwm(sbus_value, sbus_range);
+
+  // Always update subtrim and assume it will be correct when user triggers
+  // calibration save.
+  throttle_subtrim = (int16_t)(pwm - PWM_MID_PULSE);
+
+  return pwm;
 }
 
 static void update_calibration(const sbus_message_t *sbus_packet) {
@@ -135,14 +155,33 @@ static void update_calibration(const sbus_message_t *sbus_packet) {
   if (switch_pressed_time >= reset_calibration_time) {
     printf("Resetting calibration data...\r\n");
     calibration_values = default_calibration_values;
+    steering_subtrim = 0;
+    throttle_subtrim = 0;
   }
 
   if (switch_pressed_time >= save_calibration_time) {
     printf("Saving calibration data...\r\n");
+    send_subtrim_commands();
     save_calibration_data();
   }
 
   switch_pressed_count = 0;
+}
+
+static void send_subtrim_commands(void) {
+  ck_data_t *ck_data = get_ck_data();
+
+  memcpy(ck_data->steering_subtrim_page->lines, &steering_subtrim,
+         sizeof(steering_subtrim));
+  memcpy(ck_data->throttle_subtrim_page->lines, &throttle_subtrim,
+         sizeof(throttle_subtrim));
+
+  if (ck_send_document(ck_data->steering_subtrim_folder->folder_no) != CK_OK) {
+    printf("failed to send doc.\r\n");
+  }
+  if (ck_send_document(ck_data->throttle_subtrim_folder->folder_no) != CK_OK) {
+    printf("failed to send doc.\r\n");
+  }
 }
 
 static bool switch_is_active(uint16_t switch_value) {
@@ -165,4 +204,9 @@ static void save_calibration_data(void) {
 static uint16_t get_press_time_in_seconds(uint16_t switch_message_count) {
   const uint16_t switch_messages_per_second = 100;
   return switch_message_count / switch_messages_per_second;
+}
+
+static int16_t sbus_to_pwm(float value, float range) {
+  const float pwm = 1000 * value / range + 1000;
+  return (int16_t)roundf(pwm);
 }

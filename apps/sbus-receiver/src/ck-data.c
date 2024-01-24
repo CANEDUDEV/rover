@@ -19,12 +19,16 @@ ck_data_t* get_ck_data(void) { return &ck_data; }
 void page_init(void) {
   ck_data.steering_page = &ck_data.pages[0];
   ck_data.throttle_page = &ck_data.pages[1];
+  ck_data.steering_subtrim_page = &ck_data.pages[2];
+  ck_data.throttle_subtrim_page = &ck_data.pages[3];
 
   ck_data.steering_page->lines[0] = 1;
   ck_data.throttle_page->lines[0] = 0;
 
   ck_data.steering_page->line_count = 5;  // NOLINT
   ck_data.throttle_page->line_count = 3;
+  ck_data.steering_subtrim_page->line_count = 2;
+  ck_data.throttle_subtrim_page->line_count = 2;
 }
 
 void doc_init(void) {
@@ -60,6 +64,8 @@ void list_init(void) {
 void folder_init(void) {
   ck_data.steering_folder = &ck_data.folders[2];
   ck_data.throttle_folder = &ck_data.folders[3];
+  ck_data.steering_subtrim_folder = &ck_data.folders[4];
+  ck_data.throttle_subtrim_folder = &ck_data.folders[5];  // NOLINT
 
   // Set up the transmit folders
   for (int i = 2; i < 2 + CK_DATA_TX_FOLDER_COUNT; i++) {
@@ -69,6 +75,9 @@ void folder_init(void) {
     ck_data.folders[i].doc_no = i - 1;  // 0 reserved by mayor's doc
     ck_data.folders[i].enable = true;
   }
+
   ck_data.steering_folder->dlc = 5;  // NOLINT
   ck_data.throttle_folder->dlc = 3;
+  ck_data.steering_subtrim_folder->dlc = 2;
+  ck_data.throttle_subtrim_folder->dlc = 2;
 }

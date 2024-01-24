@@ -69,7 +69,7 @@ void folder_init(void) {
   ck_data.set_servo_voltage_folder = &ck_data.folders[7];
   ck_data.pwm_conf_folder = &ck_data.folders[8];
   ck_data.steering_folder = &ck_data.folders[9];
-  ck_data.steering_trim_folder = &ck_data.folders[10];
+  ck_data.subtrim_folder = &ck_data.folders[10];
   ck_data.report_freq_folder = &ck_data.folders[11];
   ck_data.reverse_folder = &ck_data.folders[12];
   ck_data.failsafe_folder = &ck_data.folders[13];
@@ -98,6 +98,7 @@ void folder_init(void) {
   ck_data.set_servo_voltage_folder->dlc = 2;
   ck_data.pwm_conf_folder->dlc = 6;
   ck_data.steering_folder->dlc = 3;
+  ck_data.subtrim_folder->dlc = 2;
   ck_data.report_freq_folder->dlc = 4;
   ck_data.reverse_folder->dlc = 0;
   ck_data.failsafe_folder->dlc = 5;

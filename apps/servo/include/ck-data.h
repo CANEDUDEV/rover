@@ -42,7 +42,7 @@ typedef struct {
   ck_folder_t *set_servo_voltage_folder;
   ck_folder_t *pwm_conf_folder;
   ck_folder_t *steering_folder;
-  ck_folder_t *steering_trim_folder;
+  ck_folder_t *subtrim_folder;
   ck_folder_t *report_freq_folder;
   ck_folder_t *reverse_folder;
   ck_folder_t *failsafe_folder;
