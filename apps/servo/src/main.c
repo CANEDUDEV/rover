@@ -129,6 +129,7 @@ ck_err_t set_action_mode(ck_action_mode_t mode) {
     // This delay is there because otherwise error frames will be generated on
     // the CAN bus. The root cause is still unknown.
     vTaskDelay(pdMS_TO_TICKS(10));
+    pwm_set_pulse(PWM_NEUTRAL_PULSE_MUS);
     HAL_NVIC_SystemReset();
   }
   return CK_OK;
