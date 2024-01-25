@@ -18,6 +18,9 @@ with canlib.openChannel(
     ch.writeWait(rover.set_silent_mode(city=rover.City.SBUS_RECEIVER), -1)
     sleep(3)
 
+    # Disable failsafe
+    ch.writeWait(servo.set_failsafe(servo.FAILSAFE_OFF, city=rover.City.MOTOR), -1)
+
     # Accelerate
     ch.writeWait(servo.set_throttle_pulse_frame(1600), -1)
     sleep(1)
@@ -36,5 +39,8 @@ with canlib.openChannel(
 
     # Back to neutral. There is no braking in reverse mode.
     ch.writeWait(servo.set_throttle_pulse_frame(1500), -1)
+
+    # Re-enable failsafe
+    ch.writeWait(servo.set_failsafe(servo.FAILSAFE_ON, city=rover.City.MOTOR), -1)
 
     ch.busOff()

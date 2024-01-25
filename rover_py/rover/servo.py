@@ -3,7 +3,7 @@ import struct
 
 from canlib import Frame
 
-from .rover import Envelope
+from .rover import City, Envelope
 
 FAILSAFE_OFF = 0
 FAILSAFE_ON = 1
@@ -32,7 +32,7 @@ def set_steering_angle_frame(angle_deg):
 
 def set_throttle_pulse_frame(pulse_mus):
     data = [0] + list(pulse_mus.to_bytes(2, "little", signed=True))
-    return Frame(id_=Envelope.THROTTLE, dlc=3, data=data)
+    return Frame(id_=Envelope.THROTTLE, dlc=5, data=data)
 
 
 def set_measure_period_frame(time_ms):
@@ -49,10 +49,16 @@ def set_reverse_direction():
     return Frame(id_=Envelope.SERVO_REVERSE_DIRECTION, dlc=0, data=[])
 
 
-def set_failsafe(on, timeout_ms=100, pulse_mus=1500):
+def set_failsafe(on, city=City.SERVO, timeout_ms=100, pulse_mus=1500):
+    if city == City.MOTOR:
+        envelope = Envelope.MOTOR_FAILSAFE
+    else:
+        envelope = Envelope.SERVO_FAILSAFE
+
     data = (
         [on]
         + list(timeout_ms.to_bytes(2, "little"))
         + list(pulse_mus.to_bytes(2, "little"))
     )
-    return Frame(id_=Envelope.SERVO_FAILSAFE, dlc=5, data=data)
+
+    return Frame(id_=envelope, dlc=5, data=data)
