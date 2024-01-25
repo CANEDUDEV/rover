@@ -77,7 +77,7 @@ void folder_init(void) {
   }
 
   ck_data.steering_folder->dlc = 5;  // NOLINT
-  ck_data.throttle_folder->dlc = 3;
+  ck_data.throttle_folder->dlc = 5;  // NOLINT
   ck_data.steering_subtrim_folder->dlc = 2;
   ck_data.throttle_subtrim_folder->dlc = 2;
 }
