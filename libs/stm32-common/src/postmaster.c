@@ -22,7 +22,7 @@ inline int min(int a, int b) {  // NOLINT
   return b;
 }
 
-ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc) {
+ck_err_t ck_send_letter(const ck_letter_t *letter) {
   common_peripherals_t *common_peripherals = get_common_peripherals();
   CAN_HandleTypeDef *hcan = &common_peripherals->hcan;
 
@@ -37,7 +37,7 @@ ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc) {
   }
 
   CAN_TxHeaderTypeDef header = {
-      .DLC = dlc,
+      .DLC = letter->page.line_count,
       .RTR = CAN_RTR_DATA,
       .IDE = CAN_ID_STD,
       .StdId = letter->envelope.envelope_no,

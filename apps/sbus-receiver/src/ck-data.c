@@ -26,7 +26,7 @@ void page_init(void) {
   ck_data.throttle_page->lines[0] = 0;
 
   ck_data.steering_page->line_count = 5;  // NOLINT
-  ck_data.throttle_page->line_count = 3;
+  ck_data.throttle_page->line_count = 5;  // NOLINT
   ck_data.steering_subtrim_page->line_count = 2;
   ck_data.throttle_subtrim_page->line_count = 2;
 }
@@ -76,8 +76,10 @@ void folder_init(void) {
     ck_data.folders[i].enable = true;
   }
 
-  ck_data.steering_folder->dlc = 5;  // NOLINT
-  ck_data.throttle_folder->dlc = 5;  // NOLINT
-  ck_data.steering_subtrim_folder->dlc = 2;
-  ck_data.throttle_subtrim_folder->dlc = 2;
+  ck_data.steering_folder->dlc = ck_data.steering_page->line_count;
+  ck_data.throttle_folder->dlc = ck_data.throttle_page->line_count;
+  ck_data.steering_subtrim_folder->dlc =
+      ck_data.steering_subtrim_page->line_count;
+  ck_data.throttle_subtrim_folder->dlc =
+      ck_data.throttle_subtrim_page->line_count;
 }

@@ -25,14 +25,12 @@ extern "C" {
  * ck_send_document() or ck_send_mayors_page() instead.
  *
  * @param letter the letter to send.
- * @param dlc the DLC of the folder which the letter is constructed from.
  *
  * @return #CK_ERR_SEND_FAILED if letter failed to send.
- * @return #CK_ERR_INVALID_CAN_DLC if the dlc is out of bounds.
  *
  * @return #CK_OK if letter is sent correctly.
  ******************************************************************************/
-ck_err_t ck_send_letter(const ck_letter_t *letter, uint8_t dlc);
+ck_err_t ck_send_letter(const ck_letter_t *letter);
 
 /*******************************************************************************
  * Apply the requested communication mode in hardware.
