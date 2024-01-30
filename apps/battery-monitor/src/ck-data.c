@@ -22,15 +22,14 @@ void page_init(void) {
   ck_data.reg_out_page = &ck_data.pages[2];
   ck_data.vbat_out_current_page = &ck_data.pages[3];
 
-  // Set up the pages
-  // NOLINTBEGIN(*-magic-numbers)
-  ck_data.cell_page0->line_count = 7;
+  // 3 cells per page + 1 byte for pagination.
+  ck_data.cell_page0->line_count = 3 * sizeof(uint16_t) + 1;
   ck_data.cell_page0->lines[0] = 0;  // Pagination
-  ck_data.cell_page1->line_count = 7;
+  ck_data.cell_page1->line_count = 3 * sizeof(uint16_t) + 1;
   ck_data.cell_page1->lines[0] = 1;  // Pagination
-  ck_data.reg_out_page->line_count = 4;
-  ck_data.vbat_out_current_page->line_count = 4;
-  // NOLINTEND(*-magic-numbers)
+  // Voltage is 2 bytes, current is 2 bytes.
+  ck_data.reg_out_page->line_count = 2 * sizeof(uint16_t);
+  ck_data.vbat_out_current_page->line_count = 2 * sizeof(uint16_t);
 }
 
 void doc_init(void) {
@@ -96,11 +95,10 @@ void folder_init(void) {
     ck_data.folders[i].enable = true;
   }
 
-  // 3 cells per page + 1 byte for pagination.
-  ck_data.cell_folder->dlc = 3 * sizeof(uint16_t) + 1;
-  // Voltage is 2 bytes, current is 2 bytes.
-  ck_data.reg_out_folder->dlc = 2 * sizeof(uint16_t);
-  ck_data.vbat_out_current_folder->dlc = sizeof(uint32_t);
+  ck_data.cell_folder->dlc = ck_data.cell_page0->line_count;
+  ck_data.reg_out_folder->dlc = ck_data.reg_out_page->line_count;
+  ck_data.vbat_out_current_folder->dlc =
+      ck_data.vbat_out_current_page->line_count;
 
   // Set up the receive folders
   uint8_t rx_doc_no = 0;  // Start counting from 0
