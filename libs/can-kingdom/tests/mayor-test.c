@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "king.h"
+#include "postmaster.h"
 #include "test.h"
 
 #define RX_BIT_COUNT 1
