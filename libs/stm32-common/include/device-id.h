@@ -13,6 +13,11 @@ extern "C" {
 ck_id_t get_default_ck_id(uint8_t city_address);
 
 /**
+ * ID will be cached after calls to read_ck_id().
+ */
+ck_id_t *get_cached_ck_id(void);
+
+/**
  * Reads #ck_id from SPI flash.
  * Returns APP_OK on success, APP_NOT_OK or littlefs error codes otherwise.
  */

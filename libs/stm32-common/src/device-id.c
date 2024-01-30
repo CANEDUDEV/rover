@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "common-peripherals.h"
+#include "error.h"
 #include "lfs-wrapper.h"
 #include "rover.h"
 #include "stm32f3xx_ll_utils.h"
@@ -15,6 +16,7 @@
 static const char *ck_id_filename = "/ck_id";
 
 static ck_id_t ck_id_storage;
+static ck_id_t cached_ck_id;
 
 ck_id_t get_default_ck_id(uint8_t city_address) {
   ck_id_t ck_id = {
@@ -26,6 +28,8 @@ ck_id_t get_default_ck_id(uint8_t city_address) {
   memset(ck_id.group_addresses, 0, sizeof(ck_id.group_addresses));
   return ck_id;
 }
+
+ck_id_t *get_cached_ck_id(void) { return &cached_ck_id; }
 
 int read_ck_id(ck_id_t *ck_id) {
   memset(ck_id, 0, sizeof(ck_id_t));
@@ -39,9 +43,12 @@ int read_ck_id(ck_id_t *ck_id) {
   int err = read_file(&file);
   if (err < 0) {
     printf("Error: couldn't read file %s. error: %d\r\n", ck_id_filename, err);
+    return err;
   }
 
-  return err;
+  cached_ck_id = *ck_id;
+
+  return APP_OK;
 }
 
 int write_ck_id(ck_id_t *ck_id) {
