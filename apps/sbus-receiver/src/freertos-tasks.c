@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "ck-data.h"
+#include "rover.h"
 #include "sbus.h"
 #include "steering.h"
 
@@ -47,6 +48,8 @@ void task_init(void) {
   if (init_letter_reader_task(letter_reader_cfg) != APP_OK) {
     error();
   }
+
+  init_king_task(priority++);
 }
 
 void sbus_read_and_steer(void *unused) {
