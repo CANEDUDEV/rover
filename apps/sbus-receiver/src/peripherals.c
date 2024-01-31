@@ -11,7 +11,9 @@ static peripherals_t peripherals;
 void gpio_init(void);
 void uart2_init(void);
 
-peripherals_t* get_peripherals(void) { return &peripherals; }
+peripherals_t* get_peripherals(void) {
+  return &peripherals;
+}
 
 void peripherals_init(void) {
   common_peripherals_init();

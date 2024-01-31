@@ -57,4 +57,6 @@ void failsafe_set_timeout(uint16_t timeout_ms) {
   failsafe_timeout = timeout_ms;
 }
 
-void failsafe_set_pulse(uint16_t pulse_mus) { failsafe_pulse = pulse_mus; }
+void failsafe_set_pulse(uint16_t pulse_mus) {
+  failsafe_pulse = pulse_mus;
+}

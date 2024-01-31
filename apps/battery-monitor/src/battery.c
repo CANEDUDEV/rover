@@ -43,7 +43,9 @@ void battery_state_reset(void) {
   battery_state.low_voltage_fault = false;
 }
 
-battery_state_t *get_battery_state(void) { return &battery_state; }
+battery_state_t *get_battery_state(void) {
+  return &battery_state;
+}
 
 void set_fuse_config(fuse_config_t fuse_config) {
   switch (fuse_config) {

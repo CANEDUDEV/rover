@@ -29,7 +29,9 @@ ck_id_t get_default_ck_id(uint8_t city_address) {
   return ck_id;
 }
 
-ck_id_t *get_cached_ck_id(void) { return &cached_ck_id; }
+ck_id_t *get_cached_ck_id(void) {
+  return &cached_ck_id;
+}
 
 int read_ck_id(ck_id_t *ck_id) {
   memset(ck_id, 0, sizeof(ck_id_t));

@@ -38,7 +38,8 @@ void UsageFault_Handler(void) {
 }
 
 // Debug monitor handler.
-void DebugMon_Handler(void) {}
+void DebugMon_Handler(void) {
+}
 
 // System tick timer handler.
 void SysTick_Handler(void) {

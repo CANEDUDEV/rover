@@ -1058,7 +1058,8 @@ static ck_err_t set_city_mode(ck_city_mode_t mode) {
   return CK_OK;
 }
 
-static void start_200ms_timer(void) {}
+static void start_200ms_timer(void) {
+}
 
 static test_err_t check_kings_doc_folder(ck_folder_t *folder) {
   if (folder->envelope_count != 1) {
