@@ -1,8 +1,10 @@
 #include "king.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "ck-test.h"
 #include "test.h"
 
 static test_err_t verify_kp_header(int page_no, ck_page_t *page);
@@ -15,31 +17,12 @@ static test_err_t test_kp16(void);
 static test_err_t test_kp17(void);
 
 int main(void) {
-  test_err_t ret = test_kp0();
-  if (ret != TEST_PASS) {
-    return ret;
-  }
-  ret = test_kp1();
-  if (ret != TEST_PASS) {
-    return ret;
-  }
-  ret = test_kp2();
-  if (ret != TEST_PASS) {
-    return ret;
-  }
-  ret = test_kp8();
-  if (ret != TEST_PASS) {
-    return ret;
-  }
-  ret = test_kp16();
-  if (ret != TEST_PASS) {
-    return ret;
-  }
-  ret = test_kp17();
-  if (ret != TEST_PASS) {
-    return ret;
-  }
-  return TEST_PASS;
+  assert(test_kp0() == TEST_PASS);
+  assert(test_kp1() == TEST_PASS);
+  assert(test_kp2() == TEST_PASS);
+  assert(test_kp8() == TEST_PASS);
+  assert(test_kp16() == TEST_PASS);
+  assert(test_kp17() == TEST_PASS);
 }
 
 // NOLINTBEGIN(*-magic-numbers)
