@@ -25,9 +25,9 @@
 // Helpers
 static int program_page(uint32_t page_address, uint8_t *bytes, size_t size);
 static int wait_until_ready(void);
-static int write_enable(void);
-static void start_cmd(void);
-static void end_cmd(void);
+static int set_write_enable_flag(void);
+static void start_spi_cmd(void);
+static void end_spi_cmd(void);
 
 int erase(uint32_t sector_address) {
   // sector_address bounds and alignment check
@@ -49,23 +49,23 @@ int erase(uint32_t sector_address) {
   // NOLINTEND(*-magic-numbers)
 
   // Set write enable flag before erase
-  if (write_enable() != APP_OK) {
+  if (set_write_enable_flag() != APP_OK) {
     return APP_NOT_OK;
   }
 
   // Erase
   common_peripherals_t *peripherals = get_common_peripherals();
 
-  start_cmd();
+  start_spi_cmd();
 
   if (HAL_SPI_Transmit(&peripherals->hspi_flash, cmd, sizeof(cmd),
                        MAX_BLOCK_TIME_MS) != HAL_OK) {
-    end_cmd();
+    end_spi_cmd();
     printf("Failed to transmit SECTOR_ERASE_COMMAND\r\n");
     return APP_NOT_OK;
   }
 
-  end_cmd();
+  end_spi_cmd();
 
   // Wait for flash
   return wait_until_ready();
@@ -125,11 +125,11 @@ int read(uint32_t address, uint8_t *data, size_t size) {
   // Read data
   common_peripherals_t *peripherals = get_common_peripherals();
 
-  start_cmd();
+  start_spi_cmd();
 
   if (HAL_SPI_Transmit(&peripherals->hspi_flash, cmd, sizeof(cmd),
                        MAX_BLOCK_TIME_MS) != HAL_OK) {
-    end_cmd();
+    end_spi_cmd();
     printf("Failed to transmit READ_DATA_COMMAND\r\n");
     return APP_NOT_OK;
   }
@@ -142,7 +142,7 @@ int read(uint32_t address, uint8_t *data, size_t size) {
   while (bytes_left > UINT16_MAX) {
     if (HAL_SPI_Receive(&peripherals->hspi_flash, data + bytes_read, UINT16_MAX,
                         MAX_BLOCK_TIME_MS) != HAL_OK) {
-      end_cmd();
+      end_spi_cmd();
       printf("Failed to receive bytes\r\n");
       return APP_NOT_OK;
     }
@@ -154,12 +154,12 @@ int read(uint32_t address, uint8_t *data, size_t size) {
   // Read remaining bytes
   if (HAL_SPI_Receive(&peripherals->hspi_flash, data + bytes_read,
                       size - bytes_read, MAX_BLOCK_TIME_MS) != HAL_OK) {
-    end_cmd();
+    end_spi_cmd();
     printf("Failed to receive bytes\r\n");
     return APP_NOT_OK;
   }
 
-  end_cmd();
+  end_spi_cmd();
 
   return APP_OK;
 }
@@ -181,18 +181,18 @@ static int program_page(uint32_t page_address, uint8_t *bytes, size_t size) {
   // NOLINTEND(*-magic-numbers)
 
   // Set write enable flag before page program
-  if (write_enable() != APP_OK) {
+  if (set_write_enable_flag() != APP_OK) {
     return APP_NOT_OK;
   }
 
   common_peripherals_t *peripherals = get_common_peripherals();
 
   // Transmit command
-  start_cmd();
+  start_spi_cmd();
 
   if (HAL_SPI_Transmit(&peripherals->hspi_flash, cmd, sizeof(cmd),
                        MAX_BLOCK_TIME_MS) != HAL_OK) {
-    end_cmd();
+    end_spi_cmd();
     printf("Failed to transmit PAGE_PROGRAM_COMMAND\r\n");
     return APP_NOT_OK;
   }
@@ -200,12 +200,12 @@ static int program_page(uint32_t page_address, uint8_t *bytes, size_t size) {
   // Transmit data bytes
   if (HAL_SPI_Transmit(&peripherals->hspi_flash, bytes, size,
                        MAX_BLOCK_TIME_MS) != HAL_OK) {
-    end_cmd();
+    end_spi_cmd();
     printf("Failed to transmit data bytes\r\n");
     return APP_NOT_OK;
   }
 
-  end_cmd();
+  end_spi_cmd();
 
   // Wait for flash
   return wait_until_ready();
@@ -217,50 +217,50 @@ static int wait_until_ready(void) {
 
   uint8_t response = SR1_BUSY;
   while (response & SR1_BUSY) {
-    start_cmd();
+    start_spi_cmd();
     if (HAL_SPI_Transmit(&peripherals->hspi_flash, &cmd, sizeof(cmd),
                          MAX_BLOCK_TIME_MS) != HAL_OK) {
-      end_cmd();
+      end_spi_cmd();
       printf("Failed to transmit READ_SR1_COMMAND\r\n");
       return APP_NOT_OK;
     }
 
     if (HAL_SPI_Receive(&peripherals->hspi_flash, &response, sizeof(response),
                         MAX_BLOCK_TIME_MS) != HAL_OK) {
-      end_cmd();
+      end_spi_cmd();
       printf("Failed to receive response to READ_SR1_COMMAND\r\n");
       return APP_NOT_OK;
     }
-    end_cmd();
+    end_spi_cmd();
   }
 
   return APP_OK;
 }
 
-static int write_enable(void) {
+static int set_write_enable_flag(void) {
   common_peripherals_t *peripherals = get_common_peripherals();
   uint8_t cmd = WRITE_ENABLE_COMMAND;
 
   // Set write enable flag
-  start_cmd();
+  start_spi_cmd();
 
   if (HAL_SPI_Transmit(&peripherals->hspi_flash, &cmd, sizeof(cmd),
                        MAX_BLOCK_TIME_MS) != HAL_OK) {
-    end_cmd();
+    end_spi_cmd();
     printf("Failed to transmit WRITE_ENABLE_COMMAND\r\n");
     return APP_NOT_OK;
   }
 
-  end_cmd();
+  end_spi_cmd();
 
   // Check if flag is set
   cmd = READ_SR1_COMMAND;
 
-  start_cmd();
+  start_spi_cmd();
 
   if (HAL_SPI_Transmit(&peripherals->hspi_flash, &cmd, sizeof(cmd),
                        MAX_BLOCK_TIME_MS) != HAL_OK) {
-    end_cmd();
+    end_spi_cmd();
     printf("Failed to transmit READ_SR1_COMMAND\r\n");
     return APP_NOT_OK;
   }
@@ -268,12 +268,12 @@ static int write_enable(void) {
   uint8_t response = 0;
   if (HAL_SPI_Receive(&peripherals->hspi_flash, &response, sizeof(response),
                       MAX_BLOCK_TIME_MS) != HAL_OK) {
-    end_cmd();
+    end_spi_cmd();
     printf("Failed to receive response to READ_SR1_COMMAND\r\n");
     return APP_NOT_OK;
   }
 
-  end_cmd();
+  end_spi_cmd();
 
   if ((response & SR1_WEL) == 0) {
     printf("Failed to set WRITE_ENABLE flag\r\n");
@@ -283,12 +283,12 @@ static int write_enable(void) {
   return APP_OK;
 }
 
-static void start_cmd(void) {
+static void start_spi_cmd(void) {
   taskENTER_CRITICAL();
   HAL_GPIO_WritePin(SPI_FLASH_GPIO_PORT, SPI_FLASH_NSS_PIN, GPIO_PIN_RESET);
 }
 
-static void end_cmd(void) {
+static void end_spi_cmd(void) {
   HAL_GPIO_WritePin(SPI_FLASH_GPIO_PORT, SPI_FLASH_NSS_PIN, GPIO_PIN_SET);
   taskEXIT_CRITICAL();
 }
