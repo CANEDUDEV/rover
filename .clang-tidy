@@ -11,3 +11,6 @@ WarningsAsErrors: '*'
 HeaderFilterRegex: '.*, -libs/third-party'
 FormatStyle: file
 InheritParentConfig: true
+CheckOptions:
+  - key: readability-function-cognitive-complexity.IgnoreMacros
+    value: 'true'

@@ -1,5 +1,6 @@
 #include "types.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -12,28 +13,11 @@ static test_err_t test_check_can_bit_timing(void);
 static test_err_t test_default_letter(void);
 
 int main(void) {
-  test_err_t ret = test_check_action_mode();
-  if (ret != TEST_PASS) {
-    return ret;
-  }
-  ret = test_check_comm_mode();
-  if (ret != TEST_PASS) {
-    return ret;
-  }
-  ret = test_check_list_type();
-  if (ret != TEST_PASS) {
-    return ret;
-  }
-  ret = test_check_can_bit_timing();
-  if (ret != TEST_PASS) {
-    return ret;
-  }
-  ret = test_default_letter();
-  if (ret != TEST_PASS) {
-    return ret;
-  }
-
-  return TEST_PASS;
+  assert(test_check_action_mode() == TEST_PASS);
+  assert(test_check_comm_mode() == TEST_PASS);
+  assert(test_check_list_type() == TEST_PASS);
+  assert(test_check_can_bit_timing() == TEST_PASS);
+  assert(test_default_letter() == TEST_PASS);
 }
 
 static test_err_t test_check_action_mode(void) {

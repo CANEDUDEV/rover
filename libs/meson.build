@@ -1,4 +1,5 @@
 subdir('third-party')
+subdir('test-utils')
 subdir('can-kingdom')
 subdir('rover')
 subdir('stm32-common')
