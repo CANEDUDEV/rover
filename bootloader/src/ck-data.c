@@ -16,7 +16,9 @@ void ck_data_init(void) {
   folder_init();
 }
 
-ck_data_t* get_ck_data(void) { return &ck_data; }
+ck_data_t* get_ck_data(void) {
+  return &ck_data;
+}
 
 void page_init(void) {
   ck_data.bootloader_page = &ck_data.pages[0];

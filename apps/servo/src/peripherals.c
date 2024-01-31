@@ -24,7 +24,9 @@ void i2c3_init(void);
 void spi3_init(void);
 void tim1_init(void);
 
-peripherals_t* get_peripherals(void) { return &peripherals; }
+peripherals_t* get_peripherals(void) {
+  return &peripherals;
+}
 
 void peripherals_init(void) {
   common_peripherals_init();

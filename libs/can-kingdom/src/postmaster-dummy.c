@@ -15,7 +15,9 @@ ck_err_t ck_apply_comm_mode(ck_comm_mode_t mode) {
   return CK_OK;
 }
 
-uint8_t ck_get_125kbit_prescaler(void) { return 1; }
+uint8_t ck_get_125kbit_prescaler(void) {
+  return 1;
+}
 
 ck_err_t ck_set_bit_timing(const ck_can_bit_timing_t *bit_timing) {
   if (!bit_timing) {

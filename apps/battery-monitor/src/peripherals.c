@@ -18,7 +18,9 @@ void i2c1_init(void);
 void dma_init(void);
 void gpio_init(void);
 
-peripherals_t* get_peripherals(void) { return &peripherals; }
+peripherals_t* get_peripherals(void) {
+  return &peripherals;
+}
 
 void peripherals_init(void) {
   common_peripherals_init();

@@ -381,9 +381,13 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode) {
   return ck_apply_comm_mode(mode);
 }
 
-ck_comm_mode_t ck_get_comm_mode(void) { return mayor.comm_mode; }
+ck_comm_mode_t ck_get_comm_mode(void) {
+  return mayor.comm_mode;
+}
 
-uint32_t ck_get_base_number(void) { return mayor.user_data.ck_id.base_no; }
+uint32_t ck_get_base_number(void) {
+  return mayor.user_data.ck_id.base_no;
+}
 
 ck_err_t ck_is_default_letter(ck_letter_t *letter) {
   ck_letter_t dletter = ck_default_letter();
