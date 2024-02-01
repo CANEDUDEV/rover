@@ -8,7 +8,7 @@ extern "C" {
 #include <stdint.h>
 
 #define ADC1_NUM_CHANNELS 4
-#define ADC2_NUM_CHANNELS 5
+#define ADC2_NUM_CHANNELS 6
 
 typedef struct {
   uint16_t adc1_buf[ADC1_NUM_CHANNELS];
