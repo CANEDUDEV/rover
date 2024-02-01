@@ -35,6 +35,7 @@ uint16_t adc_to_cell_voltage(uint16_t adc_value);
 uint16_t adc_to_reg_out_current(uint16_t adc_value);
 uint16_t adc_to_reg_out_voltage(uint16_t adc_value);
 uint32_t adc_to_vbat_out_current(uint16_t adc_value);
+uint16_t adc_to_vbat_out_voltage(uint16_t adc_value);
 void set_jumper_config(jumper_config_t jumper_config);
 
 #ifdef __cplusplus
