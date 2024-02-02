@@ -3,27 +3,24 @@
 #include <string.h>
 
 #include "adc.h"
-#include "ck-data.h"
 #include "led.h"
-#include "peripherals.h"
 #include "ports.h"
-#include "potentiometer.h"
 
-// CK
-#include "mayor.h"
-
-// FreeRTOS
-#include "FreeRTOS.h"
-#include "task.h"
-#include "timers.h"
+// Constants for array indices
+#define REG_OUT_CURRENT_INDEX 2
+#define REG_OUT_VOLTAGE_INDEX 3
+#define VBAT_OUT_CURRENT_INDEX 4
 
 static battery_state_t battery_state;
 
+void handle_battery_state(const adc_reading_t *adc_reading);
+void handle_faults(void);
 void update_battery_cells(const adc_reading_t *adc_reading);
 void update_battery_charge(void);
 void update_battery_leds(void);
-void send_docs(void);
+bool is_power_on(void);
 bool is_low_voltage(void);
+bool is_over_current_fault(void);
 uint16_t *get_lowest_cell(void);
 
 void battery_state_init(void) {
@@ -36,6 +33,7 @@ void battery_state_reset(void) {
   for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
     battery_state.cells[i] = CHARGE_100_PERCENT;
   }
+  battery_state.reg_out_voltage = 0;
   battery_state.reg_out_current = 0;
   battery_state.vbat_out_current = 0;
   battery_state.charge = CHARGE_100_PERCENT;
@@ -74,41 +72,38 @@ void set_over_current_threshold(uint32_t threshold) {
 }
 
 void update_battery_state(const adc_reading_t *adc_reading) {
-  GPIO_PinState power_on =
-      HAL_GPIO_ReadPin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN);
-
-  // Measurement depends on power on state. Measuring during power off state
-  // will give wrong readings.
-  if (power_on == GPIO_PIN_SET) {
-    battery_state.reg_out_current =
-        adc_to_reg_out_current(adc_reading->adc2_buf[2]);
-
-    battery_state.reg_out_voltage =
-        adc_to_reg_out_voltage(adc_reading->adc2_buf[3]);
-
-    battery_state.vbat_out_current =
-        adc_to_vbat_out_current(adc_reading->adc2_buf[4]);
-
-    update_battery_cells(adc_reading);
-    update_battery_charge();
-    update_battery_leds();
-
-    if (is_low_voltage()) {
-      battery_state.low_voltage_fault = true;
-    }
-
-    // Check if over current threshold
-    if (battery_state.reg_out_current + battery_state.vbat_out_current >
-        battery_state.over_current_threshold) {
-      battery_state.over_current_fault = true;
-    }
+  if (!is_power_on()) {
+    return;  // Early return if power is not on
   }
 
-  // Turn off main power on faults.
+  handle_battery_state(adc_reading);
+  handle_faults();
+}
+
+void handle_battery_state(const adc_reading_t *adc_reading) {
+  battery_state.reg_out_current =
+      adc_to_reg_out_current(adc_reading->adc2_buf[REG_OUT_CURRENT_INDEX]);
+  battery_state.reg_out_voltage =
+      adc_to_reg_out_voltage(adc_reading->adc2_buf[REG_OUT_VOLTAGE_INDEX]);
+  battery_state.vbat_out_current =
+      adc_to_vbat_out_current(adc_reading->adc2_buf[VBAT_OUT_CURRENT_INDEX]);
+
+  update_battery_cells(adc_reading);
+  update_battery_charge();
+  update_battery_leds();
+
+  if (is_low_voltage()) {
+    battery_state.low_voltage_fault = true;
+  }
+
+  if (is_over_current_fault()) {
+    battery_state.over_current_fault = true;
+  }
+}
+
+void handle_faults(void) {
   if (battery_state.low_voltage_fault || battery_state.over_current_fault) {
-    // Turn off the power outputs
     HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_RESET);
-    // Blink LEDs red to show user something is wrong.
     blink_leds_red();
   }
 }
@@ -235,6 +230,10 @@ void update_battery_leds(void) {
   }
 }
 
+bool is_power_on(void) {
+  return HAL_GPIO_ReadPin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN) == GPIO_PIN_SET;
+}
+
 bool is_low_voltage(void) {
   uint16_t *lowest_cell = get_lowest_cell();
   if (!lowest_cell) {
@@ -250,6 +249,11 @@ bool is_low_voltage(void) {
     return true;
   }
   return false;
+}
+
+bool is_over_current_fault(void) {
+  return battery_state.reg_out_current + battery_state.vbat_out_current >
+         battery_state.over_current_threshold;
 }
 
 uint16_t *get_lowest_cell(void) {
@@ -273,5 +277,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_PIN) {
   if (GPIO_PIN != OVER_CURRENT_PIN) {
     return;
   }
+
   battery_state.over_current_fault = true;
+  handle_faults();
 }
