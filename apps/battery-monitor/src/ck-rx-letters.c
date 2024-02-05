@@ -8,7 +8,6 @@
 #include "ck-data.h"
 #include "error.h"
 #include "freertos-tasks.h"
-#include "peripherals.h"
 #include "ports.h"
 #include "potentiometer.h"
 
@@ -128,7 +127,11 @@ int process_output_on_off_letter(const ck_letter_t *letter) {
     case 1:
       HAL_GPIO_WritePin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN, GPIO_PIN_SET);
       break;
+
+    default:
+      break;
   }
+
   switch (power_out) {
     case 0:
       HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_RESET);
@@ -138,27 +141,27 @@ int process_output_on_off_letter(const ck_letter_t *letter) {
       battery_state_reset();
       HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_SET);
       break;
+
+    default:
+      break;
   }
+
   return APP_OK;
 }
 
-// 4 bytes in page
+// 2 bytes in page
 //
-// bytes 0-1: battery monitoring period in ms, i.e. how often to measure voltage
-// and current. This affects how often low voltage/over current is checked.
-// bytes 2-3: battery reporting period in ms, i.e. how often to send
+// bytes 0-1: battery reporting period in ms, i.e. how often to send
 // measurements over CAN.
 int process_report_freq_letter(const ck_letter_t *letter) {
   ck_data_t *ck_data = get_ck_data();
   if (letter->page.line_count != ck_data->report_freq_folder->dlc) {
     return APP_NOT_OK;
   }
+
   task_periods_t periods;
 
-  memcpy(&periods.battery_monitor_period_ms, letter->page.lines,
-         sizeof(periods.battery_monitor_period_ms));
-
-  memcpy(&periods.battery_report_period_ms, &letter->page.lines[2],
+  memcpy(&periods.battery_report_period_ms, letter->page.lines,
          sizeof(periods.battery_report_period_ms));
 
   set_task_periods(&periods);

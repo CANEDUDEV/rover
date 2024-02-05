@@ -8,7 +8,6 @@ extern "C" {
 #include <stdint.h>
 
 typedef struct {
-  uint16_t battery_monitor_period_ms;
   uint16_t battery_report_period_ms;
 } task_periods_t;
 

@@ -18,23 +18,31 @@ typedef struct {
   float r_sense;
 } lt6106_current_sensor_t;
 
-// Returns voltage in mV.
-static float adc_value_to_voltage(uint16_t adc_value) {
-  return ADC_REF_VOLTAGE * adc_value / (float)ADC_RESOLUTION;
-}
-
-static float divide_voltage(float voltage, const voltage_divider_t *divider) {
-  return voltage * (float)(divider->r1 + divider->r2) / (float)divider->r2;
-}
-
-/* The LT6106 current sensor specifies that
- * i_sense = voltage * r_in / (r_sense * r_out).
- *
- * Returns current in mA.
- */
 static float sense_current(float voltage,
-                           const lt6106_current_sensor_t *sensor) {
-  return voltage * sensor->r_in / (sensor->r_sense * sensor->r_out);
+                           const lt6106_current_sensor_t *sensor);
+static float adc_value_to_voltage(uint16_t adc_value);
+static float divide_voltage(float voltage, const voltage_divider_t *divider);
+
+void adc_average_samples(adc_reading_t *average,
+                         const volatile adc_samples_t *samples) {
+  uint32_t sum_adc1[ADC1_NUM_CHANNELS] = {0};
+  uint32_t sum_adc2[ADC2_NUM_CHANNELS] = {0};
+
+  for (uint32_t i = 0; i < ADC_NUM_SAMPLES * ADC1_NUM_CHANNELS; i++) {
+    sum_adc1[i % ADC1_NUM_CHANNELS] += samples->adc1_buf[i];
+  }
+
+  for (uint8_t j = 0; j < ADC1_NUM_CHANNELS; j++) {
+    average->adc1_buf[j] = sum_adc1[j] / ADC_NUM_SAMPLES;
+  }
+
+  for (uint32_t i = 0; i < ADC_NUM_SAMPLES * ADC2_NUM_CHANNELS; i++) {
+    sum_adc2[i % ADC2_NUM_CHANNELS] += samples->adc2_buf[i];
+  }
+
+  for (uint8_t j = 0; j < ADC2_NUM_CHANNELS; j++) {
+    average->adc2_buf[j] = sum_adc2[j] / ADC_NUM_SAMPLES;
+  }
 }
 
 uint16_t adc_to_cell_voltage(uint16_t adc_value) {
@@ -112,4 +120,23 @@ void set_jumper_config(jumper_config_t jumper_config) {
     default:  // Ignore any other value
       break;
   }
+}
+
+// Returns voltage in mV.
+static float adc_value_to_voltage(uint16_t adc_value) {
+  return ADC_REF_VOLTAGE * adc_value / (float)ADC_RESOLUTION;
+}
+
+static float divide_voltage(float voltage, const voltage_divider_t *divider) {
+  return voltage * (float)(divider->r1 + divider->r2) / (float)divider->r2;
+}
+
+/* The LT6106 current sensor specifies that
+ * i_sense = voltage * r_in / (r_sense * r_out).
+ *
+ * Returns current in mA.
+ */
+static float sense_current(float voltage,
+                           const lt6106_current_sensor_t *sensor) {
+  return voltage * sensor->r_in / (sensor->r_sense * sensor->r_out);
 }

@@ -37,11 +37,6 @@ def set_low_voltage_cutoff_frame(voltage_mv):
     return Frame(id_=Envelope.BATTERY_LOW_VOLTAGE_CUTOFF, dlc=2, data=data)
 
 
-def set_monitor_period_frame(time_ms):
-    data = list(time_ms.to_bytes(2, "little")) + [0, 0]
-    return Frame(id_=Envelope.BATTERY_REPORT_FREQUENCY, dlc=4, data=data)
-
-
 def set_report_period_frame(time_ms):
-    data = [0, 0] + list(time_ms.to_bytes(2, "little"))
-    return Frame(id_=Envelope.BATTERY_REPORT_FREQUENCY, dlc=4, data=data)
+    data = list(time_ms.to_bytes(2, "little"))
+    return Frame(id_=Envelope.BATTERY_REPORT_FREQUENCY, dlc=2, data=data)

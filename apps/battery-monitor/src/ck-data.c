@@ -118,6 +118,6 @@ void folder_init(void) {
       2 * sizeof(uint8_t) + sizeof(uint32_t);
   ck_data.set_reg_out_voltage_folder->dlc = sizeof(uint16_t);
   ck_data.output_on_off_folder->dlc = 2 * sizeof(uint8_t);
-  ck_data.report_freq_folder->dlc = sizeof(uint32_t);
+  ck_data.report_freq_folder->dlc = sizeof(uint16_t);
   ck_data.low_voltage_cutoff_folder->dlc = sizeof(uint16_t);
 }
