@@ -115,13 +115,12 @@ int process_output_on_off_letter(const ck_letter_t *letter) {
 
   switch (reg_out) {
     case 0:
-      HAL_GPIO_WritePin(nREG_POWER_ON_GPIO_PORT, nREG_POWER_ON_PIN,
-                        GPIO_PIN_SET);
+      HAL_GPIO_WritePin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN,
+                        GPIO_PIN_RESET);
       break;
 
     case 1:
-      HAL_GPIO_WritePin(nREG_POWER_ON_GPIO_PORT, nREG_POWER_ON_PIN,
-                        GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN, GPIO_PIN_SET);
       break;
   }
   switch (power_out) {
