@@ -24,17 +24,18 @@
 #include "task.h"
 #include "timers.h"
 
-#define BATTERY_MONITOR_DEFAULT_PERIOD_MS 20
 #define BATTERY_REPORT_DEFAULT_PERIOD_MS 200
 
+#define BATTERY_MONITOR_STACK_SIZE \
+  (sizeof(adc_samples_t) + configMINIMAL_STACK_SIZE)
+
 static task_periods_t task_periods = {
-    .battery_monitor_period_ms = BATTERY_MONITOR_DEFAULT_PERIOD_MS,
     .battery_report_period_ms = BATTERY_REPORT_DEFAULT_PERIOD_MS,
 };
 
 static TaskHandle_t battery_monitor_task;
 static StaticTask_t battery_monitor_buf;
-static StackType_t battery_monitor_stack[configMINIMAL_STACK_SIZE];
+static StackType_t battery_monitor_stack[BATTERY_MONITOR_STACK_SIZE];
 
 static TaskHandle_t battery_report_task;
 static StaticTask_t battery_report_buf;
@@ -60,7 +61,7 @@ void task_init(void) {
       priority++, battery_report_stack, &battery_report_buf);
 
   battery_monitor_task = xTaskCreateStatic(
-      battery_monitor, "battery monitor", configMINIMAL_STACK_SIZE, NULL,
+      battery_monitor, "battery monitor", BATTERY_MONITOR_STACK_SIZE, NULL,
       priority++, battery_monitor_stack, &battery_monitor_buf);
 
   letter_reader_cfg_t letter_reader_cfg = {
@@ -74,9 +75,6 @@ void task_init(void) {
 }
 
 void set_task_periods(task_periods_t *periods) {
-  if (periods->battery_monitor_period_ms != 0) {
-    task_periods.battery_monitor_period_ms = periods->battery_monitor_period_ms;
-  }
   if (periods->battery_report_period_ms != 0) {
     task_periods.battery_report_period_ms = periods->battery_report_period_ms;
   }
@@ -95,34 +93,20 @@ void battery_monitor(void *unused) {
   HAL_GPIO_WritePin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN, GPIO_PIN_SET);
   HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_SET);
 
-  StaticTimer_t timer_buf;
-  TimerHandle_t timer =
-      xTimerCreateStatic("battery monitor timer",
-                         pdMS_TO_TICKS(task_periods.battery_monitor_period_ms),
-                         pdFALSE,  // Don't auto reload timer
-                         NULL,     // Timer ID, unused
-                         battery_monitor_timer, &timer_buf);
-
-  adc_reading_t adc_reading;
+  volatile adc_samples_t adc_samples;
 
   for (;;) {
-    // This starts the timer with the set period
-    xTimerChangePeriod(timer,
-                       pdMS_TO_TICKS(task_periods.battery_monitor_period_ms),
-                       portMAX_DELAY);
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
-
-    // Start both ADCs
-    HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc_reading.adc1_buf,
-                      sizeof(adc_reading.adc1_buf) / sizeof(uint16_t));
-    HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc_reading.adc2_buf,
-                      sizeof(adc_reading.adc2_buf) / sizeof(uint16_t));
+    HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc_samples.adc1_buf,
+                      ADC_NUM_SAMPLES * ADC1_NUM_CHANNELS);
+    HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc_samples.adc2_buf,
+                      ADC_NUM_SAMPLES * ADC2_NUM_CHANNELS);
 
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for DMA
 
-    update_battery_state(&adc_reading);
+    adc_reading_t adc_average;
+    adc_average_samples(&adc_average, &adc_samples);
 
-    update_pages();
+    update_battery_state(&adc_average);
   }
 }
 
@@ -142,14 +126,11 @@ void battery_report(void *unused) {
     xTimerChangePeriod(timer,
                        pdMS_TO_TICKS(task_periods.battery_report_period_ms),
                        portMAX_DELAY);
+
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
+    update_pages();
     send_docs();
   }
-}
-
-void battery_monitor_timer(TimerHandle_t timer) {
-  (void)timer;
-  xTaskNotifyGive(battery_monitor_task);
 }
 
 void battery_report_timer(TimerHandle_t timer) {
@@ -214,8 +195,10 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-  (void)hadc;
-  BaseType_t higher_priority_task_woken = pdFALSE;
-  vTaskNotifyGiveFromISR(battery_monitor_task, &higher_priority_task_woken);
-  portYIELD_FROM_ISR(higher_priority_task_woken);
+  // Avoid double notifications by notifying on the slower of the two ADCs
+  if (hadc->Instance == ADC2) {
+    BaseType_t higher_priority_task_woken = pdFALSE;
+    vTaskNotifyGiveFromISR(battery_monitor_task, &higher_priority_task_woken);
+    portYIELD_FROM_ISR(higher_priority_task_woken);
+  }
 }

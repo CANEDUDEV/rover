@@ -47,7 +47,4 @@ with canlib.openChannel(
     ch.writeWait(battery.set_reg_pwr_on_frame, -1)
     sleep(2)
 
-    # This will cause two reports in a row to have the same measurements.
-    ch.writeWait(battery.set_monitor_period_frame(500), -1)
-    sleep(2)
     ch.writeWait(battery.set_report_period_frame(1000), -1)
