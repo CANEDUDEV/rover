@@ -172,9 +172,10 @@ void update_pages(void) {
   memcpy(&ck_data->reg_out_page->lines[2], &battery_state->reg_out_current,
          sizeof(uint16_t));
 
-  memcpy(ck_data->vbat_out_current_page->lines,
-         &battery_state->vbat_out_current,
-         ck_data->vbat_out_current_folder->dlc);
+  memcpy(ck_data->vbat_out_page->lines, &battery_state->vbat_out_voltage,
+         sizeof(uint16_t));
+  memcpy(&ck_data->vbat_out_page->lines[2], &battery_state->vbat_out_current,
+         sizeof(uint32_t));
 }
 
 void send_docs(void) {
@@ -186,7 +187,7 @@ void send_docs(void) {
   if (ck_send_document(ck_data->reg_out_folder->folder_no) != CK_OK) {
     printf("failed to send doc.\r\n");
   }
-  if (ck_send_document(ck_data->vbat_out_current_folder->folder_no) != CK_OK) {
+  if (ck_send_document(ck_data->vbat_out_folder->folder_no) != CK_OK) {
     printf("failed to send doc.\r\n");
   }
 }

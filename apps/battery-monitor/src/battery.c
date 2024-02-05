@@ -9,7 +9,8 @@
 // Constants for array indices
 #define REG_OUT_CURRENT_INDEX 2
 #define REG_OUT_VOLTAGE_INDEX 3
-#define VBAT_OUT_CURRENT_INDEX 4
+#define VBAT_OUT_VOLTAGE_INDEX 4
+#define VBAT_OUT_CURRENT_INDEX 5
 
 static battery_state_t battery_state;
 
@@ -35,6 +36,7 @@ void battery_state_reset(void) {
   }
   battery_state.reg_out_voltage = 0;
   battery_state.reg_out_current = 0;
+  battery_state.vbat_out_voltage = 0;
   battery_state.vbat_out_current = 0;
   battery_state.charge = CHARGE_100_PERCENT;
   battery_state.over_current_fault = false;
@@ -85,6 +87,8 @@ void handle_battery_state(const adc_reading_t *adc_reading) {
       adc_to_reg_out_current(adc_reading->adc2_buf[REG_OUT_CURRENT_INDEX]);
   battery_state.reg_out_voltage =
       adc_to_reg_out_voltage(adc_reading->adc2_buf[REG_OUT_VOLTAGE_INDEX]);
+  battery_state.vbat_out_voltage =
+      adc_to_vbat_out_voltage(adc_reading->adc2_buf[VBAT_OUT_VOLTAGE_INDEX]);
   battery_state.vbat_out_current =
       adc_to_vbat_out_current(adc_reading->adc2_buf[VBAT_OUT_CURRENT_INDEX]);
 

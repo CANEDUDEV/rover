@@ -9,7 +9,7 @@
 #include "mayor.h"
 #include "postmaster.h"
 
-#define ASSIGNMENT_COUNT 27
+#define ASSIGNMENT_COUNT 28
 
 typedef struct {
   uint16_t envelope;
@@ -229,18 +229,24 @@ static void init_assignments(void) {
   index++;
 
   assignments[index].city = ROVER_BATTERY_MONITOR_ID;
-  assignments[index].envelope = ROVER_BATTERY_REG_OUT_CURRENT_ENVELOPE;
+  assignments[index].envelope = ROVER_BATTERY_REGULATED_OUTPUT_ENVELOPE;
   assignments[index].folder = 3;
   index++;
 
   assignments[index].city = ROVER_BATTERY_MONITOR_ID;
-  assignments[index].envelope = ROVER_BATTERY_VBAT_OUT_CURRENT_ENVELOPE;
+  assignments[index].envelope = ROVER_BATTERY_BATTERY_OUTPUT_ENVELOPE;
   assignments[index].folder = 4;
   index++;
 
   assignments[index].city = ROVER_SERVO_ID;
   assignments[index].envelope = ROVER_SERVO_VOLTAGE_ENVELOPE;
   assignments[index].folder = 5;
+  index++;
+
+  // TODO: Remove this when the power board is standard on the Rover.
+  assignments[index].city = ROVER_SERVO_ID;
+  assignments[index].envelope = ROVER_BATTERY_VOLTAGE_ENVELOPE;
+  assignments[index].folder = 4;
   index++;
 
   assignments[index].city = ROVER_SERVO_ID;
