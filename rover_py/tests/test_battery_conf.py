@@ -40,8 +40,11 @@ with canlib.openChannel(
     # This should cause power to turn off due to low-voltage cutoff
     ch.writeWait(battery.set_low_voltage_cutoff_frame(4200), -1)
     sleep(2)
+
+    # Restore power
     ch.writeWait(battery.set_low_voltage_cutoff_frame(3200), -1)
     ch.writeWait(battery.set_pwr_on_frame, -1)
+    ch.writeWait(battery.set_reg_pwr_on_frame, -1)
     sleep(2)
 
     # This will cause two reports in a row to have the same measurements.
