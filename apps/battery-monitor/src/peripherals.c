@@ -230,7 +230,7 @@ void gpio_init(void) {
                     GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(nREG_POWER_ON_GPIO_PORT, nREG_POWER_ON_PIN, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : OVER_CURRENT_PIN */
   gpio_init.Pin = OVER_CURRENT_PIN;
@@ -246,12 +246,12 @@ void gpio_init(void) {
   gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED4_GPIO_PORT, &gpio_init);
 
-  /*Configure GPIO pin : nREG_POWER_ON_PIN */
-  gpio_init.Pin = nREG_POWER_ON_PIN;
+  /*Configure GPIO pin : REG_POWER_ON_PIN */
+  gpio_init.Pin = REG_POWER_ON_PIN;
   gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
   gpio_init.Pull = GPIO_NOPULL;
   gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(nREG_POWER_ON_GPIO_PORT, &gpio_init);
+  HAL_GPIO_Init(REG_POWER_ON_GPIO_PORT, &gpio_init);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, EXTI15_10_IRQ_PRIORITY, 0);
