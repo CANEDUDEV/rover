@@ -30,6 +30,7 @@ typedef struct {
   uint16_t cells[BATTERY_CELLS_MAX];
   uint16_t reg_out_current;
   uint16_t reg_out_voltage;
+  uint16_t vbat_out_voltage;
   uint32_t vbat_out_current;
   charge_t charge;
   volatile bool over_current_fault;  // Set to true by GPIO external interrupt

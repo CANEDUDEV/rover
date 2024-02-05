@@ -21,12 +21,11 @@ class Envelope(IntEnum):
 
     # Report messages
     BATTERY_CELL_VOLTAGES = 0x200
-    BATTERY_REG_OUT_CURRENT = 0x201
-    BATTERY_VBAT_OUT_CURRENT = 0x202
+    BATTERY_REGULATED_OUTPUT_ENVELOPE = 0x201
+    BATTERY_BATTERY_OUTPUT_ENVELOPE = 0x202
 
     SERVO_VOLTAGE = 0x203
     SERVO_CURRENT = 0x204
-    BATTERY_VOLTAGE = 0x205
     SERVO_POSITION = 0x206
 
     # Settings messages
@@ -63,11 +62,10 @@ KINGDOM_ASSIGNMENTS = [
     (City.SBUS_RECEIVER, Envelope.THROTTLE, 3),
     # Report messages
     (City.BATTERY_MONITOR, Envelope.BATTERY_CELL_VOLTAGES, 2),
-    (City.BATTERY_MONITOR, Envelope.BATTERY_REG_OUT_CURRENT, 3),
-    (City.BATTERY_MONITOR, Envelope.BATTERY_VBAT_OUT_CURRENT, 4),
+    (City.BATTERY_MONITOR, Envelope.BATTERY_REGULATED_OUTPUT_ENVELOPE, 3),
+    (City.BATTERY_MONITOR, Envelope.BATTERY_BATTERY_OUTPUT_ENVELOPE, 4),
     (City.SERVO, Envelope.SERVO_VOLTAGE, 5),
     (City.SERVO, Envelope.SERVO_CURRENT, 3),
-    (City.SERVO, Envelope.BATTERY_VOLTAGE, 4),
     # Don't enable this by default
     # (City.SERVO, Envelope.SERVO_POSITION, 2),
     # Settings messages

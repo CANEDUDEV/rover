@@ -30,16 +30,16 @@ typedef struct {
   ck_page_t *cell_page0;
   ck_page_t *cell_page1;
   ck_page_t *reg_out_page;
-  ck_page_t *vbat_out_current_page;
+  ck_page_t *vbat_out_page;
 
   ck_document_t *cell_doc;
   ck_document_t *reg_out_doc;
-  ck_document_t *vbat_out_current_doc;
+  ck_document_t *vbat_out_doc;
 
   // Transmit
   ck_folder_t *cell_folder;
   ck_folder_t *reg_out_folder;
-  ck_folder_t *vbat_out_current_folder;
+  ck_folder_t *vbat_out_folder;
 
   // Receive
   ck_folder_t *jumper_and_fuse_conf_folder;
