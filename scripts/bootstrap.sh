@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-YAMLFMT=https://github.com/google/yamlfmt/releases/download/v0.7.1/yamlfmt_0.7.1_Linux_x86_64.tar.gz
+YAMLFMT=https://github.com/google/yamlfmt/releases/download/v0.10.0/yamlfmt_0.10.0_Linux_x86_64.tar.gz
 
 sudo apt-get -qq update
 sudo apt-get -qq install --no-upgrade -y \
