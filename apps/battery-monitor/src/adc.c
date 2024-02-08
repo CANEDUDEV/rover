@@ -4,8 +4,8 @@
 
 #include "jumpers.h"
 
-#define ADC_REF_VOLTAGE 3300            // in mV
-#define ADC_RESOLUTION ((1 << 12) - 1)  // 12-bit ADC
+#define ADC_REF_VOLTAGE_mV 3300
+#define ADC_RESOLUTION_12BIT ((1 << 12) - 1)  // 12-bit ADC
 
 typedef struct {
   uint16_t r1;
@@ -21,7 +21,8 @@ typedef struct {
 static float sense_current(float voltage,
                            const lt6106_current_sensor_t *sensor);
 static float adc_value_to_voltage(uint16_t adc_value);
-static float divide_voltage(float voltage, const voltage_divider_t *divider);
+static float reverse_voltage_division(float output_voltage,
+                                      const voltage_divider_t *divider);
 
 void adc_average_samples(adc_reading_t *average,
                          const volatile adc_samples_t *samples) {
@@ -50,8 +51,9 @@ uint16_t adc_to_cell_voltage(uint16_t adc_value) {
       .r1 = 13000,
       .r2 = 1600,
   };
-  float measured_voltage = adc_value_to_voltage(adc_value);
-  float cell_voltage = divide_voltage(measured_voltage, &divider);
+  float measured_output_voltage = adc_value_to_voltage(adc_value);
+  float cell_voltage =
+      reverse_voltage_division(measured_output_voltage, &divider);
   return (uint16_t)roundf(cell_voltage);
 }
 
@@ -61,8 +63,8 @@ uint16_t adc_to_reg_out_current(uint16_t adc_value) {
       .r_out = 5100,
       .r_sense = 0.005F,
   };
-  float measured_voltage = adc_value_to_voltage(adc_value);
-  float i_sense = sense_current(measured_voltage, &sensor);
+  float measured_output_voltage = adc_value_to_voltage(adc_value);
+  float i_sense = sense_current(measured_output_voltage, &sensor);
   return (uint16_t)roundf(i_sense);
 }
 
@@ -71,8 +73,8 @@ uint16_t adc_to_reg_out_voltage(uint16_t adc_value) {
       .r1 = 47000,
       .r2 = 10000,
   };
-  float measured_voltage = adc_value_to_voltage(adc_value);
-  float reg_vout = divide_voltage(measured_voltage, &divider);
+  float measured_output_voltage = adc_value_to_voltage(adc_value);
+  float reg_vout = reverse_voltage_division(measured_output_voltage, &divider);
   return (uint16_t)roundf(reg_vout);
 }
 
@@ -88,8 +90,8 @@ uint32_t adc_to_vbat_out_current(uint16_t adc_value) {
       .r_out = get_current_measure_jumper_config(),
       .r_sense = 0.0005F,
   };
-  float measured_voltage = adc_value_to_voltage(adc_value);
-  float i_sense = sense_current(measured_voltage, &sensor);
+  float measured_output_voltage = adc_value_to_voltage(adc_value);
+  float i_sense = sense_current(measured_output_voltage, &sensor);
   return (uint32_t)roundf(i_sense);
 }
 
@@ -98,26 +100,27 @@ uint16_t adc_to_vbat_out_voltage(uint16_t adc_value) {
       .r1 = 13000,
       .r2 = 1600,
   };
-  float measured_voltage = adc_value_to_voltage(adc_value);
-  float vbat_out = divide_voltage(measured_voltage, &divider);
+  float measured_output_voltage = adc_value_to_voltage(adc_value);
+  float vbat_out = reverse_voltage_division(measured_output_voltage, &divider);
   return (uint16_t)roundf(vbat_out);
 }
 
 // Returns voltage in mV.
 static float adc_value_to_voltage(uint16_t adc_value) {
-  return ADC_REF_VOLTAGE * adc_value / (float)ADC_RESOLUTION;
+  return ADC_REF_VOLTAGE_mV * adc_value / (float)ADC_RESOLUTION_12BIT;
 }
 
-static float divide_voltage(float voltage, const voltage_divider_t *divider) {
-  return voltage * (float)(divider->r1 + divider->r2) / (float)divider->r2;
+static float reverse_voltage_division(float output_voltage,
+                                      const voltage_divider_t *divider) {
+  return output_voltage * (float)(divider->r1 + divider->r2) /
+         (float)divider->r2;
 }
 
-/* The LT6106 current sensor specifies that
- * i_sense = voltage * r_in / (r_sense * r_out).
- *
- * Returns current in mA.
+/*
+ * The LT6106 current sensor specifies that
+ * i_sense = output_voltage * r_in / (r_sense * r_out).
  */
-static float sense_current(float voltage,
+static float sense_current(float output_voltage,
                            const lt6106_current_sensor_t *sensor) {
-  return voltage * sensor->r_in / (sensor->r_sense * sensor->r_out);
+  return output_voltage * sensor->r_in / (sensor->r_sense * sensor->r_out);
 }
