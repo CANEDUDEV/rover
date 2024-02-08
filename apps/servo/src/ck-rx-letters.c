@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "ck-data.h"
 #include "error.h"
 #include "failsafe.h"
 #include "freertos-tasks.h"
@@ -22,7 +23,8 @@ static bool reverse = false;
 // 2 bytes in page
 // bytes 1-2: desired servo voltage in mV. Allowed range: 2740-10800 mV
 int process_set_servo_voltage_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 2) {
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->set_servo_voltage_folder->dlc) {
     return APP_NOT_OK;
   }
 
@@ -75,7 +77,8 @@ int process_set_servo_voltage_letter(const ck_letter_t *letter) {
 
 // 2 bytes in page, the PWM frequency in Hz. At most 333 Hz.
 int process_pwm_conf_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 2) {
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->pwm_conf_folder->dlc) {
     return APP_NOT_OK;
   }
 
@@ -103,7 +106,8 @@ int process_pwm_conf_letter(const ck_letter_t *letter) {
 // -90 degrees pulse width: 500 microseconds.
 // +90 degrees pulse width: 2500 microseconds.
 int process_steering_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 5) {  // NOLINT
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->steering_folder->dlc) {
     return APP_NOT_OK;
   }
 
@@ -147,7 +151,8 @@ int process_steering_letter(const ck_letter_t *letter) {
 // 2 bytes in page.
 // Signed integer representing a subtrim value as a pulse width in microseconds.
 int process_subtrim_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 2) {
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->subtrim_folder->dlc) {
     return APP_NOT_OK;
   }
 
@@ -170,9 +175,11 @@ int process_subtrim_letter(const ck_letter_t *letter) {
 // bytes 2-3: reporting period in ms, i.e. how often to send
 //            measurements over CAN.
 int process_report_freq_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 4) {
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->report_freq_folder->dlc) {
     return APP_NOT_OK;
   }
+
   task_periods_t periods;
   memcpy(&periods.measure_period_ms, letter->page.lines,
          sizeof(periods.measure_period_ms));
@@ -184,15 +191,18 @@ int process_report_freq_letter(const ck_letter_t *letter) {
 }
 
 int process_reverse_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 0) {
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->reverse_folder->dlc) {
     return APP_NOT_OK;
   }
+
   reverse = !reverse;
   return APP_OK;
 }
 
 int process_failsafe_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 5) {  // NOLINT
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->failsafe_folder->dlc) {
     return APP_NOT_OK;
   }
 

@@ -5,6 +5,7 @@
 
 #include "adc.h"
 #include "battery.h"
+#include "ck-data.h"
 #include "error.h"
 #include "freertos-tasks.h"
 #include "peripherals.h"
@@ -37,9 +38,11 @@
 //     caution, since setting it too high will result in burned fuses. Byte 2
 //     needs to be set to 0x01 for this setting to have any effect.
 int process_jumper_and_fuse_conf_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 7) {  // NOLINT
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->jumper_and_fuse_conf_folder->dlc) {
     return APP_NOT_OK;
   }
+
   set_jumper_config(letter->page.lines[0]);
   set_fuse_config(letter->page.lines[1]);
   if (letter->page.lines[2] == 0x1) {
@@ -70,7 +73,8 @@ int process_jumper_and_fuse_conf_letter(const ck_letter_t *letter) {
 //  potentiometer_value = (256 / 100 kOhm) * R_set
 //
 int process_set_reg_out_voltage_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 2) {
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->set_reg_out_voltage_folder->dlc) {
     return APP_NOT_OK;
   }
 
@@ -107,9 +111,11 @@ int process_set_reg_out_voltage_letter(const ck_letter_t *letter) {
 // ignored byte 1: power on/off, set to 0 for OFF, 1 for ON, all other values
 // are ignored
 int process_output_on_off_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 2) {
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->output_on_off_folder->dlc) {
     return APP_NOT_OK;
   }
+
   uint8_t reg_out = letter->page.lines[0];
   uint8_t power_out = letter->page.lines[1];
 
@@ -143,7 +149,8 @@ int process_output_on_off_letter(const ck_letter_t *letter) {
 // bytes 2-3: battery reporting period in ms, i.e. how often to send
 // measurements over CAN.
 int process_report_freq_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 4) {
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->report_freq_folder->dlc) {
     return APP_NOT_OK;
   }
   task_periods_t periods;
@@ -166,7 +173,8 @@ int process_report_freq_letter(const ck_letter_t *letter) {
 // individual cell in the battery may have, not the total voltage of the cells
 // combined.
 int process_low_voltage_cutoff_letter(const ck_letter_t *letter) {
-  if (letter->page.line_count != 2) {
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->low_voltage_cutoff_folder->dlc) {
     return APP_NOT_OK;
   }
 
