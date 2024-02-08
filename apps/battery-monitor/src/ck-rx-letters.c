@@ -3,11 +3,11 @@
 #include <math.h>
 #include <string.h>
 
-#include "adc.h"
 #include "battery.h"
 #include "ck-data.h"
 #include "error.h"
 #include "freertos-tasks.h"
+#include "jumpers.h"
 #include "ports.h"
 #include "potentiometer.h"
 
@@ -42,7 +42,7 @@ int process_jumper_and_fuse_conf_letter(const ck_letter_t *letter) {
     return APP_NOT_OK;
   }
 
-  set_jumper_config(letter->page.lines[0]);
+  set_current_measure_jumper_config(letter->page.lines[0]);
   set_fuse_config(letter->page.lines[1]);
   if (letter->page.lines[2] == 0x1) {
     uint32_t over_current_threshold = 0;
