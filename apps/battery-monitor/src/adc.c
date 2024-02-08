@@ -2,10 +2,10 @@
 
 #include <math.h>
 
+#include "jumpers.h"
+
 #define ADC_REF_VOLTAGE 3300            // in mV
 #define ADC_RESOLUTION ((1 << 12) - 1)  // 12-bit ADC
-
-static float vbat_sense_r_out;
 
 typedef struct {
   uint16_t r1;
@@ -85,7 +85,7 @@ uint16_t adc_to_reg_out_voltage(uint16_t adc_value) {
 uint32_t adc_to_vbat_out_current(uint16_t adc_value) {
   const lt6106_current_sensor_t sensor = {
       .r_in = 51,
-      .r_out = vbat_sense_r_out,
+      .r_out = get_current_measure_jumper_config(),
       .r_sense = 0.0005F,
   };
   float measured_voltage = adc_value_to_voltage(adc_value);
@@ -101,25 +101,6 @@ uint16_t adc_to_vbat_out_voltage(uint16_t adc_value) {
   float measured_voltage = adc_value_to_voltage(adc_value);
   float vbat_out = divide_voltage(measured_voltage, &divider);
   return (uint16_t)roundf(vbat_out);
-}
-
-void set_jumper_config(jumper_config_t jumper_config) {
-  switch (jumper_config) {
-    case ALL_OFF:
-      vbat_sense_r_out = 10200;  // NOLINT
-      break;
-    case X11_ON:
-      vbat_sense_r_out = 5100;  // NOLINT
-      break;
-    case X12_ON:
-      vbat_sense_r_out = 3400;  // NOLINT
-      break;
-    case ALL_ON:
-      vbat_sense_r_out = 2550;  // NOLINT
-      break;
-    default:  // Ignore any other value
-      break;
-  }
 }
 
 // Returns voltage in mV.

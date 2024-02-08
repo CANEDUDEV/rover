@@ -7,6 +7,7 @@
 #include "battery.h"
 #include "ck-data.h"
 #include "ck-rx-letters.h"
+#include "jumpers.h"
 #include "peripherals.h"
 #include "ports.h"
 #include "potentiometer.h"
@@ -43,8 +44,8 @@ static StackType_t battery_report_stack[configMINIMAL_STACK_SIZE];
 
 void battery_monitor(void *unused);
 void battery_report(void *unused);
-void battery_monitor_timer(TimerHandle_t timer);
 void battery_report_timer(TimerHandle_t timer);
+void sample_adc(volatile adc_samples_t *adc_samples);
 void update_pages(void);
 void send_docs(void);
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
@@ -83,31 +84,32 @@ void set_task_periods(task_periods_t *periods) {
 void battery_monitor(void *unused) {
   (void)unused;
 
-  peripherals_t *peripherals = get_peripherals();
-
-  set_jumper_config(ALL_ON);
-  configure_potentiometer(POTENTIOMETER_IVRA_DEFAULT);
-
+  set_current_measure_jumper_config(X11_ON_X12_ON);
+  configure_potentiometer(0);
   battery_state_init();
 
   HAL_GPIO_WritePin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN, GPIO_PIN_SET);
   HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_SET);
 
   volatile adc_samples_t adc_samples;
+  adc_reading_t adc_average;
 
   for (;;) {
-    HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc_samples.adc1_buf,
-                      ADC_NUM_SAMPLES * ADC1_NUM_CHANNELS);
-    HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc_samples.adc2_buf,
-                      ADC_NUM_SAMPLES * ADC2_NUM_CHANNELS);
-
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for DMA
-
-    adc_reading_t adc_average;
+    sample_adc(&adc_samples);
     adc_average_samples(&adc_average, &adc_samples);
-
     update_battery_state(&adc_average);
   }
+}
+
+void sample_adc(volatile adc_samples_t *adc_samples) {
+  peripherals_t *peripherals = get_peripherals();
+
+  HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc_samples->adc1_buf,
+                    ADC_NUM_SAMPLES * ADC1_NUM_CHANNELS);
+  HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc_samples->adc2_buf,
+                    ADC_NUM_SAMPLES * ADC2_NUM_CHANNELS);
+
+  ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for DMA
 }
 
 void battery_report(void *unused) {

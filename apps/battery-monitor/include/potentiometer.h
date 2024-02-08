@@ -5,9 +5,7 @@
 extern "C" {
 #endif
 
-#include "stm32f3xx_hal.h"
-
-#define POTENTIOMETER_IVRA_DEFAULT 40  // Default potentiometer value
+#include <stdint.h>
 
 void configure_potentiometer(uint8_t pot_value);
 

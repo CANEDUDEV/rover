@@ -7,6 +7,7 @@ battery_monitor_src = files(
   'src' / 'ck-rx-letters.c',
   'src' / 'freertos-tasks.c',
   'src' / 'interrupts.c',
+  'src' / 'jumpers.c',
   'src' / 'led.c',
   'src' / 'main.c',
   'src' / 'peripherals.c',
