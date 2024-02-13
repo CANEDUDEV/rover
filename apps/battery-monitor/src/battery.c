@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "adc.h"
+#include "jumpers.h"
 #include "led.h"
 #include "ports.h"
 
@@ -95,6 +96,7 @@ void handle_battery_state(const adc_reading_t *adc_reading) {
   update_battery_cells(adc_reading);
   update_battery_charge();
   update_battery_leds();
+  update_voltage_regulator_jumper_state();
 
   if (is_low_voltage()) {
     battery_state.low_voltage_fault = true;

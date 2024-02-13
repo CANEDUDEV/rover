@@ -85,7 +85,9 @@ void battery_monitor(void *unused) {
   (void)unused;
 
   set_current_measure_jumper_config(X11_ON_X12_ON);
-  configure_potentiometer(0);
+  if (configure_potentiometer(0) != APP_OK) {
+    error();
+  }
   battery_state_init();
 
   HAL_GPIO_WritePin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN, GPIO_PIN_SET);

@@ -22,10 +22,19 @@ typedef enum {
   X11_ON_X12_ON = 2550,
 } current_measure_jumper_config_t;
 
+typedef enum {
+  VOUT_0_TO_6V,
+  VOUT_6_TO_16V,
+} voltage_regulator_jumper_config_t;
+
 void set_current_measure_jumper_config(
     current_measure_jumper_config_t jumper_config);
 
 current_measure_jumper_config_t get_current_measure_jumper_config(void);
+
+void update_voltage_regulator_jumper_state(void);
+
+voltage_regulator_jumper_config_t get_voltage_regulator_jumper_state(void);
 
 #ifdef __cplusplus
 }
