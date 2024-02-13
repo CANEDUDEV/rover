@@ -26,6 +26,7 @@ bool is_over_current_fault(void);
 uint16_t *get_lowest_cell(void);
 
 void battery_state_init(void) {
+  led_init();
   battery_state_reset();
   battery_state.low_voltage_cutoff = CHARGE_0_PERCENT;
   set_fuse_config(FUSE_100_AMPERE);
@@ -110,7 +111,7 @@ void handle_battery_state(const adc_reading_t *adc_reading) {
 void handle_faults(void) {
   if (battery_state.low_voltage_fault || battery_state.over_current_fault) {
     HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_RESET);
-    blink_leds_red();
+    led_signal_fault();
   }
 }
 
@@ -285,5 +286,4 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_PIN) {
   }
 
   battery_state.over_current_fault = true;
-  handle_faults();
 }

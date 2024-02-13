@@ -18,7 +18,9 @@ typedef enum {
   LED7,
 } led_t;
 
-void blink_leds_red(void);
+void led_init(void);
+void led_signal_fault(void);
+void led_stop_signal_fault(void);
 void set_led_color(led_t led, led_color_t color);
 
 #ifdef __cplusplus
