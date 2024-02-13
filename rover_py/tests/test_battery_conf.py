@@ -1,4 +1,5 @@
-from time import sleep
+import sys
+import time
 
 from canlib import canlib
 
@@ -16,35 +17,53 @@ with canlib.openChannel(
 
     # Set regulated output voltage to 5 V
     ch.writeWait(battery.set_reg_out_voltage_frame(5000), -1)
-    sleep(2)
+    time.sleep(2)
+
+    # Set report period to 1s
+    ch.writeWait(battery.set_report_period_frame(1000), -1)
+
+    # Measure time between two reports
+    t_before = time.time()
+
+    ch.iocontrol.flush_rx_buffer()
+    ch.readSyncSpecific(rover.Envelope.BATTERY_BATTERY_OUTPUT_ENVELOPE, timeout=2000)
+
+    ch.iocontrol.flush_rx_buffer()
+    ch.readSyncSpecific(rover.Envelope.BATTERY_BATTERY_OUTPUT_ENVELOPE, timeout=2000)
+
+    t_after = time.time()
+
+    assert t_after - t_before > 1
+
+    # Restore report period
+    ch.writeWait(battery.set_report_period_frame(200), -1)
 
     # Toggle regulated output power on / off
     ch.writeWait(battery.set_reg_pwr_off_frame, -1)
-    sleep(2)
+    time.sleep(2)
     ch.writeWait(battery.set_reg_pwr_on_frame, -1)
-    sleep(2)
+    time.sleep(2)
 
     # Toggle main power on / off
     ch.writeWait(battery.set_pwr_off_frame, -1)
-    sleep(2)
+    time.sleep(2)
     ch.writeWait(battery.set_pwr_on_frame, -1)
-    sleep(2)
+    time.sleep(2)
 
     # This should cause power to turn off due to over current protection
     ch.writeWait(battery.set_over_current_threshold_frame(0), -1)
-    sleep(2)
+    time.sleep(2)
     ch.writeWait(battery.set_over_current_threshold_frame(49500), -1)
     ch.writeWait(battery.set_pwr_on_frame, -1)
-    sleep(2)
+    time.sleep(2)
 
     # This should cause power to turn off due to low-voltage cutoff
+    # (Only works with batteries)
     ch.writeWait(battery.set_low_voltage_cutoff_frame(4200), -1)
-    sleep(2)
+    time.sleep(2)
 
     # Restore power
     ch.writeWait(battery.set_low_voltage_cutoff_frame(3200), -1)
     ch.writeWait(battery.set_pwr_on_frame, -1)
     ch.writeWait(battery.set_reg_pwr_on_frame, -1)
-    sleep(2)
-
-    ch.writeWait(battery.set_report_period_frame(1000), -1)
+    time.sleep(2)
