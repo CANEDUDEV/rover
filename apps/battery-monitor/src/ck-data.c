@@ -115,7 +115,7 @@ void folder_init(void) {
   }
 
   ck_data.jumper_and_fuse_conf_folder->dlc =
-      2 * sizeof(uint8_t) + sizeof(uint32_t);
+      3 * sizeof(uint8_t) + sizeof(uint32_t);
   ck_data.set_reg_out_voltage_folder->dlc = sizeof(uint16_t);
   ck_data.output_on_off_folder->dlc = 2 * sizeof(uint8_t);
   ck_data.report_freq_folder->dlc = sizeof(uint16_t);
