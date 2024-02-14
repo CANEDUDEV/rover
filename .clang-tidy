@@ -8,7 +8,7 @@ Checks: |
   -cppcoreguidelines-avoid-non-const-global-variables,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
 WarningsAsErrors: '*'
-HeaderFilterRegex: '.*, -libs/third-party'
+HeaderFilterRegex: '.*, -subprojects'
 FormatStyle: file
 InheritParentConfig: true
 CheckOptions:
