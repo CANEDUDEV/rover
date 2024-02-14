@@ -14,7 +14,7 @@ sbus_receiver_elf = executable(
   'sbus-receiver.elf',
   [common_libs_src, rover_king_src, sbus_receiver_src],
   include_directories: [common_libs_inc, sbus_receiver_inc],
-  link_with: common_libs,
+  dependencies: common_deps,
   link_depends: app_linker_script,
   link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )
