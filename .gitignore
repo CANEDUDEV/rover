@@ -9,3 +9,6 @@
 .vscode/
 build/
 compile_commands.json
+subprojects/*
+!subprojects/packagefiles/
+!subprojects/*.wrap
