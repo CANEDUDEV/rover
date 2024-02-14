@@ -16,6 +16,8 @@ objcopy = find_program('objcopy')
 clang_tidy = find_program('clang-tidy')
 cat = find_program('cat')
 
+stm32cubef3_proj = subproject('stm32cubef3')
+
 fs = import('fs')
 
 # Order is important
