@@ -1,4 +1,3 @@
-subdir('third-party')
 subdir('test-utils')
 subdir('can-kingdom')
 subdir('rover')
@@ -8,6 +7,7 @@ drivers_inc = stm32cubef3_proj.get_variable('drivers_inc')
 drivers_src = stm32cubef3_proj.get_variable('drivers_src')
 freertos_inc = stm32cubef3_proj.get_variable('freertos_inc')
 freertos_src = stm32cubef3_proj.get_variable('freertos_src')
+littlefs_dep = dependency('littlefs')
 
 # Convenience source file list for all targets
 common_libs_src = [
@@ -28,12 +28,10 @@ common_libs_inc = [
   # third-party
   drivers_inc,
   freertos_inc,
-  littlefs_inc,
 ]
 
-common_libs = [
-  # third-party
-  littlefs_lib,
+common_deps = [
+  littlefs_dep,
 ]
 
 common_libs_tidy_files = [
