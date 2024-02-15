@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+
 typedef enum {
   TEST_PASS = 0,
   TEST_FAIL = 1,
@@ -13,6 +16,15 @@ typedef enum {
   TEST_SKIP = 77,
   TEST_SETUP_FAIL = 99,
 } test_err_t;
+
+#define ASSERT(condition, message, ...)                                       \
+  do {                                                                        \
+    if (!(condition)) {                                                       \
+      printf("Assertion failed in func %s, line %d: " message "\n", __func__, \
+             __LINE__, ##__VA_ARGS__);                                        \
+      exit(TEST_FAIL);                                                        \
+    }                                                                         \
+  } while (0)
 
 #ifdef __cplusplus
 }
