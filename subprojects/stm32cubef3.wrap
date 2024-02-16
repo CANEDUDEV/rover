@@ -3,3 +3,7 @@ url = https://github.com/STMicroelectronics/STM32CubeF3.git
 revision = v1.11.4
 depth = 1
 patch_directory = stm32cubef3
+
+[provide]
+stm32f3-hal = stm32f3_hal_dep
+freertos = freertos_dep

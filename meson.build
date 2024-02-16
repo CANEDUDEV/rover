@@ -16,11 +16,18 @@ objcopy = find_program('objcopy')
 clang_tidy = find_program('clang-tidy')
 cat = find_program('cat')
 
-stm32cubef3_proj = subproject('stm32cubef3')
+stm32f3_hal_dep = dependency('stm32f3-hal')
+freertos_dep = dependency('freertos')
+littlefs_dep = dependency('littlefs')
 
-fs = import('fs')
+common_deps = [
+  stm32f3_hal_dep,
+  freertos_dep,
+  littlefs_dep,
+]
 
 # Order is important
+fs = import('fs')
 subdir('libs')
 subdir('bootloader')
 subdir('apps')
