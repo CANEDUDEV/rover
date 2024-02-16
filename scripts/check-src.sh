@@ -20,6 +20,6 @@ black .
 ninja -C build clang-format
 
 # Check
-shfmt -f . | xargs shellcheck -o all
+shfmt -f . | grep -v ^subprojects | xargs shellcheck -o all
 ninja -C build clang-tidy
 check_git_index

@@ -19,6 +19,7 @@ cat = find_program('cat')
 stm32f3_hal_dep = dependency('stm32f3-hal')
 freertos_dep = dependency('freertos')
 littlefs_dep = dependency('littlefs')
+fff_dep = dependency('fff')
 
 common_deps = [
   stm32f3_hal_dep,
