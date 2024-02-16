@@ -465,7 +465,7 @@ static void flash_program(void *unused) {
       HAL_FLASH_Unlock();
       HAL_StatusTypeDef status = HAL_OK;
       status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, current_address,
-                                 *(uint64_t *)word);
+                                 *(uint32_t *)word);
       HAL_FLASH_Lock();
       taskEXIT_CRITICAL();
 
