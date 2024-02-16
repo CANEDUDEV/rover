@@ -11,8 +11,8 @@ bootloader_linker_script = fs.copyfile(files('src' / 'bootloader.ld'))
 
 bootloader_elf = executable(
   'bootloader.elf',
-  [bootloader_src, common_libs_src],
-  include_directories: [bootloader_inc, common_libs_inc],
+  bootloader_src,
+  include_directories: bootloader_inc,
   dependencies: common_deps,
   link_depends: bootloader_linker_script,
   link_args: ['-T@0@'.format(bootloader_linker_script.full_path())],
