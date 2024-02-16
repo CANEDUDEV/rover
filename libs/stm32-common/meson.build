@@ -22,4 +22,9 @@ stm32_startup_src = files(
 
 stm32_common_src = [stm32_lib_src, stm32_startup_src]
 
+stm32_common_dep = declare_dependency(
+  include_directories: stm32_common_inc,
+  sources: stm32_common_src,
+)
+
 stm32_common_tidy_files = [stm32_lib_src]
