@@ -31,4 +31,6 @@ battery_monitor_bin = custom_target(
   build_by_default: true,
 )
 
-battery_monitor_tidy_files = battery_monitor_src
+subdir('tests')
+
+battery_monitor_tidy_files = [battery_monitor_src, battery_test_tidy_files]
