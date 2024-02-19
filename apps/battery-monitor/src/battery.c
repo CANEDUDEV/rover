@@ -5,7 +5,7 @@
 #include "adc.h"
 #include "jumpers.h"
 #include "led.h"
-#include "ports.h"
+#include "power.h"
 
 // Constants for array indices
 #define REG_OUT_CURRENT_INDEX 2
@@ -20,7 +20,6 @@ void handle_faults(void);
 void update_battery_cells(const adc_reading_t *adc_reading);
 void update_battery_charge(void);
 void update_battery_leds(void);
-bool is_power_on(void);
 bool is_low_voltage(void);
 bool is_over_current_fault(void);
 uint16_t *get_lowest_cell(void);
@@ -33,6 +32,9 @@ void battery_state_init(void) {
 }
 
 void battery_state_reset(void) {
+  set_reg_vout_power_off();
+  set_vbat_power_off();
+
   for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
     battery_state.cells[i] = CHARGE_100_PERCENT;
   }
@@ -76,7 +78,7 @@ void set_over_current_threshold(uint32_t threshold) {
 }
 
 void update_battery_state(const adc_reading_t *adc_reading) {
-  if (!is_power_on()) {
+  if (get_vbat_power_state() == POWER_OFF) {
     return;  // Early return if power is not on
   }
 
@@ -110,7 +112,7 @@ void handle_battery_state(const adc_reading_t *adc_reading) {
 
 void handle_faults(void) {
   if (battery_state.low_voltage_fault || battery_state.over_current_fault) {
-    HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_RESET);
+    set_vbat_power_off();
     led_signal_fault();
   }
 }
@@ -237,10 +239,6 @@ void update_battery_leds(void) {
   }
 }
 
-bool is_power_on(void) {
-  return HAL_GPIO_ReadPin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN) == GPIO_PIN_SET;
-}
-
 bool is_low_voltage(void) {
   uint16_t *lowest_cell = get_lowest_cell();
   if (!lowest_cell) {
@@ -278,12 +276,4 @@ uint16_t *get_lowest_cell(void) {
     }
   }
   return lowest_cell;
-}
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_PIN) {
-  if (GPIO_PIN != OVER_CURRENT_PIN) {
-    return;
-  }
-
-  battery_state.over_current_fault = true;
 }
