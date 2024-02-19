@@ -12,6 +12,7 @@ battery_monitor_src = files(
   'src' / 'main.c',
   'src' / 'peripherals.c',
   'src' / 'potentiometer.c',
+  'src' / 'power.c',
 )
 
 battery_monitor_elf = executable(
