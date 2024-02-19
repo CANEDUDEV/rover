@@ -11,6 +11,7 @@
 #include "peripherals.h"
 #include "ports.h"
 #include "potentiometer.h"
+#include "power.h"
 
 // STM32Common
 #include "error.h"
@@ -88,10 +89,11 @@ void battery_monitor(void *unused) {
   if (configure_potentiometer(0) != APP_OK) {
     error();
   }
+
   battery_state_init();
 
-  HAL_GPIO_WritePin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_SET);
+  set_reg_vout_power_on();
+  set_vbat_power_on();
 
   volatile adc_samples_t adc_samples;
   adc_reading_t adc_average;
