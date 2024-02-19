@@ -35,6 +35,8 @@ void battery_state_reset(void) {
   set_reg_vout_power_off();
   set_vbat_power_off();
 
+  led_stop_signal_fault();
+
   for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
     battery_state.cells[i] = CHARGE_100_PERCENT;
   }
