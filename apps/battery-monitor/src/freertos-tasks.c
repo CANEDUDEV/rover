@@ -9,7 +9,6 @@
 #include "ck-rx-letters.h"
 #include "jumpers.h"
 #include "peripherals.h"
-#include "ports.h"
 #include "potentiometer.h"
 #include "power.h"
 
@@ -149,9 +148,9 @@ void update_pages(void) {
   battery_state_t *battery_state = get_battery_state();
 
   // Copy cells 0,1,2 to page 0 of cell doc, cells 3,4,5 to page 1.
-  memcpy(&ck_data->cell_page0->lines[1], &battery_state->cells[0],
+  memcpy(&ck_data->cell_page0->lines[1], &battery_state->cell_voltage[0],
          ck_data->cell_folder->dlc);
-  memcpy(&ck_data->cell_page1->lines[1], &battery_state->cells[3],
+  memcpy(&ck_data->cell_page1->lines[1], &battery_state->cell_voltage[3],
          ck_data->cell_folder->dlc);
 
   memcpy(ck_data->reg_out_page->lines, &battery_state->reg_out_voltage,
