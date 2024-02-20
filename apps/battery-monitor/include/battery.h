@@ -15,24 +15,21 @@ extern "C" {
 // detection threshold voltage at 100 mV.
 #define BATTERY_CELL_DETECTION_THRESHOLD 100
 
-// Define some charge states in mV. Based on LiPo batteries. Assumes maximum
-// cell voltage of 4200 mV and a low voltage cutoff at 3200 mV.
-typedef enum {
-  CHARGE_0_PERCENT = 3200,
-  CHARGE_20_PERCENT = 3400,
-  CHARGE_40_PERCENT = 3600,
-  CHARGE_60_PERCENT = 3800,
-  CHARGE_80_PERCENT = 4000,
-  CHARGE_100_PERCENT = 4200,
-} charge_t;
+#define BATTERY_CHARGE_100_PERCENT 100
+
+#define LIPO_CELL_MIN_VOLTAGE 3200
+#define LIPO_CELL_MAX_VOLTAGE 4200
 
 typedef struct {
-  uint16_t cells[BATTERY_CELLS_MAX];
+  uint16_t cell_min_voltage;
+  uint16_t cell_max_voltage;
+  uint16_t cell_voltage[BATTERY_CELLS_MAX];
+
   uint16_t reg_out_current;
   uint16_t reg_out_voltage;
   uint16_t vbat_out_voltage;
   uint32_t vbat_out_current;
-  charge_t charge;
+  uint8_t charge;
   volatile bool over_current_fault;  // Set to true by GPIO external interrupt
                                      // on the OVER_CURRENT pin.
   bool low_voltage_fault;

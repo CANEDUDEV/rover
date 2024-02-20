@@ -1,5 +1,6 @@
 #include "battery.h"
 
+#include <math.h>
 #include <string.h>
 
 #include "adc.h"
@@ -20,14 +21,16 @@ void handle_faults(void);
 void update_battery_cells(const adc_reading_t *adc_reading);
 void update_battery_charge(void);
 void update_battery_leds(void);
-bool is_low_voltage(void);
+bool is_low_voltage_fault(void);
 bool is_over_current_fault(void);
 uint16_t *get_lowest_cell(void);
 
 void battery_state_init(void) {
   led_init();
   battery_state_reset();
-  battery_state.low_voltage_cutoff = CHARGE_0_PERCENT;
+  // TODO: set a low voltage cutoff point at 3.2V when running a high amp load.
+  // TODO: set a low voltage cutoff point at 3.7 V when running a low amp load.
+  battery_state.low_voltage_cutoff = battery_state.cell_min_voltage;
   set_fuse_config(FUSE_100_AMPERE);
 }
 
@@ -37,14 +40,14 @@ void battery_state_reset(void) {
 
   led_stop_signal_fault();
 
-  for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
-    battery_state.cells[i] = CHARGE_100_PERCENT;
-  }
+  battery_state.cell_min_voltage = LIPO_CELL_MIN_VOLTAGE;
+  battery_state.cell_max_voltage = LIPO_CELL_MAX_VOLTAGE;
+  memset(battery_state.cell_voltage, 0, sizeof(battery_state.cell_voltage));
   battery_state.reg_out_voltage = 0;
   battery_state.reg_out_current = 0;
   battery_state.vbat_out_voltage = 0;
   battery_state.vbat_out_current = 0;
-  battery_state.charge = CHARGE_100_PERCENT;
+  battery_state.charge = 0;
   battery_state.over_current_fault = false;
   battery_state.low_voltage_fault = false;
 }
@@ -103,7 +106,7 @@ void handle_battery_state(const adc_reading_t *adc_reading) {
   update_battery_leds();
   update_voltage_regulator_jumper_state();
 
-  if (is_low_voltage()) {
+  if (is_low_voltage_fault()) {
     battery_state.low_voltage_fault = true;
   }
 
@@ -126,42 +129,42 @@ void update_battery_cells(const adc_reading_t *adc_reading) {
   if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
     cell_voltage = 0;
   }
-  battery_state.cells[0] = cell_voltage;
-  total_voltage = battery_state.cells[0];
+  battery_state.cell_voltage[0] = cell_voltage;
+  total_voltage = battery_state.cell_voltage[0];
 
   cell_voltage = adc_to_cell_voltage(adc_reading->adc1_buf[1]) - total_voltage;
   if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
     cell_voltage = 0;
   }
-  battery_state.cells[1] = cell_voltage;
-  total_voltage += battery_state.cells[1];
+  battery_state.cell_voltage[1] = cell_voltage;
+  total_voltage += battery_state.cell_voltage[1];
 
   cell_voltage = adc_to_cell_voltage(adc_reading->adc1_buf[2]) - total_voltage;
   if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
     cell_voltage = 0;
   }
-  battery_state.cells[2] = cell_voltage;
-  total_voltage += battery_state.cells[2];
+  battery_state.cell_voltage[2] = cell_voltage;
+  total_voltage += battery_state.cell_voltage[2];
 
   cell_voltage = adc_to_cell_voltage(adc_reading->adc1_buf[3]) - total_voltage;
   if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
     cell_voltage = 0;
   }
-  battery_state.cells[3] = cell_voltage;
-  total_voltage += battery_state.cells[3];
+  battery_state.cell_voltage[3] = cell_voltage;
+  total_voltage += battery_state.cell_voltage[3];
 
   cell_voltage = adc_to_cell_voltage(adc_reading->adc2_buf[0]) - total_voltage;
   if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
     cell_voltage = 0;
   }
-  battery_state.cells[4] = cell_voltage;
-  total_voltage += battery_state.cells[4];
+  battery_state.cell_voltage[4] = cell_voltage;
+  total_voltage += battery_state.cell_voltage[4];
 
   cell_voltage = adc_to_cell_voltage(adc_reading->adc2_buf[1]) - total_voltage;
   if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
     cell_voltage = 0;
   }
-  battery_state.cells[5] = cell_voltage;
+  battery_state.cell_voltage[5] = cell_voltage;
   // NOLINTEND(*-magic-numbers)
 }
 
@@ -171,91 +174,52 @@ void update_battery_charge(void) {
 
   // If no cells are connected for some reason
   if (!lowest_cell) {
+    battery_state.charge = BATTERY_CHARGE_100_PERCENT;
     return;
   }
 
-  charge_t lowest = CHARGE_100_PERCENT;
+  float charge_percent =
+      (float)(*lowest_cell - battery_state.cell_min_voltage) /
+      (float)(battery_state.cell_max_voltage - battery_state.cell_min_voltage);
 
-  if (*lowest_cell <= CHARGE_0_PERCENT) {
-    lowest = CHARGE_0_PERCENT;
-  } else if (*lowest_cell <= CHARGE_20_PERCENT) {
-    lowest = CHARGE_20_PERCENT;
-  } else if (*lowest_cell <= CHARGE_40_PERCENT) {
-    lowest = CHARGE_40_PERCENT;
-  } else if (*lowest_cell <= CHARGE_60_PERCENT) {
-    lowest = CHARGE_60_PERCENT;
-  } else if (*lowest_cell <= CHARGE_80_PERCENT) {
-    lowest = CHARGE_80_PERCENT;
+  charge_percent *= BATTERY_CHARGE_100_PERCENT;
+
+  if (charge_percent > BATTERY_CHARGE_100_PERCENT) {
+    charge_percent = BATTERY_CHARGE_100_PERCENT;
+  }
+  if (charge_percent < 0) {
+    charge_percent = 0;
   }
 
-  // Charge state update logic
-  const uint8_t report_limit = 10;
-  static uint8_t report_count = 0;
-
-  // Don't update charge state until we're sure it's a charge difference and not
-  // an outlier.
-  if (lowest < battery_state.charge) {
-    report_count++;
-  }
-
-  if (report_count >= report_limit) {
-    report_count = 0;
-    battery_state.charge = lowest;
-  }
+  battery_state.charge = (uint8_t)roundf(charge_percent);
 }
 
 void update_battery_leds(void) {
-  switch (battery_state.charge) {
-    case CHARGE_0_PERCENT:
-      set_led_color(LED6, RED);
-      set_led_color(LED7, NONE);
-      break;
+  const uint8_t charge_20_percent = 20;
+  const uint8_t charge_50_percent = 50;
 
-    case CHARGE_40_PERCENT:
-      set_led_color(LED6, ORANGE);
-      set_led_color(LED7, NONE);
-      break;
+  if (battery_state.charge < charge_20_percent) {
+    set_led_color(LED6, RED);
+    set_led_color(LED7, RED);
+  }
 
-    case CHARGE_20_PERCENT:
-      set_led_color(LED6, RED);
-      set_led_color(LED7, RED);
-      break;
+  else if (battery_state.charge < charge_50_percent) {
+    set_led_color(LED6, ORANGE);
+    set_led_color(LED7, ORANGE);
+  }
 
-    case CHARGE_60_PERCENT:
-      set_led_color(LED6, ORANGE);
-      set_led_color(LED7, ORANGE);
-      break;
-
-    case CHARGE_80_PERCENT:
-      set_led_color(LED6, GREEN);
-      set_led_color(LED7, NONE);
-      break;
-
-    case CHARGE_100_PERCENT:
-      set_led_color(LED6, GREEN);
-      set_led_color(LED7, GREEN);
-      break;
-
-    default:
-      break;
+  else {
+    set_led_color(LED6, GREEN);
+    set_led_color(LED7, GREEN);
   }
 }
 
-bool is_low_voltage(void) {
+bool is_low_voltage_fault(void) {
   uint16_t *lowest_cell = get_lowest_cell();
   if (!lowest_cell) {
     return false;
   }
-  const uint8_t report_limit = 10;
-  static uint8_t report_count = 0;
-  if (*lowest_cell < battery_state.low_voltage_cutoff) {
-    report_count++;
-  }
-  if (report_count >= report_limit) {
-    report_count = 0;
-    return true;
-  }
-  return false;
+  return *lowest_cell < battery_state.low_voltage_cutoff;
 }
 
 bool is_over_current_fault(void) {
@@ -264,17 +228,17 @@ bool is_over_current_fault(void) {
 }
 
 uint16_t *get_lowest_cell(void) {
-  uint16_t lowest_charge = CHARGE_100_PERCENT;
+  uint16_t lowest_voltage = battery_state.cell_max_voltage;
   uint16_t *lowest_cell = NULL;
   for (uint8_t i = 0; i < BATTERY_CELLS_MAX; i++) {
     // If cell is not connected, do not use its values in the low voltage
     // detection logic.
-    if (battery_state.cells[i] < BATTERY_CELL_DETECTION_THRESHOLD) {
+    if (battery_state.cell_voltage[i] < BATTERY_CELL_DETECTION_THRESHOLD) {
       continue;
     }
-    if (battery_state.cells[i] < lowest_charge) {
-      lowest_charge = battery_state.cells[i];
-      lowest_cell = &battery_state.cells[i];
+    if (battery_state.cell_voltage[i] <= lowest_voltage) {
+      lowest_voltage = battery_state.cell_voltage[i];
+      lowest_cell = &battery_state.cell_voltage[i];
     }
   }
   return lowest_cell;
