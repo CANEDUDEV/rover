@@ -3,6 +3,7 @@
 #include "jumpers.h"
 
 // Testing
+#include "battery-test-utils.h"
 #include "fff.h"
 #include "test.h"
 
@@ -13,14 +14,6 @@ DEFINE_FFF_GLOBALS
 FAKE_VALUE_FUNC(uint8_t, get_potentiometer_value)
 FAKE_VALUE_FUNC(battery_state_t *, get_battery_state)
 // NOLINTEND
-
-typedef struct {
-  uint32_t actual_value;
-  uint32_t expected_value;
-  uint32_t accepted_error;
-} measurement_t;
-
-bool is_acceptable_measurement(measurement_t *measurement);
 
 void test_adc_to_cell_voltage(void);
 void test_adc_to_reg_out_current(void);
@@ -95,7 +88,7 @@ void test_adc_to_vbat_out_current_x11_on_x12_on(void) {
   set_current_measure_jumper_config(X11_ON_X12_ON);
 
   measurement_t measurement = {
-      .actual_value = adc_to_vbat_out_current(adc_value_420ma),
+      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_420ma),
       .expected_value = expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
@@ -112,7 +105,7 @@ void test_adc_to_vbat_out_current_x11_on(void) {
   set_current_measure_jumper_config(X11_ON);
 
   measurement_t measurement = {
-      .actual_value = adc_to_vbat_out_current(adc_value_450ma),
+      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_450ma),
       .expected_value = expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
@@ -129,7 +122,7 @@ void test_adc_to_vbat_out_current_x12_on(void) {
   set_current_measure_jumper_config(X12_ON);
 
   measurement_t measurement = {
-      .actual_value = adc_to_vbat_out_current(adc_value_460ma),
+      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_460ma),
       .expected_value = expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
@@ -146,7 +139,7 @@ void test_adc_to_vbat_out_current_x11_off_x12_off(void) {
   set_current_measure_jumper_config(X11_OFF_X12_OFF);
 
   measurement_t measurement = {
-      .actual_value = adc_to_vbat_out_current(adc_value_460ma),
+      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_460ma),
       .expected_value = expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
@@ -168,14 +161,4 @@ void test_adc_to_vbat_out_voltage(void) {
 
   ASSERT(is_acceptable_measurement(&measurement), "expected: %u, got: %u",
          measurement.expected_value, measurement.actual_value);
-}
-
-bool is_acceptable_measurement(measurement_t *measurement) {
-  uint32_t min_accepted_measurement =
-      measurement->expected_value - measurement->accepted_error;
-  uint32_t max_accepted_measurement =
-      measurement->expected_value + measurement->accepted_error;
-
-  return (measurement->actual_value >= min_accepted_measurement &&
-          measurement->actual_value <= max_accepted_measurement);
 }
