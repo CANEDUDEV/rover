@@ -99,7 +99,7 @@ void folder_init(void) {
   // NOLINTBEGIN(*-magic-numbers)
   ck_data.set_servo_voltage_folder->dlc = 2;
   ck_data.pwm_conf_folder->dlc = 6;
-  ck_data.steering_folder->dlc = 3;
+  ck_data.steering_folder->dlc = 5;
   ck_data.subtrim_folder->dlc = 2;
   ck_data.report_freq_folder->dlc = 4;
   ck_data.reverse_folder->dlc = 0;
