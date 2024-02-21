@@ -16,19 +16,19 @@ def set_reg_out_voltage_frame(voltage_mv):
 
 
 set_reg_pwr_off_frame = Frame(
-    id_=Envelope.BATTERY_OUTPUT_ON_OFF, dlc=2, data=[0, 1]
+    id_=Envelope.BATTERY_OUTPUT_ON_OFF, dlc=2, data=[0xFF, 0]
 )  # Set regulated power out OFF
 
 set_reg_pwr_on_frame = Frame(
-    id_=Envelope.BATTERY_OUTPUT_ON_OFF, dlc=2, data=[1, 1]
+    id_=Envelope.BATTERY_OUTPUT_ON_OFF, dlc=2, data=[0xFF, 1]
 )  # Set regulated power out ON
 
 set_pwr_off_frame = Frame(
-    id_=Envelope.BATTERY_OUTPUT_ON_OFF, dlc=2, data=[0, 0]
+    id_=Envelope.BATTERY_OUTPUT_ON_OFF, dlc=2, data=[0, 0xFF]
 )  # Set power out OFF
 
 set_pwr_on_frame = Frame(
-    id_=Envelope.BATTERY_OUTPUT_ON_OFF, dlc=2, data=[1, 1]
+    id_=Envelope.BATTERY_OUTPUT_ON_OFF, dlc=2, data=[1, 0xFF]
 )  # Set power out ON
 
 
