@@ -8,8 +8,8 @@
 #include "error.h"
 #include "freertos-tasks.h"
 #include "jumpers.h"
-#include "ports.h"
 #include "potentiometer.h"
+#include "power.h"
 
 // 7 bytes in page
 //
@@ -113,31 +113,29 @@ int process_output_on_off_letter(const ck_letter_t *letter) {
     return APP_NOT_OK;
   }
 
-  uint8_t reg_out = letter->page.lines[0];
-  uint8_t power_out = letter->page.lines[1];
-
-  switch (reg_out) {
+  uint8_t vbat_out = letter->page.lines[0];
+  switch (vbat_out) {
     case 0:
-      HAL_GPIO_WritePin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN,
-                        GPIO_PIN_RESET);
+      set_vbat_power_off();
       break;
 
     case 1:
-      HAL_GPIO_WritePin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN, GPIO_PIN_SET);
+      battery_state_reset();
+      set_vbat_power_on();
       break;
 
     default:
       break;
   }
 
-  switch (power_out) {
+  uint8_t reg_out = letter->page.lines[1];
+  switch (reg_out) {
     case 0:
-      HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_RESET);
+      set_reg_vout_power_off();
       break;
 
     case 1:
-      battery_state_reset();
-      HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_SET);
+      set_reg_vout_power_on();
       break;
 
     default:
