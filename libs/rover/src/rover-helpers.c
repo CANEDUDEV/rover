@@ -339,9 +339,10 @@ static void init_assignments(void) {
   assignments[index].folder = 10;
   index++;
 
-  assignments[index].city = ROVER_SERVO_ID;
-  assignments[index].envelope = ROVER_SERVO_POSITION_ENVELOPE;
-  assignments[index].folder = 2;
-  index++;
+  // Disable for now as it's a work in progress.
+  // assignments[index].city = ROVER_SERVO_ID;
+  // assignments[index].envelope = ROVER_SERVO_POSITION_ENVELOPE;
+  // assignments[index].folder = 2;
+  // index++;
 }
 // NOLINTEND(*-magic-numbers)
