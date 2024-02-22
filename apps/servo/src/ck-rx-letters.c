@@ -70,7 +70,7 @@ int process_set_servo_voltage_letter(const ck_letter_t *letter) {
     potentiometer = (uint8_t)potentiometer_f_rounded;
   }
 
-  configure_servo_potentiometer(potentiometer);
+  write_servo_potentiometer(potentiometer);
 
   return APP_OK;
 }

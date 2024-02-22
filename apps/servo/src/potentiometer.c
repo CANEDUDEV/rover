@@ -28,7 +28,7 @@ int init_potentiometers(void) {
   return APP_OK;
 }
 
-int configure_potentiometer(uint8_t terminal_address, uint8_t pot_value) {
+int write_potentiometer_value(uint8_t terminal_address, uint8_t pot_value) {
   peripherals_t *peripherals = get_peripherals();
   uint8_t write_cmd[2] = {terminal_address, pot_value};
 
@@ -44,10 +44,10 @@ int configure_potentiometer(uint8_t terminal_address, uint8_t pot_value) {
   return APP_OK;
 }
 
-int configure_servo_potentiometer(uint8_t pot_value) {
-  return configure_potentiometer(POTENTIOMETER_WRA_ADDRESS, pot_value);
+int write_servo_potentiometer(uint8_t pot_value) {
+  return write_potentiometer_value(POTENTIOMETER_WRA_ADDRESS, pot_value);
 }
 
-int configure_sensor_potentiometer(uint8_t pot_value) {
-  return configure_potentiometer(POTENTIOMETER_WRB_ADDRESS, pot_value);
+int write_sensor_potentiometer(uint8_t pot_value) {
+  return write_potentiometer_value(POTENTIOMETER_WRB_ADDRESS, pot_value);
 }

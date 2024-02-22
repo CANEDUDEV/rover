@@ -90,7 +90,7 @@ void battery_monitor(void *unused) {
     error();
   }
 
-  if (configure_potentiometer(0) != APP_OK) {
+  if (write_potentiometer_value(0) != APP_OK) {
     error();
   }
 

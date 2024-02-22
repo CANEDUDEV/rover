@@ -16,8 +16,8 @@ extern "C" {
 #define POTENTIOMETER_SENSOR_DEFAULT 180  // Gives 3.3V
 
 int init_potentiometers(void);
-int configure_servo_potentiometer(uint8_t pot_value);
-int configure_sensor_potentiometer(uint8_t pot_value);
+int write_servo_potentiometer(uint8_t pot_value);
+int write_sensor_potentiometer(uint8_t pot_value);
 
 #ifdef __cplusplus
 }

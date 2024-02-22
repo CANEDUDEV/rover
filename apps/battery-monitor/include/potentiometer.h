@@ -8,7 +8,7 @@ extern "C" {
 #include <stdint.h>
 
 int init_potentiometer(void);
-int configure_potentiometer(uint8_t pot_value);
+int write_potentiometer_value(uint8_t pot_value);
 int read_potentiometer_value(uint8_t *pot_value);
 
 #ifdef __cplusplus

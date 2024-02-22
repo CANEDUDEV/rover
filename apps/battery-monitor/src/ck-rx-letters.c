@@ -82,7 +82,7 @@ int process_set_reg_out_voltage_letter(const ck_letter_t *letter) {
     potentiometer_value = 0;
   }
 
-  return configure_potentiometer(potentiometer_value);
+  return write_potentiometer_value(potentiometer_value);
 }
 
 // 2 bytes in page

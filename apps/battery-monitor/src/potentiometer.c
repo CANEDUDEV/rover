@@ -30,7 +30,7 @@ int init_potentiometer(void) {
   return APP_OK;
 }
 
-int configure_potentiometer(uint8_t pot_value) {
+int write_potentiometer_value(uint8_t pot_value) {
   peripherals_t *peripherals = get_peripherals();
   uint8_t wra_write_cmd[2] = {POTENTIOMETER_WRA_ADDRESS, pot_value};
 
