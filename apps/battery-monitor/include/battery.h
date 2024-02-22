@@ -20,6 +20,8 @@ extern "C" {
 #define LIPO_CELL_MIN_VOLTAGE 3200
 #define LIPO_CELL_MAX_VOLTAGE 4200
 
+#define DEFAULT_OVER_CURRENT_THRESHOLD_MA 100000
+
 typedef struct {
   uint16_t cell_min_voltage;
   uint16_t cell_max_voltage;
@@ -35,22 +37,14 @@ typedef struct {
   bool low_voltage_fault;
 
   uint32_t over_current_threshold;  // At what value the over_current_fault will
-                                    // trigger from software. Defaults to fuse
-                                    // config - 500mA.
+                                    // trigger from software.
 
   uint16_t low_voltage_cutoff;  // In mV.
 } battery_state_t;
 
-// Values in mA.
-typedef enum {
-  FUSE_50_AMPERE = 50000,
-  FUSE_100_AMPERE = 100000,
-} fuse_config_t;
-
 void battery_state_init(void);
 void battery_state_reset(void);
 battery_state_t *get_battery_state(void);
-void set_fuse_config(fuse_config_t fuse_config);
 void set_over_current_threshold(uint32_t threshold);
 // Parses an adc reading and uses it to update the battery state.
 void update_battery_state(const adc_reading_t *adc_reading);

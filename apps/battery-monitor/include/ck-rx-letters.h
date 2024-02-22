@@ -7,7 +7,7 @@ extern "C" {
 
 #include "types.h"
 
-int process_jumper_and_fuse_conf_letter(const ck_letter_t *letter);
+int process_jumper_config_letter(const ck_letter_t *letter);
 int process_set_reg_out_voltage_letter(const ck_letter_t *letter);
 int process_output_on_off_letter(const ck_letter_t *letter);
 int process_report_freq_letter(const ck_letter_t *letter);

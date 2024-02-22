@@ -28,10 +28,15 @@ uint16_t *get_lowest_cell(void);
 void battery_state_init(void) {
   led_init();
   battery_state_reset();
+
+  battery_state.cell_min_voltage = LIPO_CELL_MIN_VOLTAGE;
+  battery_state.cell_max_voltage = LIPO_CELL_MAX_VOLTAGE;
+
   // TODO: set a low voltage cutoff point at 3.2V when running a high amp load.
   // TODO: set a low voltage cutoff point at 3.7 V when running a low amp load.
   battery_state.low_voltage_cutoff = battery_state.cell_min_voltage;
-  set_fuse_config(FUSE_100_AMPERE);
+
+  battery_state.over_current_threshold = DEFAULT_OVER_CURRENT_THRESHOLD_MA;
 }
 
 void battery_state_reset(void) {
@@ -40,8 +45,6 @@ void battery_state_reset(void) {
 
   led_stop_signal_fault();
 
-  battery_state.cell_min_voltage = LIPO_CELL_MIN_VOLTAGE;
-  battery_state.cell_max_voltage = LIPO_CELL_MAX_VOLTAGE;
   memset(battery_state.cell_voltage, 0, sizeof(battery_state.cell_voltage));
   battery_state.reg_out_voltage = 0;
   battery_state.reg_out_current = 0;
@@ -54,21 +57,6 @@ void battery_state_reset(void) {
 
 battery_state_t *get_battery_state(void) {
   return &battery_state;
-}
-
-void set_fuse_config(fuse_config_t fuse_config) {
-  switch (fuse_config) {
-    case FUSE_50_AMPERE:
-      set_over_current_threshold(FUSE_50_AMPERE - 500);  // NOLINT
-      break;
-
-    case FUSE_100_AMPERE:
-      set_over_current_threshold(FUSE_100_AMPERE - 500);  // NOLINT
-      break;
-
-    default:  // Ignore
-      break;
-  }
 }
 
 // We might detect false positives if the jumper config is set to detect low

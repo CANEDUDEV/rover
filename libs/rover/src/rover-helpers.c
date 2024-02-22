@@ -9,7 +9,7 @@
 #include "mayor.h"
 #include "postmaster.h"
 
-#define ASSIGNMENT_COUNT 28
+#define ASSIGNMENT_COUNT 29
 
 typedef struct {
   uint16_t envelope;
@@ -255,7 +255,7 @@ static void init_assignments(void) {
   index++;
 
   assignments[index].city = ROVER_BATTERY_MONITOR_ID;
-  assignments[index].envelope = ROVER_BATTERY_JUMPER_AND_FUSE_CONF_ENVELOPE;
+  assignments[index].envelope = ROVER_BATTERY_JUMPER_CONFIG_ENVELOPE;
   assignments[index].folder = 5;
   index++;
 
@@ -277,6 +277,11 @@ static void init_assignments(void) {
   assignments[index].city = ROVER_BATTERY_MONITOR_ID;
   assignments[index].envelope = ROVER_BATTERY_LOW_VOLTAGE_CUTOFF_ENVELOPE;
   assignments[index].folder = 9;
+  index++;
+
+  assignments[index].city = ROVER_BATTERY_MONITOR_ID;
+  assignments[index].envelope = ROVER_BATTERY_OVERCURRENT_THRESHOLD_ENVELOPE;
+  assignments[index].folder = 10;
   index++;
 
   assignments[index].city = ROVER_SERVO_ID;

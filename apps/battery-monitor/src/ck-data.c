@@ -82,11 +82,12 @@ void folder_init(void) {
   ck_data.cell_folder = &ck_data.folders[2];
   ck_data.reg_out_folder = &ck_data.folders[3];
   ck_data.vbat_out_folder = &ck_data.folders[4];
-  ck_data.jumper_and_fuse_conf_folder = &ck_data.folders[5];
+  ck_data.jumper_config_folder = &ck_data.folders[5];
   ck_data.set_reg_out_voltage_folder = &ck_data.folders[6];
   ck_data.output_on_off_folder = &ck_data.folders[7];
   ck_data.report_freq_folder = &ck_data.folders[8];
   ck_data.low_voltage_cutoff_folder = &ck_data.folders[9];
+  ck_data.over_current_threshold_folder = &ck_data.folders[10];
   // NOLINTEND(*-magic-numbers)
 
   // Set up the transmit folders
@@ -114,10 +115,10 @@ void folder_init(void) {
     rx_doc_no++;
   }
 
-  ck_data.jumper_and_fuse_conf_folder->dlc =
-      3 * sizeof(uint8_t) + sizeof(uint32_t);
+  ck_data.jumper_config_folder->dlc = sizeof(uint8_t);
   ck_data.set_reg_out_voltage_folder->dlc = sizeof(uint16_t);
   ck_data.output_on_off_folder->dlc = 2 * sizeof(uint8_t);
   ck_data.report_freq_folder->dlc = sizeof(uint16_t);
   ck_data.low_voltage_cutoff_folder->dlc = sizeof(uint16_t);
+  ck_data.over_current_threshold_folder->dlc = sizeof(uint32_t);
 }

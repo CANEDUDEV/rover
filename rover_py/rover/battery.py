@@ -14,14 +14,14 @@ class JumperConfig(IntEnum):
     X11_ON_X12_ON = 0x03
 
 
-def set_jumper_conf(jumper: JumperConfig):
-    data = [jumper, 0xFF, 0, 0, 0, 0, 0]
-    return Frame(id_=Envelope.BATTERY_JUMPER_AND_FUSE_CONF, dlc=7, data=data)
+def set_jumper_conf_frame(jumper: JumperConfig):
+    data = [jumper]
+    return Frame(id_=Envelope.BATTERY_JUMPER_CONFIG, dlc=1, data=data)
 
 
 def set_over_current_threshold_frame(current_ma):
-    data = [0xFF, 0xFF, 0x01] + list(current_ma.to_bytes(4, "little"))
-    return Frame(id_=Envelope.BATTERY_JUMPER_AND_FUSE_CONF, dlc=7, data=data)
+    data = list(current_ma.to_bytes(4, "little"))
+    return Frame(id_=Envelope.BATTERY_OVERCURRENT_THRESHOLD, dlc=4, data=data)
 
 
 def set_reg_out_voltage_frame(voltage_mv):

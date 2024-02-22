@@ -9,7 +9,7 @@ extern "C" {
 
 #define CK_DATA_TX_PAGE_COUNT 4
 #define CK_DATA_TX_DOC_COUNT 3
-#define CK_DATA_RX_DOC_COUNT 5
+#define CK_DATA_RX_DOC_COUNT 6
 #define CK_DATA_LIST_COUNT 2
 #define CK_DATA_TX_FOLDER_COUNT CK_DATA_TX_DOC_COUNT
 #define CK_DATA_RX_FOLDER_COUNT CK_DATA_RX_DOC_COUNT
@@ -42,7 +42,8 @@ typedef struct {
   ck_folder_t *vbat_out_folder;
 
   // Receive
-  ck_folder_t *jumper_and_fuse_conf_folder;
+  ck_folder_t *jumper_config_folder;
+  ck_folder_t *over_current_threshold_folder;
   ck_folder_t *set_reg_out_voltage_folder;
   ck_folder_t *output_on_off_folder;
   ck_folder_t *report_freq_folder;
