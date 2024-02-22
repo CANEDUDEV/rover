@@ -102,7 +102,7 @@ void test_adc_to_vbat_out_current_x11_on(void) {
   const uint16_t expected_current_ma = 450;
   const uint16_t accepted_error_ma = 10;
 
-  set_current_measure_jumper_config(X11_ON);
+  set_current_measure_jumper_config(X11_ON_X12_OFF);
 
   measurement_t measurement = {
       .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_450ma),
@@ -119,7 +119,7 @@ void test_adc_to_vbat_out_current_x12_on(void) {
   const uint16_t expected_current_ma = 460;
   const uint16_t accepted_error_ma = 10;
 
-  set_current_measure_jumper_config(X12_ON);
+  set_current_measure_jumper_config(X11_OFF_X12_ON);
 
   measurement_t measurement = {
       .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_460ma),

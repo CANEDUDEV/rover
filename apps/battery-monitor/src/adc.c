@@ -87,7 +87,7 @@ uint16_t adc_to_reg_out_voltage(uint16_t adc_value) {
 uint32_t adc_to_vbat_out_current(uint16_t adc_value) {
   const lt6106_current_sensor_t sensor = {
       .r_in = 51,
-      .r_out = get_current_measure_jumper_config(),
+      .r_out = get_current_measure_jumper_r_out(),
       .r_sense = 0.0005F,
   };
   float measured_output_voltage = adc_value_to_voltage(adc_value);
