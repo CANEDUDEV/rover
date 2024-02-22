@@ -181,8 +181,8 @@ void send_docs(void) {
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
   ck_data_t *ck_data = get_ck_data();
 
-  if (folder->folder_no == ck_data->jumper_and_fuse_conf_folder->folder_no) {
-    return process_jumper_and_fuse_conf_letter(letter);
+  if (folder->folder_no == ck_data->jumper_config_folder->folder_no) {
+    return process_jumper_config_letter(letter);
   }
   if (folder->folder_no == ck_data->set_reg_out_voltage_folder->folder_no) {
     return process_set_reg_out_voltage_letter(letter);
