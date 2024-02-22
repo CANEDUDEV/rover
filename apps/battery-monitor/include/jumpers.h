@@ -5,21 +5,23 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 /*
  * X11 and X12 jumper configuration
  *
- * | X11 | X12 | Rout      |
- * |-----|-----|-----------|
- * | OFF | OFF | 10.2 kOhm |
- * | ON  | OFF | 5.1 kOhm  |
- * | OFF | ON  | 3.4 kOhm  |
- * | ON  | ON  | 2.55 kOhm |
+ * | X11 | X12 | Measurable current range |
+ * |-----|-----|--------------------------|
+ * | OFF | OFF | 0-33 A                   |
+ * | ON  | OFF | 0-66 A                   |
+ * | OFF | ON  | 0-99 A                   |
+ * | ON  | ON  | 0-132 A                  |
  */
 typedef enum {
-  X11_OFF_X12_OFF = 10200,
-  X11_ON = 5100,
-  X12_ON = 3400,
-  X11_ON_X12_ON = 2550,
+  X11_OFF_X12_OFF,
+  X11_ON_X12_OFF,
+  X11_OFF_X12_ON,
+  X11_ON_X12_ON,
 } current_measure_jumper_config_t;
 
 typedef enum {
@@ -30,7 +32,7 @@ typedef enum {
 void set_current_measure_jumper_config(
     current_measure_jumper_config_t jumper_config);
 
-current_measure_jumper_config_t get_current_measure_jumper_config(void);
+uint16_t get_current_measure_jumper_r_out(void);
 
 void update_voltage_regulator_jumper_state(void);
 

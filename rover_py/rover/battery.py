@@ -1,8 +1,22 @@
 # Battery board testing frames
 
+from enum import IntEnum
+
 from canlib import Frame
 
 from .rover import Envelope
+
+
+class JumperConfig(IntEnum):
+    X11_OFF_X12_OFF = 0x00
+    X11_ON_X12_OFF = 0x01
+    X11_OFF_X12_ON = 0x02
+    X11_ON_X12_ON = 0x03
+
+
+def set_jumper_conf(jumper: JumperConfig):
+    data = [jumper, 0xFF, 0, 0, 0, 0, 0]
+    return Frame(id_=Envelope.BATTERY_JUMPER_AND_FUSE_CONF, dlc=7, data=data)
 
 
 def set_over_current_threshold_frame(current_ma):
