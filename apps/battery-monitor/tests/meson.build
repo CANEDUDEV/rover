@@ -14,7 +14,7 @@ math_dep = cc_native.find_library('m')
 battery_adc_test = executable(
   'battery-adc-test',
   battery_adc_test_src,
-  include_directories: battery_monitor_inc,
+  include_directories: [battery_monitor_inc, stm32_common_inc],
   dependencies: [math_dep, test_utils_dep],
   native: true,
 )
@@ -32,7 +32,7 @@ battery_test_src = files(
 battery_test = executable(
   'battery-test',
   battery_test_src,
-  include_directories: battery_monitor_inc,
+  include_directories: [battery_monitor_inc, stm32_common_inc],
   dependencies: [math_dep, test_utils_dep],
   native: true,
 )

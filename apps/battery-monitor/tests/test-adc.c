@@ -11,7 +11,7 @@ DEFINE_FFF_GLOBALS
 
 // NOLINTBEGIN
 // Mock these functions to be able to buiid jumpers.c
-FAKE_VALUE_FUNC(uint8_t, get_potentiometer_value)
+FAKE_VALUE_FUNC(uint8_t, read_potentiometer_value)
 FAKE_VALUE_FUNC(battery_state_t *, get_battery_state)
 // NOLINTEND
 

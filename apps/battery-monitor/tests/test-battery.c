@@ -21,22 +21,22 @@ FAKE_VOID_FUNC(led_init)
 FAKE_VOID_FUNC(led_signal_fault)
 FAKE_VOID_FUNC(led_stop_signal_fault)
 FAKE_VOID_FUNC(set_led_color, led_t, led_color_t)
-FAKE_VALUE_FUNC(uint8_t, get_potentiometer_value)
+FAKE_VALUE_FUNC(uint8_t, read_potentiometer_value)
 FAKE_VALUE_FUNC(power_state_t, get_vbat_power_state)
 FAKE_VALUE_FUNC(power_state_t, get_reg_vout_power_state)
 // NOLINTEND
 
-#define FFF_FAKES_LIST(FAKE)    \
-  FAKE(set_vbat_power_on)       \
-  FAKE(set_vbat_power_off)      \
-  FAKE(set_reg_vout_power_on)   \
-  FAKE(set_reg_vout_power_off)  \
-  FAKE(led_init)                \
-  FAKE(led_signal_fault)        \
-  FAKE(led_stop_signal_fault)   \
-  FAKE(set_led_color)           \
-  FAKE(get_potentiometer_value) \
-  FAKE(get_vbat_power_state)    \
+#define FFF_FAKES_LIST(FAKE)     \
+  FAKE(set_vbat_power_on)        \
+  FAKE(set_vbat_power_off)       \
+  FAKE(set_reg_vout_power_on)    \
+  FAKE(set_reg_vout_power_off)   \
+  FAKE(led_init)                 \
+  FAKE(led_signal_fault)         \
+  FAKE(led_stop_signal_fault)    \
+  FAKE(set_led_color)            \
+  FAKE(read_potentiometer_value) \
+  FAKE(get_vbat_power_state)     \
   FAKE(get_reg_vout_power_state)
 
 #define LIPO_OVERVOLTAGE (LIPO_CELL_MAX_VOLTAGE + 100)
