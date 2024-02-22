@@ -29,6 +29,8 @@ typedef struct {
 
   uint16_t reg_out_current;
   uint16_t reg_out_voltage;
+  uint16_t target_reg_out_voltage;
+
   uint16_t vbat_out_voltage;
   uint32_t vbat_out_current;
   uint8_t charge;

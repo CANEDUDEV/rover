@@ -1,6 +1,5 @@
 #include "ck-rx-letters.h"
 
-#include <math.h>
 #include <string.h>
 
 #include "battery.h"
@@ -8,7 +7,6 @@
 #include "error.h"
 #include "freertos-tasks.h"
 #include "jumpers.h"
-#include "potentiometer.h"
 #include "power.h"
 
 // 1 bytes in page
@@ -40,49 +38,17 @@ int process_jumper_config_letter(const ck_letter_t *letter) {
 //
 // bytes 0-1: desired output voltage on the regulated output.
 //
-// Voltage regulator (PTN78020W) formula for calculating the output voltage
-// using a given resistance:
-//
-// R_set = 54.9 kOhm * (1.25 V / (V_o - 2.5 V)) - 6.490 kOhm,
-//
-// Where V_o is the target voltage and R_set is the required resistance to set
-// the target_voltage.
-//
-// We use a potentiometer to set R_set. The potentiometer (TPL0102-100) takes a
-// value between 0 and 255 (total 256 steps) corresponding to resistances
-// between 0 and 100 kOhm. This gives the formula
-//  R_set = (100 kOhm / 256) * potentiometer_value =>
-//  potentiometer_value = (256 / 100 kOhm) * R_set
-//
 int process_set_reg_out_voltage_letter(const ck_letter_t *letter) {
   ck_data_t *ck_data = get_ck_data();
   if (letter->page.line_count != ck_data->set_reg_out_voltage_folder->dlc) {
     return APP_NOT_OK;
   }
 
-  uint16_t target_voltage = 0;
-  memcpy(&target_voltage, letter->page.lines, sizeof(target_voltage));
+  battery_state_t *battery_state = get_battery_state();
+  memcpy(&battery_state->target_reg_out_voltage, letter->page.lines,
+         sizeof(battery_state->target_reg_out_voltage));
 
-  const uint16_t min_voltage = 3300;   // CPU voltage
-  const uint16_t max_voltage = 12600;  // PTN78020W regulator max
-  if (target_voltage < min_voltage || target_voltage > max_voltage) {
-    return APP_NOT_OK;
-  }
-
-  // Voltages in mV
-  const float r_set = 54900 * (1250 / ((float)target_voltage - 2500)) - 6490;
-  const float potentiometer_f = r_set * (256.0F / (100 * 1000));
-  uint8_t potentiometer_value = (uint8_t)roundf(potentiometer_f);
-
-  // Check for overflow
-  if (potentiometer_f > 0xFF) {  // NOLINT
-    potentiometer_value = 0xFF;  // NOLINT
-  }
-  if (potentiometer_f < 0) {
-    potentiometer_value = 0;
-  }
-
-  return write_potentiometer_value(potentiometer_value);
+  return APP_OK;
 }
 
 // 2 bytes in page

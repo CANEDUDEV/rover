@@ -47,6 +47,10 @@ int write_potentiometer_value(uint8_t pot_value) {
 }
 
 int read_potentiometer_value(uint8_t *pot_value) {
+  if (pot_value == NULL) {
+    return APP_NOT_OK;
+  }
+
   peripherals_t *peripherals = get_peripherals();
   uint8_t wra_read_cmd = POTENTIOMETER_WRA_ADDRESS;
 

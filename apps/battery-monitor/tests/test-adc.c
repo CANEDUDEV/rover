@@ -1,19 +1,9 @@
 #include "adc.h"
-#include "battery.h"
 #include "jumpers.h"
 
 // Testing
 #include "battery-test-utils.h"
-#include "fff.h"
 #include "test.h"
-
-DEFINE_FFF_GLOBALS
-
-// NOLINTBEGIN
-// Mock these functions to be able to buiid jumpers.c
-FAKE_VALUE_FUNC(int, read_potentiometer_value, uint8_t *)
-FAKE_VALUE_FUNC(battery_state_t *, get_battery_state)
-// NOLINTEND
 
 void test_adc_to_cell_voltage(void);
 void test_adc_to_reg_out_current(void);

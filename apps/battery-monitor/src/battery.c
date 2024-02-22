@@ -4,8 +4,10 @@
 #include <string.h>
 
 #include "adc.h"
+#include "error.h"
 #include "jumpers.h"
 #include "led.h"
+#include "potentiometer.h"
 #include "power.h"
 
 // Constants for array indices
@@ -21,6 +23,8 @@ void handle_faults(void);
 void update_battery_cells(const adc_reading_t *adc_reading);
 void update_battery_charge(void);
 void update_battery_leds(void);
+void update_reg_out_voltage_controller(void);
+bool is_reg_out_voltage_stable(void);
 bool is_low_voltage_fault(void);
 bool is_over_current_fault(void);
 uint16_t *get_lowest_cell(void);
@@ -31,6 +35,7 @@ void battery_state_init(void) {
 
   battery_state.cell_min_voltage = LIPO_CELL_MIN_VOLTAGE;
   battery_state.cell_max_voltage = LIPO_CELL_MAX_VOLTAGE;
+  battery_state.target_reg_out_voltage = 0;
 
   // TODO: set a low voltage cutoff point at 3.2V when running a high amp load.
   // TODO: set a low voltage cutoff point at 3.7 V when running a low amp load.
@@ -93,6 +98,7 @@ void handle_battery_state(const adc_reading_t *adc_reading) {
   update_battery_charge();
   update_battery_leds();
   update_voltage_regulator_jumper_state();
+  update_reg_out_voltage_controller();
 
   if (is_low_voltage_fault()) {
     battery_state.low_voltage_fault = true;
@@ -200,6 +206,39 @@ void update_battery_leds(void) {
     set_led_color(LED6, GREEN);
     set_led_color(LED7, GREEN);
   }
+}
+
+void update_reg_out_voltage_controller(void) {
+  if (is_reg_out_voltage_stable()) {
+    return;
+  }
+
+  uint8_t current_pot_value = 0;
+  if (read_potentiometer_value(&current_pot_value) != APP_OK) {
+    return;
+  }
+
+  int16_t next_pot_value = current_pot_value;
+
+  if (battery_state.reg_out_voltage > battery_state.target_reg_out_voltage &&
+      next_pot_value > 0) {
+    next_pot_value--;
+  }
+
+  if (battery_state.reg_out_voltage < battery_state.target_reg_out_voltage &&
+      next_pot_value < UINT8_MAX) {
+    next_pot_value++;
+  }
+
+  write_potentiometer_value(next_pot_value);
+}
+
+bool is_reg_out_voltage_stable(void) {
+  const uint16_t accepted_error = 10;
+  return battery_state.reg_out_voltage <
+             battery_state.target_reg_out_voltage + accepted_error &&
+         battery_state.reg_out_voltage >
+             battery_state.target_reg_out_voltage - accepted_error;
 }
 
 bool is_low_voltage_fault(void) {
