@@ -1,29 +1,53 @@
-
 #include "potentiometer.h"
 
+#include <stdio.h>
+
+#include "error.h"
 #include "peripherals.h"
 
-#define POT_ADDR (0x50 << 1)  // Shift left to match STM32 specification
-#define POT_IVRA_ADDR 0x0     // VCC_Servo potentiometer i2c address
-#define POT_IVRB_ADDR 0x1     // VDD_Sensor potentiometer i2c address
+// Shift left to match STM32 specification
+#define POTENTIOMETER_ADDRESS (0x50 << 1)
 
-void configure_servo_potentiometer(uint8_t pot_value) {
+#define POTENTIOMETER_WRA_ADDRESS 0x00  // VCC_Servo potentiometer i2c address
+#define POTENTIOMETER_WRB_ADDRESS 0x01  // VDD_Sensor potentiometer i2c address
+#define POTENTIOMETER_ACR_ADDRESS 0x10  // Access control register
+
+int init_potentiometers(void) {
   peripherals_t *peripherals = get_peripherals();
-  uint8_t ivra_write[2] = {POT_IVRA_ADDR, pot_value};
-  HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivra_write,
-                          sizeof(ivra_write), HAL_MAX_DELAY);
+  // Volatile RW enable, Shutdown disable
+  const uint8_t acr_contents = 0xC0;
+  uint8_t acr_write[2] = {POTENTIOMETER_ACR_ADDRESS, acr_contents};
+  HAL_StatusTypeDef err =
+      HAL_I2C_Master_Transmit(&peripherals->hi2c1, POTENTIOMETER_ADDRESS,
+                              acr_write, sizeof(acr_write), HAL_MAX_DELAY);
+  if (err != HAL_OK) {
+    printf("Error: failed to set up potentiometer: %d\r\n", err);
+    return APP_NOT_OK;
+  }
+
+  return APP_OK;
 }
 
-void configure_sensor_potentiometer(uint8_t pot_value) {
+int configure_potentiometer(uint8_t terminal_address, uint8_t pot_value) {
   peripherals_t *peripherals = get_peripherals();
-  uint8_t ivrb_write[2] = {POT_IVRB_ADDR, pot_value};
-  HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivrb_write,
-                          sizeof(ivrb_write), HAL_MAX_DELAY);
+  uint8_t write_cmd[2] = {terminal_address, pot_value};
+
+  HAL_StatusTypeDef err =
+      HAL_I2C_Master_Transmit(&peripherals->hi2c1, POTENTIOMETER_ADDRESS,
+                              write_cmd, sizeof(write_cmd), HAL_MAX_DELAY);
+
+  if (err != HAL_OK) {
+    printf("Error: failed to set pot value: %d\r\n", err);
+    return APP_NOT_OK;
+  }
+
+  return APP_OK;
 }
 
-void configure_both_potentiometers(uint8_t servo_pot, uint8_t sensor_pot) {
-  peripherals_t *peripherals = get_peripherals();
-  uint8_t ivr_write[3] = {POT_IVRA_ADDR, servo_pot, sensor_pot};
-  HAL_I2C_Master_Transmit(&peripherals->hi2c1, POT_ADDR, ivr_write,
-                          sizeof(ivr_write), HAL_MAX_DELAY);
+int configure_servo_potentiometer(uint8_t pot_value) {
+  return configure_potentiometer(POTENTIOMETER_WRA_ADDRESS, pot_value);
+}
+
+int configure_sensor_potentiometer(uint8_t pot_value) {
+  return configure_potentiometer(POTENTIOMETER_WRB_ADDRESS, pot_value);
 }
