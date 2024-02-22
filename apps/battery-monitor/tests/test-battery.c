@@ -21,7 +21,7 @@ FAKE_VOID_FUNC(led_init)
 FAKE_VOID_FUNC(led_signal_fault)
 FAKE_VOID_FUNC(led_stop_signal_fault)
 FAKE_VOID_FUNC(set_led_color, led_t, led_color_t)
-FAKE_VALUE_FUNC(uint8_t, read_potentiometer_value)
+FAKE_VALUE_FUNC(int, read_potentiometer_value, uint8_t*)
 FAKE_VALUE_FUNC(power_state_t, get_vbat_power_state)
 FAKE_VALUE_FUNC(power_state_t, get_reg_vout_power_state)
 // NOLINTEND
