@@ -51,12 +51,12 @@ void test_adc_to_cell_voltage(void) {
 }
 
 void test_adc_to_reg_out_current(void) {
-  const uint16_t adc_value_75ma = 42;
-  const uint16_t expected_current_ma = 75;
-  const uint16_t accepted_error_ma = 10;
+  const uint16_t adc_value_1500ma = 931;
+  const uint16_t expected_current_ma = 1500;
+  const uint16_t accepted_error_ma = 30;
 
   measurement_t measurement = {
-      .actual_value = adc_to_reg_out_current(adc_value_75ma),
+      .actual_value = adc_to_reg_out_current(adc_value_1500ma),
       .expected_value = expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
@@ -81,14 +81,14 @@ void test_adc_to_reg_out_voltage(void) {
 }
 
 void test_adc_to_vbat_out_current_x11_on_x12_on(void) {
-  const uint16_t adc_value_420ma = 13;
-  const uint16_t expected_current_ma = 420;
-  const uint16_t accepted_error_ma = 10;
+  const uint16_t adc_value_66a = 2048;
+  const int32_t expected_current_ma = 66 * 1000;
+  const uint16_t accepted_error_ma = 300;
 
   set_current_measure_jumper_config(X11_ON_X12_ON);
 
   measurement_t measurement = {
-      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_420ma),
+      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_66a),
       .expected_value = expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
@@ -98,14 +98,14 @@ void test_adc_to_vbat_out_current_x11_on_x12_on(void) {
 }
 
 void test_adc_to_vbat_out_current_x11_on(void) {
-  const uint16_t adc_value_450ma = 28;
-  const uint16_t expected_current_ma = 450;
-  const uint16_t accepted_error_ma = 10;
+  const uint16_t adc_value_33a = 2048;
+  const uint16_t expected_current_ma = 33 * 1000;
+  const uint16_t accepted_error_ma = 300;
 
   set_current_measure_jumper_config(X11_ON_X12_OFF);
 
   measurement_t measurement = {
-      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_450ma),
+      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_33a),
       .expected_value = expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
@@ -115,14 +115,14 @@ void test_adc_to_vbat_out_current_x11_on(void) {
 }
 
 void test_adc_to_vbat_out_current_x12_on(void) {
-  const uint16_t adc_value_460ma = 19;
-  const uint16_t expected_current_ma = 460;
-  const uint16_t accepted_error_ma = 10;
+  const uint16_t adc_value_49a = 2047;
+  const uint16_t expected_current_ma = 49 * 1000;
+  const uint16_t accepted_error_ma = 300;
 
   set_current_measure_jumper_config(X11_OFF_X12_ON);
 
   measurement_t measurement = {
-      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_460ma),
+      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_49a),
       .expected_value = expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
@@ -132,14 +132,14 @@ void test_adc_to_vbat_out_current_x12_on(void) {
 }
 
 void test_adc_to_vbat_out_current_x11_off_x12_off(void) {
-  const uint16_t adc_value_460ma = 58;
-  const uint16_t expected_current_ma = 460;
-  const uint16_t accepted_error_ma = 10;
+  const uint16_t adc_value_16a = 2000;
+  const uint16_t expected_current_ma = 16 * 1000;
+  const uint16_t accepted_error_ma = 300;
 
   set_current_measure_jumper_config(X11_OFF_X12_OFF);
 
   measurement_t measurement = {
-      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_460ma),
+      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_16a),
       .expected_value = expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
