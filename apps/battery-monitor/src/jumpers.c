@@ -1,6 +1,7 @@
 #include "jumpers.h"
 
 #include "battery.h"
+#include "error.h"
 #include "potentiometer.h"
 
 static current_measure_jumper_config_t current_measure_jumper_config;
@@ -23,7 +24,11 @@ current_measure_jumper_config_t get_current_measure_jumper_config(void) {
 
 void update_voltage_regulator_jumper_state(void) {
   battery_state_t *battery_state = get_battery_state();
-  uint8_t pot_val = get_potentiometer_value();
+  uint8_t pot_val = 0;
+
+  if (read_potentiometer_value(&pot_val) != APP_OK) {
+    return;
+  }
 
   // There is overlap between the voltage ranges around 6-6.5V. Figure out which
   // jumper it is based on the potentiometer value in that case.

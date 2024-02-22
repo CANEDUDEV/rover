@@ -57,13 +57,13 @@ void task_init(void) {
     error();
   }
 
-  battery_report_task = xTaskCreateStatic(
-      battery_report, "battery report", configMINIMAL_STACK_SIZE, NULL,
-      priority++, battery_report_stack, &battery_report_buf);
-
   battery_monitor_task = xTaskCreateStatic(
       battery_monitor, "battery monitor", BATTERY_MONITOR_STACK_SIZE, NULL,
       priority++, battery_monitor_stack, &battery_monitor_buf);
+
+  battery_report_task = xTaskCreateStatic(
+      battery_report, "battery report", configMINIMAL_STACK_SIZE, NULL,
+      priority++, battery_report_stack, &battery_report_buf);
 
   letter_reader_cfg_t letter_reader_cfg = {
       .priority = priority++,
@@ -85,7 +85,17 @@ void battery_monitor(void *unused) {
   (void)unused;
 
   set_current_measure_jumper_config(X11_ON_X12_ON);
+
+  if (init_potentiometer() != APP_OK) {
+    error();
+  }
+
   if (configure_potentiometer(0) != APP_OK) {
+    error();
+  }
+
+  uint8_t value = 0;
+  if (read_potentiometer_value(&value) != APP_OK || value != 0) {
     error();
   }
 
