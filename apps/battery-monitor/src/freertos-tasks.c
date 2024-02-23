@@ -206,6 +206,10 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
   if (folder->folder_no == ck_data->low_voltage_cutoff_folder->folder_no) {
     return process_low_voltage_cutoff_letter(letter);
   }
+  if (folder->folder_no == ck_data->over_current_threshold_folder->folder_no) {
+    return process_over_current_threshold_letter(letter);
+  }
+
   return APP_OK;
 }
 
