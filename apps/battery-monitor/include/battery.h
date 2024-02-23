@@ -20,34 +20,45 @@ extern "C" {
 #define LIPO_CELL_MIN_VOLTAGE 3200
 #define LIPO_CELL_MAX_VOLTAGE 4200
 
-#define DEFAULT_OVER_CURRENT_THRESHOLD_MA 100000
+#define DEFAULT_OVERCURRENT_THRESHOLD_MA 100000
+#define DEFAULT_REG_OUT_OVERCURRENT_THRESHOLD_MA 8000
 
 typedef struct {
-  uint16_t cell_min_voltage;
-  uint16_t cell_max_voltage;
-  uint16_t cell_voltage[BATTERY_CELLS_MAX];
+  uint32_t voltage;
+  uint32_t current;
 
-  uint16_t reg_out_current;
-  uint16_t reg_out_voltage;
-  uint16_t target_reg_out_voltage;
+  uint32_t overcurrent_threshold;
+  volatile bool overcurrent_fault;  // Accessed by GPIO external interrupt
+                                    // on the OVER_CURRENT pin.
 
-  uint16_t vbat_out_voltage;
-  uint32_t vbat_out_current;
-  uint8_t charge;
-  volatile bool over_current_fault;  // Set to true by GPIO external interrupt
-                                     // on the OVER_CURRENT pin.
+} power_output_t;
+
+typedef struct {
+  uint16_t min_voltage;
+  uint16_t max_voltage;
+  uint16_t voltage[BATTERY_CELLS_MAX];
+
+  uint16_t low_voltage_cutoff;
   bool low_voltage_fault;
 
-  uint32_t over_current_threshold;  // At what value the over_current_fault will
-                                    // trigger from software.
+} battery_cells_t;
 
-  uint16_t low_voltage_cutoff;  // In mV.
+typedef struct {
+  battery_cells_t cells;
+  power_output_t vbat_out;
+  power_output_t reg_out;
+
+  uint8_t charge;
+  uint32_t target_reg_out_voltage;
+
 } battery_state_t;
+
+battery_state_t *get_battery_state(void);
 
 void battery_state_init(void);
 void battery_state_reset(void);
-battery_state_t *get_battery_state(void);
-void set_over_current_threshold(uint32_t threshold);
+void power_output_reset(power_output_t *output);
+
 // Parses an adc reading and uses it to update the battery state.
 void update_battery_state(const adc_reading_t *adc_reading);
 

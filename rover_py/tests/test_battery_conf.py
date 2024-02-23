@@ -1,4 +1,3 @@
-import sys
 import time
 
 from canlib import canlib
@@ -50,15 +49,24 @@ with canlib.openChannel(
     ch.writeWait(battery.set_pwr_on_frame, -1)
     time.sleep(2)
 
-    # This should cause power to turn off due to over current protection
-    ch.writeWait(battery.set_over_current_threshold_frame(0), -1)
+    # This should cause reg output to turn off due to over current protection
+    # NOTE: load must be connected to reg out to see this.
+    ch.writeWait(battery.set_reg_out_overcurrent_threshold_frame(0), -1)
     time.sleep(2)
-    ch.writeWait(battery.set_over_current_threshold_frame(49500), -1)
+    ch.writeWait(battery.set_reg_out_overcurrent_threshold_frame(8000), -1)
+    ch.writeWait(battery.set_reg_pwr_on_frame, -1)
+    time.sleep(2)
+
+    # This should cause vbat out to turn off due to over current protection
+    # NOTE: load must be connected to vbat out to see this.
+    ch.writeWait(battery.set_vbat_out_overcurrent_threshold_frame(0), -1)
+    time.sleep(2)
+    ch.writeWait(battery.set_vbat_out_overcurrent_threshold_frame(49500), -1)
     ch.writeWait(battery.set_pwr_on_frame, -1)
     time.sleep(2)
 
     # This should cause power to turn off due to low-voltage cutoff
-    # (Only works with batteries)
+    # NOTE: cells must be connected for this to work.
     ch.writeWait(battery.set_low_voltage_cutoff_frame(4200), -1)
     time.sleep(2)
 
@@ -66,4 +74,3 @@ with canlib.openChannel(
     ch.writeWait(battery.set_low_voltage_cutoff_frame(3200), -1)
     ch.writeWait(battery.set_pwr_on_frame, -1)
     ch.writeWait(battery.set_reg_pwr_on_frame, -1)
-    time.sleep(2)

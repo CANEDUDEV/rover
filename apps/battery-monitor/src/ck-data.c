@@ -29,10 +29,9 @@ void page_init(void) {
   ck_data.cell_page0->lines[0] = 0;  // Pagination
   ck_data.cell_page1->line_count = 3 * sizeof(uint16_t) + 1;
   ck_data.cell_page1->lines[0] = 1;  // Pagination
-  // Voltage is 2 bytes, current is 2 bytes.
-  ck_data.reg_out_page->line_count = 2 * sizeof(uint16_t);
-  // Voltage is 2 bytes, current is 4 bytes.
-  ck_data.vbat_out_page->line_count = sizeof(uint16_t) + sizeof(uint32_t);
+  // Voltage and current are uin32_t.
+  ck_data.reg_out_page->line_count = 2 * sizeof(uint32_t);
+  ck_data.vbat_out_page->line_count = 2 * sizeof(uint32_t);
 }
 
 void doc_init(void) {
@@ -87,7 +86,8 @@ void folder_init(void) {
   ck_data.output_on_off_folder = &ck_data.folders[7];
   ck_data.report_freq_folder = &ck_data.folders[8];
   ck_data.low_voltage_cutoff_folder = &ck_data.folders[9];
-  ck_data.over_current_threshold_folder = &ck_data.folders[10];
+  ck_data.vbat_out_overcurrent_threshold_folder = &ck_data.folders[10];
+  ck_data.reg_out_overcurrent_threshold_folder = &ck_data.folders[11];
   // NOLINTEND(*-magic-numbers)
 
   // Set up the transmit folders
@@ -116,9 +116,10 @@ void folder_init(void) {
   }
 
   ck_data.jumper_config_folder->dlc = sizeof(uint8_t);
-  ck_data.set_reg_out_voltage_folder->dlc = sizeof(uint16_t);
+  ck_data.set_reg_out_voltage_folder->dlc = sizeof(uint32_t);
   ck_data.output_on_off_folder->dlc = 2 * sizeof(uint8_t);
   ck_data.report_freq_folder->dlc = sizeof(uint16_t);
   ck_data.low_voltage_cutoff_folder->dlc = sizeof(uint16_t);
-  ck_data.over_current_threshold_folder->dlc = sizeof(uint32_t);
+  ck_data.vbat_out_overcurrent_threshold_folder->dlc = sizeof(uint32_t);
+  ck_data.reg_out_overcurrent_threshold_folder->dlc = sizeof(uint32_t);
 }

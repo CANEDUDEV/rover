@@ -11,7 +11,8 @@
 #define LIPO_OVERVOLTAGE (LIPO_CELL_MAX_VOLTAGE + 100)
 #define LIPO_UNDERVOLTAGE (LIPO_CELL_MIN_VOLTAGE - 100)
 
-void test_handle_faults_over_current_fault(void);
+void test_handle_faults_vbat_out_overcurrent_fault(void);
+void test_handle_faults_reg_out_overcurrent_fault(void);
 void test_handle_faults_low_voltage_fault(void);
 void test_handle_faults_no_fault(void);
 void test_update_battery_cells(void);
@@ -24,7 +25,6 @@ void test_update_battery_leds_half_charge(void);
 void test_update_battery_leds_low_charge(void);
 void test_is_reg_out_voltage_stable(void);
 void test_is_low_voltage_fault(void);
-void test_is_over_current_fault(void);
 void test_get_lowest_cell_all_full(void);
 void test_get_lowest_cell_one_lowest(void);
 void test_get_lowest_cell_no_cells(void);
@@ -39,7 +39,8 @@ int read_potentiometer_value_returns_almost_min(uint8_t* pot_value);
 int read_potentiometer_value_returns_min(uint8_t* pot_value);
 
 int main(void) {
-  test_handle_faults_over_current_fault();
+  test_handle_faults_vbat_out_overcurrent_fault();
+  test_handle_faults_reg_out_overcurrent_fault();
   test_handle_faults_low_voltage_fault();
   test_handle_faults_no_fault();
   test_update_battery_cells();
@@ -52,7 +53,6 @@ int main(void) {
   test_update_battery_leds_low_charge();
   test_is_reg_out_voltage_stable();
   test_is_low_voltage_fault();
-  test_is_over_current_fault();
   test_get_lowest_cell_all_full();
   test_get_lowest_cell_one_lowest();
   test_get_lowest_cell_no_cells();
@@ -64,11 +64,11 @@ int main(void) {
 void setup_test(void) {
   battery_state_init();
   battery_state_t* battery_state = get_battery_state();
-  battery_state->cell_min_voltage = LIPO_CELL_MIN_VOLTAGE;
-  battery_state->cell_max_voltage = LIPO_CELL_MAX_VOLTAGE;
+  battery_state->cells.min_voltage = LIPO_CELL_MIN_VOLTAGE;
+  battery_state->cells.max_voltage = LIPO_CELL_MAX_VOLTAGE;
   // 4 cell setup
   for (int i = 0; i < 4; i++) {
-    battery_state->cell_voltage[i] = LIPO_CELL_MAX_VOLTAGE;
+    battery_state->cells.voltage[i] = LIPO_CELL_MAX_VOLTAGE;
   }
   battery_state->charge = BATTERY_CHARGE_100_PERCENT;
   battery_state->target_reg_out_voltage = 0;
@@ -77,10 +77,10 @@ void setup_test(void) {
   reset_fakes();
 }
 
-void test_handle_faults_over_current_fault(void) {
+void test_handle_faults_vbat_out_overcurrent_fault(void) {
   setup_test();
   battery_state_t* battery_state = get_battery_state();
-  battery_state->over_current_fault = true;
+  battery_state->vbat_out.overcurrent_fault = true;
 
   handle_faults();
 
@@ -90,10 +90,23 @@ void test_handle_faults_over_current_fault(void) {
          led_signal_fault_fake.call_count);
 }
 
+void test_handle_faults_reg_out_overcurrent_fault(void) {
+  setup_test();
+  battery_state_t* battery_state = get_battery_state();
+  battery_state->reg_out.overcurrent_fault = true;
+
+  handle_faults();
+
+  ASSERT(set_reg_out_power_off_fake.call_count == 1, "expected: 1, got: %u",
+         set_reg_out_power_off_fake.call_count);
+  ASSERT(led_signal_fault_fake.call_count == 1, "expected: 1, got: %u",
+         led_signal_fault_fake.call_count);
+}
+
 void test_handle_faults_low_voltage_fault(void) {
   setup_test();
   battery_state_t* battery_state = get_battery_state();
-  battery_state->low_voltage_fault = true;
+  battery_state->cells.low_voltage_fault = true;
 
   handle_faults();
 
@@ -141,10 +154,10 @@ void test_update_battery_cells(void) {
   battery_state_t* battery_state = get_battery_state();
 
   for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
-    measurement.actual_value = battery_state->cell_voltage[i];
+    measurement.actual_value = battery_state->cells.voltage[i];
     ASSERT(is_acceptable_measurement(&measurement),
            "cell %d: expected voltage: %u, got: %u", i, expected_voltage_mv,
-           battery_state->cell_voltage[i]);
+           battery_state->cells.voltage[i]);
   }
 }
 
@@ -154,7 +167,7 @@ void test_update_battery_charge(void) {
   const uint16_t half_charge_cell_value =
       (LIPO_CELL_MIN_VOLTAGE + LIPO_CELL_MAX_VOLTAGE) / 2;
 
-  battery_state->cell_voltage[1] = half_charge_cell_value;
+  battery_state->cells.voltage[1] = half_charge_cell_value;
 
   update_battery_charge();
 
@@ -168,7 +181,7 @@ void test_update_battery_charge_no_cells(void) {
   setup_test();
   battery_state_t* battery_state = get_battery_state();
   // Zero all cell voltages
-  memset(battery_state->cell_voltage, 0, sizeof(battery_state->cell_voltage));
+  memset(battery_state->cells.voltage, 0, sizeof(battery_state->cells.voltage));
 
   update_battery_charge();
 
@@ -178,7 +191,7 @@ void test_update_battery_charge_no_cells(void) {
 void test_update_battery_charge_overcharged(void) {
   setup_test();
   battery_state_t* battery_state = get_battery_state();
-  battery_state->cell_voltage[1] = LIPO_OVERVOLTAGE;
+  battery_state->cells.voltage[1] = LIPO_OVERVOLTAGE;
 
   update_battery_charge();
 
@@ -190,7 +203,7 @@ void test_update_battery_charge_overcharged(void) {
 void test_update_battery_charge_undercharged(void) {
   setup_test();
   battery_state_t* battery_state = get_battery_state();
-  battery_state->cell_voltage[1] = LIPO_UNDERVOLTAGE;
+  battery_state->cells.voltage[1] = LIPO_UNDERVOLTAGE;
 
   update_battery_charge();
 
@@ -276,15 +289,15 @@ void test_is_reg_out_voltage_stable(void) {
   battery_state->target_reg_out_voltage = target_voltage;
 
   const uint16_t voltage_low = 3900;
-  battery_state->reg_out_voltage = voltage_low;
+  battery_state->reg_out.voltage = voltage_low;
   ASSERT(!is_reg_out_voltage_stable(), "");
 
   const uint16_t voltage_high = 4100;
-  battery_state->reg_out_voltage = voltage_high;
+  battery_state->reg_out.voltage = voltage_high;
   ASSERT(!is_reg_out_voltage_stable(), "");
 
   const uint16_t voltage_ok = target_voltage + 1;
-  battery_state->reg_out_voltage = voltage_ok;
+  battery_state->reg_out.voltage = voltage_ok;
   ASSERT(is_reg_out_voltage_stable(), "");
 }
 
@@ -294,26 +307,9 @@ void test_is_low_voltage_fault(void) {
   ASSERT(!is_low_voltage_fault(), "");
 
   battery_state_t* battery_state = get_battery_state();
-  battery_state->cell_voltage[1] = LIPO_UNDERVOLTAGE;
+  battery_state->cells.voltage[1] = LIPO_UNDERVOLTAGE;
 
   ASSERT(is_low_voltage_fault(), "");
-}
-
-void test_is_over_current_fault(void) {
-  setup_test();
-  ASSERT(!is_over_current_fault(), "");
-
-  battery_state_t* battery_state = get_battery_state();
-  const uint32_t current_1a = 1000;
-  battery_state->over_current_threshold = current_1a;
-  battery_state->vbat_out_current = 2 * current_1a;
-
-  ASSERT(is_over_current_fault(), "");
-
-  const uint32_t current_100a = 100 * 1000;
-  battery_state->over_current_threshold = current_100a;
-
-  ASSERT(!is_over_current_fault(), "");
 }
 
 void test_get_lowest_cell_all_full(void) {
@@ -329,7 +325,7 @@ void test_get_lowest_cell_all_full(void) {
 void test_get_lowest_cell_one_lowest(void) {
   setup_test();
   battery_state_t* battery_state = get_battery_state();
-  battery_state->cell_voltage[1] = LIPO_UNDERVOLTAGE;
+  battery_state->cells.voltage[1] = LIPO_UNDERVOLTAGE;
 
   uint16_t* lowest_cell = get_lowest_cell();
 
@@ -342,7 +338,7 @@ void test_get_lowest_cell_no_cells(void) {
   setup_test();
   battery_state_t* battery_state = get_battery_state();
   // Zero all cell voltages
-  memset(battery_state->cell_voltage, 0, sizeof(battery_state->cell_voltage));
+  memset(battery_state->cells.voltage, 0, sizeof(battery_state->cells.voltage));
 
   uint16_t* lowest_cell = get_lowest_cell();
 
@@ -355,7 +351,7 @@ void test_update_reg_out_voltage_controller_stable_voltage(void) {
   const uint16_t target_voltage = 4500;
   const uint16_t actual_voltage = target_voltage;
   battery_state->target_reg_out_voltage = target_voltage;
-  battery_state->reg_out_voltage = actual_voltage;
+  battery_state->reg_out.voltage = actual_voltage;
 
   update_reg_out_voltage_controller();
 
@@ -371,7 +367,7 @@ void test_update_reg_out_voltage_controller_increase_voltage(void) {
   const uint16_t target_voltage = 4500;
   const uint16_t actual_voltage = 4000;
   battery_state->target_reg_out_voltage = target_voltage;
-  battery_state->reg_out_voltage = actual_voltage;
+  battery_state->reg_out.voltage = actual_voltage;
 
   int (*custom_fakes[])(uint8_t*) = {
       read_potentiometer_value_returns_almost_max,
@@ -410,7 +406,7 @@ void test_update_reg_out_voltage_controller_decrease_voltage(void) {
   const uint16_t target_voltage = 3500;
   const uint16_t actual_voltage = 4000;
   battery_state->target_reg_out_voltage = target_voltage;
-  battery_state->reg_out_voltage = actual_voltage;
+  battery_state->reg_out.voltage = actual_voltage;
 
   int (*custom_fakes[])(uint8_t*) = {
       read_potentiometer_value_returns_almost_min,

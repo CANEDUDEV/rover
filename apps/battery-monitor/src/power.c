@@ -12,7 +12,7 @@ power_state_t get_vbat_power_state(void) {
   return POWER_OFF;
 }
 
-power_state_t get_reg_vout_power_state(void) {
+power_state_t get_reg_out_power_state(void) {
   GPIO_PinState pin =
       HAL_GPIO_ReadPin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN);
 
@@ -26,7 +26,7 @@ void set_vbat_power_on(void) {
   HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_SET);
 }
 
-void set_reg_vout_power_on(void) {
+void set_reg_out_power_on(void) {
   HAL_GPIO_WritePin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN, GPIO_PIN_SET);
 }
 
@@ -34,6 +34,6 @@ void set_vbat_power_off(void) {
   HAL_GPIO_WritePin(nPOWER_OFF_GPIO_PORT, nPOWER_OFF_PIN, GPIO_PIN_RESET);
 }
 
-void set_reg_vout_power_off(void) {
+void set_reg_out_power_off(void) {
   HAL_GPIO_WritePin(REG_POWER_ON_GPIO_PORT, REG_POWER_ON_PIN, GPIO_PIN_RESET);
 }

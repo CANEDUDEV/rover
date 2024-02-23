@@ -101,7 +101,7 @@ void battery_monitor(void *unused) {
 
   battery_state_init();
 
-  set_reg_vout_power_on();
+  set_reg_out_power_on();
   set_vbat_power_on();
 
   volatile adc_samples_t adc_samples;
@@ -158,19 +158,19 @@ void update_pages(void) {
   battery_state_t *battery_state = get_battery_state();
 
   // Copy cells 0,1,2 to page 0 of cell doc, cells 3,4,5 to page 1.
-  memcpy(&ck_data->cell_page0->lines[1], &battery_state->cell_voltage[0],
+  memcpy(&ck_data->cell_page0->lines[1], &battery_state->cells.voltage[0],
          ck_data->cell_folder->dlc);
-  memcpy(&ck_data->cell_page1->lines[1], &battery_state->cell_voltage[3],
+  memcpy(&ck_data->cell_page1->lines[1], &battery_state->cells.voltage[3],
          ck_data->cell_folder->dlc);
 
-  memcpy(ck_data->reg_out_page->lines, &battery_state->reg_out_voltage,
-         sizeof(uint16_t));
-  memcpy(&ck_data->reg_out_page->lines[2], &battery_state->reg_out_current,
-         sizeof(uint16_t));
+  memcpy(ck_data->reg_out_page->lines, &battery_state->reg_out.voltage,
+         sizeof(uint32_t));
+  memcpy(&ck_data->reg_out_page->lines[4], &battery_state->reg_out.current,
+         sizeof(uint32_t));
 
-  memcpy(ck_data->vbat_out_page->lines, &battery_state->vbat_out_voltage,
-         sizeof(uint16_t));
-  memcpy(&ck_data->vbat_out_page->lines[2], &battery_state->vbat_out_current,
+  memcpy(ck_data->vbat_out_page->lines, &battery_state->vbat_out.voltage,
+         sizeof(uint32_t));
+  memcpy(&ck_data->vbat_out_page->lines[4], &battery_state->vbat_out.current,
          sizeof(uint32_t));
 }
 
@@ -206,8 +206,13 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
   if (folder->folder_no == ck_data->low_voltage_cutoff_folder->folder_no) {
     return process_low_voltage_cutoff_letter(letter);
   }
-  if (folder->folder_no == ck_data->over_current_threshold_folder->folder_no) {
-    return process_over_current_threshold_letter(letter);
+  if (folder->folder_no ==
+      ck_data->vbat_out_overcurrent_threshold_folder->folder_no) {
+    return process_vbat_out_overcurrent_threshold_letter(letter);
+  }
+  if (folder->folder_no ==
+      ck_data->reg_out_overcurrent_threshold_folder->folder_no) {
+    return process_reg_out_overcurrent_threshold_letter(letter);
   }
 
   return APP_OK;

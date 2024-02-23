@@ -347,7 +347,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc) {
     PC5     ------> ADC2_IN11
     */
     gpio_init.Pin = CELL5_MEASURE_PIN | CELL6_MEASURE_PIN |
-                    I_PWR_A_MEASURE_PIN | REG_VOUT_MEASURE_PIN;
+                    I_PWR_A_MEASURE_PIN | REG_OUT_MEASURE_PIN;
     gpio_init.Mode = GPIO_MODE_ANALOG;
     gpio_init.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(CELL5_MEASURE_GPIO_PORT, &gpio_init);
@@ -405,7 +405,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc) {
     */
     HAL_GPIO_DeInit(CELL5_MEASURE_GPIO_PORT,
                     CELL5_MEASURE_PIN | CELL6_MEASURE_PIN |
-                        I_PWR_A_MEASURE_PIN | REG_VOUT_MEASURE_PIN);
+                        I_PWR_A_MEASURE_PIN | REG_OUT_MEASURE_PIN);
 
     HAL_GPIO_DeInit(VBAT_I_MEASURE_GPIO_PORT,
                     VBAT_U_MEASURE_PIN | VBAT_I_MEASURE_PIN);

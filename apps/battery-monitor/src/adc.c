@@ -74,8 +74,8 @@ uint16_t adc_to_reg_out_voltage(uint16_t adc_value) {
       .r2 = 10000,
   };
   float measured_output_voltage = adc_value_to_voltage(adc_value);
-  float reg_vout = reverse_voltage_division(measured_output_voltage, &divider);
-  return (uint16_t)roundf(reg_vout);
+  float reg_out = reverse_voltage_division(measured_output_voltage, &divider);
+  return (uint16_t)roundf(reg_out);
 }
 
 /*

@@ -66,8 +66,8 @@ void update_voltage_regulator_jumper_state(void) {
 
   // If voltage is above 6.5V, or between 6-6.5V with a low potentiometer
   // value, set to 6-16V range
-  if (battery_state->reg_out_voltage > max_6v_voltage ||
-      (battery_state->reg_out_voltage >= min_16v_voltage &&
+  if (battery_state->reg_out.voltage > max_6v_voltage ||
+      (battery_state->reg_out.voltage >= min_16v_voltage &&
        pot_val < high_voltage_pot_threshold)) {
     voltage_regulator_jumper_config = VOUT_6_TO_16V;
 

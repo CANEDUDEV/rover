@@ -19,14 +19,19 @@ def set_jumper_conf_frame(jumper: JumperConfig):
     return Frame(id_=Envelope.BATTERY_JUMPER_CONFIG, dlc=1, data=data)
 
 
-def set_over_current_threshold_frame(current_ma):
+def set_vbat_out_overcurrent_threshold_frame(current_ma):
     data = list(current_ma.to_bytes(4, "little"))
-    return Frame(id_=Envelope.BATTERY_OVERCURRENT_THRESHOLD, dlc=4, data=data)
+    return Frame(id_=Envelope.BATTERY_VBAT_OUT_OVERCURRENT_THRESHOLD, dlc=4, data=data)
+
+
+def set_reg_out_overcurrent_threshold_frame(current_ma):
+    data = list(current_ma.to_bytes(4, "little"))
+    return Frame(id_=Envelope.BATTERY_REG_OUT_OVERCURRENT_THRESHOLD, dlc=4, data=data)
 
 
 def set_reg_out_voltage_frame(voltage_mv):
-    data = list(voltage_mv.to_bytes(2, "little"))
-    return Frame(id_=Envelope.BATTERY_REG_OUT_VOLTAGE, dlc=2, data=data)
+    data = list(voltage_mv.to_bytes(4, "little"))
+    return Frame(id_=Envelope.BATTERY_REG_OUT_VOLTAGE, dlc=4, data=data)
 
 
 set_reg_pwr_off_frame = Frame(
