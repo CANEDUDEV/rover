@@ -96,7 +96,6 @@ void handle_battery_state(const adc_reading_t *adc_reading) {
 
   update_battery_cells(adc_reading);
   update_battery_charge();
-  update_battery_leds();
   update_voltage_regulator_jumper_state();
   update_reg_out_voltage_controller();
 
@@ -120,10 +119,16 @@ void handle_faults(void) {
       battery_state.vbat_out.overcurrent_fault) {
     set_vbat_power_off();
     led_signal_fault();
+
   }
-  if (battery_state.reg_out.overcurrent_fault) {
+
+  else if (battery_state.reg_out.overcurrent_fault) {
     set_reg_out_power_off();
     led_signal_fault();
+  }
+
+  else {  // No fault occured, update LED as usual
+    update_battery_leds();
   }
 }
 

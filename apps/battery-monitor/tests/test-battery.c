@@ -125,6 +125,10 @@ void test_handle_faults_no_fault(void) {
          set_vbat_power_off_fake.call_count);
   ASSERT(led_signal_fault_fake.call_count == 0, "expected: 0, got: %u",
          led_signal_fault_fake.call_count);
+
+  // Make sure the LEDs are updated
+  ASSERT(set_led_color_fake.call_count == 2, "expected: 2, got: %u",
+         set_led_color_fake.call_count);
 }
 
 void test_update_battery_cells(void) {
