@@ -51,9 +51,15 @@ set_pwr_on_frame = Frame(
 )  # Set power out ON
 
 
-def set_low_voltage_cutoff_frame(voltage_mv):
-    data = list(voltage_mv.to_bytes(2, "little"))
-    return Frame(id_=Envelope.BATTERY_LOW_VOLTAGE_CUTOFF, dlc=2, data=data)
+def set_low_voltage_cutoff_frame(
+    voltage_low_mv, voltage_high_mv, high_load_threshold_ma
+):
+    data = list(
+        voltage_low_mv.to_bytes(2, "little")
+        + voltage_high_mv.to_bytes(2, "little")
+        + high_load_threshold_ma.to_bytes(4, "little")
+    )
+    return Frame(id_=Envelope.BATTERY_LOW_VOLTAGE_CUTOFF, dlc=8, data=data)
 
 
 def set_report_period_frame(time_ms):

@@ -40,9 +40,11 @@ void battery_state_init(void) {
 
   battery_state.cells.min_voltage = LIPO_CELL_MIN_VOLTAGE;
   battery_state.cells.max_voltage = LIPO_CELL_MAX_VOLTAGE;
-  // TODO: set a low voltage cutoff point at 3.2V when running a high amp load.
-  // TODO: set a low voltage cutoff point at 3.7 V when running a low amp load.
-  battery_state.cells.low_voltage_cutoff = battery_state.cells.min_voltage;
+  battery_state.cells.high_load_threshold = DEFAULT_HIGH_LOAD_THRESHOLD_MA;
+  battery_state.cells.low_voltage_cutoff_low =
+      DEFAULT_LOW_VOLTAGE_CUTOFF_LOW_MV;
+  battery_state.cells.low_voltage_cutoff_high =
+      DEFAULT_LOW_VOLTAGE_CUTOFF_HIGH_MV;
 
   battery_state.charge = 0;
   battery_state.target_reg_out_voltage = 0;
@@ -266,7 +268,13 @@ bool is_low_voltage_fault(void) {
   if (!lowest_cell) {
     return false;
   }
-  return *lowest_cell < battery_state.cells.low_voltage_cutoff;
+
+  if (battery_state.vbat_out.current >=
+      battery_state.cells.high_load_threshold) {
+    return *lowest_cell <= battery_state.cells.low_voltage_cutoff_high;
+  }
+
+  return *lowest_cell <= battery_state.cells.low_voltage_cutoff_low;
 }
 
 uint16_t *get_lowest_cell(void) {

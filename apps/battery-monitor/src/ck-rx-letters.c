@@ -117,12 +117,18 @@ int process_report_freq_letter(const ck_letter_t *letter) {
   return APP_OK;
 }
 
-// 2 bytes in page
+// 8 bytes in page
 //
-// bytes 0-1: low voltage cutoff value in mV. 16-bit unsigned integer in little
+// bytes 0-1: low voltage cutoff value in mV when load is low. 16-bit unsigned
+// integer in little
 //            endian format. The value should correspond to the lowest voltage
 //            each individual cell in the battery may have, not the total
 //            voltage of the cells combined.
+//
+// bytes 2-3: low voltage cutoff value in mV when load is high.
+//
+// bytes 4-7: high load current threshold. When the current reaches this value,
+//            the high load low voltage cutoff value will be used.
 //
 int process_low_voltage_cutoff_letter(const ck_letter_t *letter) {
   ck_data_t *ck_data = get_ck_data();
@@ -132,8 +138,14 @@ int process_low_voltage_cutoff_letter(const ck_letter_t *letter) {
 
   battery_cells_t *battery_cells = &get_battery_state()->cells;
 
-  memcpy(&battery_cells->low_voltage_cutoff, letter->page.lines,
-         sizeof(battery_cells->low_voltage_cutoff));
+  memcpy(&battery_cells->low_voltage_cutoff_low, letter->page.lines,
+         sizeof(battery_cells->low_voltage_cutoff_low));
+
+  memcpy(&battery_cells->low_voltage_cutoff_high, &letter->page.lines[2],
+         sizeof(battery_cells->low_voltage_cutoff_high));
+
+  memcpy(&battery_cells->high_load_threshold, &letter->page.lines[4],
+         sizeof(battery_cells->high_load_threshold));
 
   battery_cells->low_voltage_fault = false;  // Reset
 

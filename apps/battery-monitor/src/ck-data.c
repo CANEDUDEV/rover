@@ -119,7 +119,9 @@ void folder_init(void) {
   ck_data.set_reg_out_voltage_folder->dlc = sizeof(uint32_t);
   ck_data.output_on_off_folder->dlc = 2 * sizeof(uint8_t);
   ck_data.report_freq_folder->dlc = sizeof(uint16_t);
-  ck_data.low_voltage_cutoff_folder->dlc = sizeof(uint16_t);
+  // 2 voltage values and one current value.
+  ck_data.low_voltage_cutoff_folder->dlc =
+      2 * sizeof(uint16_t) + sizeof(uint32_t);
   ck_data.vbat_out_overcurrent_threshold_folder->dlc = sizeof(uint32_t);
   ck_data.reg_out_overcurrent_threshold_folder->dlc = sizeof(uint32_t);
 }
