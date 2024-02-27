@@ -14,8 +14,9 @@ with canlib.openChannel(
 
     rover.start(ch)
 
-    # Set regulated output voltage to 5 V
+    # Setup defaults
     ch.writeWait(battery.set_reg_out_voltage_frame(5000), -1)
+    ch.writeWait(battery.set_jumper_conf_frame(battery.JumperConfig.X11_ON_X12_ON), -1)
     time.sleep(2)
 
     # Set report period to 1s
