@@ -1,84 +1,107 @@
 #include "adc.h"
 
+#include "lt6106.h"
 #include "math.h"
+#include "voltage-divider.h"
 
-#define ADC_REF_VOLTAGE 3300            // mV
-#define ADC_RESOLUTION ((1 << 12) - 1)  // 12-bit ADC
+#define ADC_REF_VOLTAGE_MV 3300
+#define ADC_RESOLUTION_12BIT ((1 << 12) - 1)
+
+#define ADC_REF_ANGLE_DEGREES 360
+
+static float adc_value_to_voltage(uint16_t adc_value);
+static float adc_value_to_angle(uint16_t adc_value);
+
+void adc_average_samples(adc_reading_t *average,
+                         const volatile adc_samples_t *samples) {
+  uint32_t sum_adc1[ADC1_NUM_CHANNELS] = {0};
+  uint32_t sum_adc2[ADC2_NUM_CHANNELS] = {0};
+
+  for (uint32_t i = 0; i < ADC_NUM_SAMPLES * ADC1_NUM_CHANNELS; i++) {
+    sum_adc1[i % ADC1_NUM_CHANNELS] += samples->adc1_buf[i];
+  }
+
+  for (uint8_t j = 0; j < ADC1_NUM_CHANNELS; j++) {
+    average->adc1_buf[j] = sum_adc1[j] / ADC_NUM_SAMPLES;
+  }
+
+  for (uint32_t i = 0; i < ADC_NUM_SAMPLES * ADC2_NUM_CHANNELS; i++) {
+    sum_adc2[i % ADC2_NUM_CHANNELS] += samples->adc2_buf[i];
+  }
+
+  for (uint8_t j = 0; j < ADC2_NUM_CHANNELS; j++) {
+    average->adc2_buf[j] = sum_adc2[j] / ADC_NUM_SAMPLES;
+  }
+}
 
 /* Convert the measured servo position sensor value to an angle.
- *
- * 0 mV = 0 deg, 3300 mV = 360 deg. Neutral is 180 deg, so we use it as base.
- * Outputs -180 to 180 degrees.
+ * Neutral is 180 deg, so we use it as base offset. Outputs -180 to 180 degrees.
  */
 int16_t adc_to_servo_position(uint16_t adc_value) {
-  const float angle = 360.0F * (float)adc_value / ADC_RESOLUTION - 180;
+  float measured_angle = adc_value_to_angle(adc_value);
+  const float angle = measured_angle - 180;
   return (int16_t)roundf(angle);
 }
 
-/* The LT6106 current sensor specifies that
- * i_sense = v_out * r_in / (r_sense * r_out).
- * v_out is measured by ADC, v_out = ADC_REF_VOLTAGE * adc_value /
- * ADC_RESOLUTION
- *
- * Resistances for servo board rev. E:
- * r_in = R1 = 51 Ohm
- * r_sense = R2 = 0.002 Ohm
- * r_out = R3 = 5100 Ohm
- */
 uint16_t adc_to_servo_current(uint16_t adc_value) {
-  float v_out =
-      ADC_REF_VOLTAGE * adc_value / (float)ADC_RESOLUTION;  // v_out in mV
-  const float r_in = 51;
-  const float r_out = 5100;
-  const float r_sense = 2;  // use mOhm here, this counteracts mV value in
-                            // v_out and avoids floating point
-
-  const float i_sense = 1000 * v_out * r_in / (r_sense * r_out);  // in mA
-
+  const lt6106_current_sensor_t sensor = {
+      .r_in = 51,
+      .r_out = 5100,
+      .r_sense = 0.002F,
+  };
+  float measured_output_voltage = adc_value_to_voltage(adc_value);
+  const float i_sense = lt6106_sense_current(measured_output_voltage, &sensor);
   return (uint16_t)roundf(i_sense);
 }
 
-/* Voltage divider with R1 = 47kOhm and R2 = 6.2kOhm
- * v_in = v_out * (R1 + R2) / R2
- * v_out is measured by ADC, v_out = ADC_REF_VOLTAGE * adc_value /
- * ADC_RESOLUTION
- * To get v_battery we need to add the voltage drop of the Schottky diode,
+/* To get v_battery we need to add the voltage drop of the Schottky diode,
  * around 300 mV => v_battery = v_in + 300.
  */
 uint16_t adc_to_battery_voltage(uint16_t adc_value) {
-  // Voltages in mV
-  float v_out = ADC_REF_VOLTAGE * adc_value / (float)ADC_RESOLUTION;
-  const float v_battery = v_out * (47000 + 6200) / 6200 + 300;
-  return (uint16_t)roundf(v_battery);
+  const voltage_divider_t divider = {
+      .r1 = 47000,
+      .r2 = 6200,
+  };
+  float measured_output_voltage = adc_value_to_voltage(adc_value);
+  const float battery_voltage =
+      reverse_voltage_division(measured_output_voltage, &divider) + 300;
+  return (uint16_t)roundf(battery_voltage);
 }
 
-/* Voltage divider with R1 = 39kOhm and R2 = 15kOhm
- * v_servo = v_out * (R1 + R2) / R2
- * v_out is measured by ADC, v_out = ADC_REF_VOLTAGE * adc_value /
- * ADC_RESOLUTION
- */
 uint16_t adc_to_servo_voltage(uint16_t adc_value) {
-  float v_out =
-      ADC_REF_VOLTAGE * adc_value / (float)ADC_RESOLUTION;  // v_out in mV
-  const float v_servo = v_out * (39000 + 15000) / 15000;    // v_battery in mV
-  return (uint16_t)roundf(v_servo);
+  const voltage_divider_t divider = {
+      .r1 = 39000,
+      .r2 = 15000,
+  };
+  float measured_output_voltage = adc_value_to_voltage(adc_value);
+  float servo_voltage =
+      reverse_voltage_division(measured_output_voltage, &divider);
+  return (uint16_t)roundf(servo_voltage);
 }
 
 /* DRV8801 datasheet specifies the max output current as 2.8A.
  * Specified relationship between VPROPI and Vsense: Vsense = VPROPI / 5
  * Thus, i_sense = Vsense / r_sense = VPROPI / (r_sense * 5)
- * VPROPI is measured by ADC, VPROPI = ADC_REF_VOLTAGE * adc_value /
- * ADC_RESOLUTION r_sense = R33 = 0.2 Ohm (from servo board rev. E schematic) To
- * simplify, i_sense = VPROPI / (0.2*5) = VPROPI
+ * VPROPI is measured by ADC, r_sense = R33 = 0.2 Ohm (from servo board rev. E
+ * schematic) To simplify, i_sense = VPROPI / (0.2*5) = VPROPI
  */
 uint16_t adc_to_h_bridge_current(uint16_t adc_value) {
   // Currents in mA
   const uint16_t max_current = 2800;
-  const float i_sense = ADC_REF_VOLTAGE * adc_value / (float)ADC_RESOLUTION;
+  const float i_sense = adc_value_to_voltage(adc_value);
 
   uint16_t current = (uint16_t)roundf(i_sense);
   if (current > max_current) {
     current = max_current;
   }
   return (uint16_t)current;
+}
+
+// Returns voltage in mV.
+static float adc_value_to_voltage(uint16_t adc_value) {
+  return ADC_REF_VOLTAGE_MV * adc_value / (float)ADC_RESOLUTION_12BIT;
+}
+
+static float adc_value_to_angle(uint16_t adc_value) {
+  return ADC_REF_ANGLE_DEGREES * adc_value / (float)ADC_RESOLUTION_12BIT;
 }

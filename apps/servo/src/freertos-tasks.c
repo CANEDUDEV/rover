@@ -21,17 +21,17 @@
 #include "task.h"
 #include "timers.h"
 
-#define MEASURE_DEFAULT_PERIOD_MS 20
-#define REPORT_DEFAULT_PERIOD_MS 100
+#define REPORT_DEFAULT_PERIOD_MS 200
+
+#define MEASURE_STACK_SIZE (sizeof(adc_samples_t) + configMINIMAL_STACK_SIZE)
 
 task_periods_t task_periods = {
-    .measure_period_ms = MEASURE_DEFAULT_PERIOD_MS,
     .report_period_ms = REPORT_DEFAULT_PERIOD_MS,
 };
 
 static TaskHandle_t measure_task;
 static StaticTask_t measure_buf;
-static StackType_t measure_stack[configMINIMAL_STACK_SIZE];
+static StackType_t measure_stack[MEASURE_STACK_SIZE];
 
 static TaskHandle_t report_task;
 static StaticTask_t report_buf;
@@ -39,8 +39,8 @@ static StackType_t report_stack[configMINIMAL_STACK_SIZE];
 
 void measure(void *unused);
 void report(void *unused);
-void measure_timer(TimerHandle_t timer);
 void report_timer(TimerHandle_t timer);
+void sample_adc(volatile adc_samples_t *adc_samples);
 
 void send_docs(void);
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
@@ -52,12 +52,11 @@ void task_init(void) {
     error();
   }
 
+  measure_task = xTaskCreateStatic(measure, "measure", MEASURE_STACK_SIZE, NULL,
+                                   priority++, measure_stack, &measure_buf);
+
   report_task = xTaskCreateStatic(report, "report", configMINIMAL_STACK_SIZE,
                                   NULL, priority++, report_stack, &report_buf);
-
-  measure_task =
-      xTaskCreateStatic(measure, "measure", configMINIMAL_STACK_SIZE, NULL,
-                        priority++, measure_stack, &measure_buf);
 
   letter_reader_cfg_t letter_reader_cfg = {
       .priority = priority++,
@@ -70,9 +69,6 @@ void task_init(void) {
 }
 
 void set_task_periods(task_periods_t *periods) {
-  if (periods->measure_period_ms != 0) {
-    task_periods.measure_period_ms = periods->measure_period_ms;
-  }
   if (periods->report_period_ms != 0) {
     task_periods.report_period_ms = periods->report_period_ms;
   }
@@ -81,18 +77,10 @@ void set_task_periods(task_periods_t *periods) {
 void measure(void *unused) {
   (void)unused;
 
-  peripherals_t *peripherals = get_peripherals();
-
-  StaticTimer_t timer_buf;
-  TimerHandle_t timer = xTimerCreateStatic(
-      "measure timer", pdMS_TO_TICKS(task_periods.measure_period_ms),
-      pdFALSE,  // Don't auto reload timer
-      NULL,     // Timer ID, unused
-      measure_timer, &timer_buf);
-
-  uint16_t adc1_buf[3];
-  uint16_t adc2_buf[2];
   ck_data_t *ck_data = get_ck_data();
+
+  volatile adc_samples_t adc_samples;
+  adc_reading_t adc_average;
 
   int16_t servo_position = 0;
   uint16_t servo_current = 0;
@@ -101,23 +89,15 @@ void measure(void *unused) {
   uint16_t h_bridge_current = 0;
 
   for (;;) {
-    xTimerChangePeriod(timer, task_periods.measure_period_ms, portMAX_DELAY);
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
+    sample_adc(&adc_samples);
+    adc_average_samples(&adc_average, &adc_samples);
 
-    // Start both ADCs
-    HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc1_buf,
-                      sizeof(adc1_buf) / sizeof(uint16_t));
-    HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc2_buf,
-                      sizeof(adc2_buf) / sizeof(uint16_t));
+    servo_position = adc_to_servo_position(adc_average.adc1_buf[0]);
+    servo_current = adc_to_servo_current(adc_average.adc1_buf[1]);
+    battery_voltage = adc_to_battery_voltage(adc_average.adc1_buf[2]);
+    servo_voltage = adc_to_servo_voltage(adc_average.adc2_buf[0]);
+    h_bridge_current = adc_to_h_bridge_current(adc_average.adc2_buf[1]);
 
-    // Wait for DMA
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-    servo_position = adc_to_servo_position(adc1_buf[0]);
-    servo_current = adc_to_servo_current(adc1_buf[1]);
-    battery_voltage = adc_to_battery_voltage(adc1_buf[2]);
-    servo_voltage = adc_to_servo_voltage(adc2_buf[0]);
-    h_bridge_current = adc_to_h_bridge_current(adc2_buf[1]);
     memcpy(ck_data->servo_position_page->lines, &servo_position,
            sizeof(servo_position));
     memcpy(ck_data->servo_current_page->lines, &servo_current,
@@ -128,7 +108,21 @@ void measure(void *unused) {
            sizeof(servo_voltage));
     memcpy(ck_data->h_bridge_current_page->lines, &h_bridge_current,
            sizeof(h_bridge_current));
+
+    // Delay since ADC_NUM_SAMPLES is only 1.
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
+}
+
+void sample_adc(volatile adc_samples_t *adc_samples) {
+  peripherals_t *peripherals = get_peripherals();
+
+  HAL_ADC_Start_DMA(&peripherals->hadc1, (uint32_t *)adc_samples->adc1_buf,
+                    ADC_NUM_SAMPLES * ADC1_NUM_CHANNELS);
+  HAL_ADC_Start_DMA(&peripherals->hadc2, (uint32_t *)adc_samples->adc2_buf,
+                    ADC_NUM_SAMPLES * ADC2_NUM_CHANNELS);
+
+  ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for DMA
 }
 
 void report(void *unused) {
@@ -146,11 +140,6 @@ void report(void *unused) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
     send_docs();
   }
-}
-
-void measure_timer(TimerHandle_t timer) {
-  (void)timer;
-  xTaskNotifyGive(measure_task);
 }
 
 void report_timer(TimerHandle_t timer) {
@@ -206,9 +195,8 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-  (void)hadc;
-  // Only notify when the second ADC has finished
-  if (hadc->Instance == ADC2) {
+  // Avoid double notifications by notifying on the slower of the two ADCs
+  if (hadc->Instance == ADC1) {
     BaseType_t higher_priority_task_woken = pdFALSE;
     vTaskNotifyGiveFromISR(measure_task, &higher_priority_task_woken);
     portYIELD_FROM_ISR(higher_priority_task_woken);

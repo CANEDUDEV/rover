@@ -168,11 +168,9 @@ int process_subtrim_letter(const ck_letter_t *letter) {
   return APP_OK;
 }
 
-// 4 bytes in page
+// 2 bytes in page
 //
-// bytes 0-1: measuring period in ms, i.e. how often to measure voltage and
-//            current.
-// bytes 2-3: reporting period in ms, i.e. how often to send
+// bytes 0-1: reporting period in ms, i.e. how often to send
 //            measurements over CAN.
 int process_report_freq_letter(const ck_letter_t *letter) {
   ck_data_t *ck_data = get_ck_data();
@@ -181,9 +179,7 @@ int process_report_freq_letter(const ck_letter_t *letter) {
   }
 
   task_periods_t periods;
-  memcpy(&periods.measure_period_ms, letter->page.lines,
-         sizeof(periods.measure_period_ms));
-  memcpy(&periods.report_period_ms, &letter->page.lines[2],
+  memcpy(&periods.report_period_ms, letter->page.lines,
          sizeof(periods.report_period_ms));
 
   set_task_periods(&periods);
@@ -200,13 +196,20 @@ int process_reverse_letter(const ck_letter_t *letter) {
   return APP_OK;
 }
 
+// 5 bytes in page
+//
+// byte 0: Failsafe state, 0 = off, 1 = on, all others ignored
+//
+// bytes 1-2: Failsafe timeout period in ms, unsigned 16-bit int.
+//
+// bytes 3-4: Failsafe PWM pulse setting, unsigned 16-bit int.
+//
 int process_failsafe_letter(const ck_letter_t *letter) {
   ck_data_t *ck_data = get_ck_data();
   if (letter->page.line_count != ck_data->failsafe_folder->dlc) {
     return APP_NOT_OK;
   }
 
-  // byte 0: on/off/keep current. 0 = off, 1 = on, all others = keep current
   if (letter->page.lines[0] == 0) {
     failsafe_off();
   } else if (letter->page.lines[0] == 1) {
@@ -222,7 +225,7 @@ int process_failsafe_letter(const ck_letter_t *letter) {
 
   // 0 = keep current setting
   uint16_t pulse = 0;
-  memcpy(&pulse, &letter->page.lines[3], sizeof(timeout));
+  memcpy(&pulse, &letter->page.lines[3], sizeof(pulse));
   if (pulse) {
     failsafe_set_pulse(pulse);
   }

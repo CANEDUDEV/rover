@@ -6,8 +6,8 @@
 #include "lt6106.h"
 #include "voltage-divider.h"
 
-#define ADC_REF_VOLTAGE_mV 3300
-#define ADC_RESOLUTION_12BIT ((1 << 12) - 1)  // 12-bit ADC
+#define ADC_REF_VOLTAGE_MV 3300
+#define ADC_RESOLUTION_12BIT ((1 << 12) - 1)
 
 static float adc_value_to_voltage(uint16_t adc_value);
 
@@ -94,5 +94,5 @@ uint16_t adc_to_vbat_out_voltage(uint16_t adc_value) {
 
 // Returns voltage in mV.
 static float adc_value_to_voltage(uint16_t adc_value) {
-  return ADC_REF_VOLTAGE_mV * adc_value / (float)ADC_RESOLUTION_12BIT;
+  return ADC_REF_VOLTAGE_MV * adc_value / (float)ADC_RESOLUTION_12BIT;
 }
