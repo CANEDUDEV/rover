@@ -17,7 +17,7 @@ battery_adc_test = executable(
   'battery-adc-test',
   [battery_adc_test_src, battery_common_test_src],
   include_directories: [battery_monitor_inc, stm32_common_inc],
-  dependencies: [math_dep, test_utils_dep],
+  dependencies: [math_dep, test_utils_dep, circuits_dep],
   native: true,
 )
 
@@ -29,7 +29,7 @@ battery_test = executable(
   'battery-test',
   [battery_test_src, battery_common_test_src],
   include_directories: [battery_monitor_inc, stm32_common_inc],
-  dependencies: [math_dep, test_utils_dep],
+  dependencies: [math_dep, test_utils_dep, circuits_dep],
   native: true,
 )
 

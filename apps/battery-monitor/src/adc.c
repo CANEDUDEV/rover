@@ -3,26 +3,13 @@
 #include <math.h>
 
 #include "jumpers.h"
+#include "lt6106.h"
+#include "voltage-divider.h"
 
 #define ADC_REF_VOLTAGE_mV 3300
 #define ADC_RESOLUTION_12BIT ((1 << 12) - 1)  // 12-bit ADC
 
-typedef struct {
-  uint16_t r1;
-  uint16_t r2;
-} voltage_divider_t;
-
-typedef struct {
-  float r_in;
-  float r_out;
-  float r_sense;
-} lt6106_current_sensor_t;
-
-static float sense_current(float voltage,
-                           const lt6106_current_sensor_t *sensor);
 static float adc_value_to_voltage(uint16_t adc_value);
-static float reverse_voltage_division(float output_voltage,
-                                      const voltage_divider_t *divider);
 
 void adc_average_samples(adc_reading_t *average,
                          const volatile adc_samples_t *samples) {
@@ -64,7 +51,7 @@ uint16_t adc_to_reg_out_current(uint16_t adc_value) {
       .r_sense = 0.005F,
   };
   float measured_output_voltage = adc_value_to_voltage(adc_value);
-  float i_sense = sense_current(measured_output_voltage, &sensor);
+  float i_sense = lt6106_sense_current(measured_output_voltage, &sensor);
   return (uint16_t)roundf(i_sense);
 }
 
@@ -91,7 +78,7 @@ uint32_t adc_to_vbat_out_current(uint16_t adc_value) {
       .r_sense = 0.0005F,
   };
   float measured_output_voltage = adc_value_to_voltage(adc_value);
-  float i_sense = sense_current(measured_output_voltage, &sensor);
+  float i_sense = lt6106_sense_current(measured_output_voltage, &sensor);
   return (uint32_t)roundf(i_sense);
 }
 
@@ -108,22 +95,4 @@ uint16_t adc_to_vbat_out_voltage(uint16_t adc_value) {
 // Returns voltage in mV.
 static float adc_value_to_voltage(uint16_t adc_value) {
   return ADC_REF_VOLTAGE_mV * adc_value / (float)ADC_RESOLUTION_12BIT;
-}
-
-static float reverse_voltage_division(float output_voltage,
-                                      const voltage_divider_t *divider) {
-  return output_voltage * (float)(divider->r1 + divider->r2) /
-         (float)divider->r2;
-}
-
-/*
- * The LT6106 current sensor specifies that
- * i_sense = output_voltage * r_in / (r_sense * r_out).
- */
-static float sense_current(float output_voltage,
-                           const lt6106_current_sensor_t *sensor) {
-  // Input offset voltage correction (typical 150 microvolts)
-  const float error = 0.15F * sensor->r_out / sensor->r_in;
-  return (output_voltage - error) * sensor->r_in /
-         (sensor->r_sense * sensor->r_out);
 }
