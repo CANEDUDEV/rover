@@ -18,6 +18,7 @@ extern "C" {
 int init_potentiometers(void);
 int write_servo_potentiometer(uint8_t pot_value);
 int write_sensor_potentiometer(uint8_t pot_value);
+int read_servo_potentiometer(uint8_t *pot_value);
 
 #ifdef __cplusplus
 }

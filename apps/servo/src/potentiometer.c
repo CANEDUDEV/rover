@@ -51,3 +51,30 @@ int write_servo_potentiometer(uint8_t pot_value) {
 int write_sensor_potentiometer(uint8_t pot_value) {
   return write_potentiometer_value(POTENTIOMETER_WRB_ADDRESS, pot_value);
 }
+
+int read_servo_potentiometer(uint8_t *pot_value) {
+  if (pot_value == NULL) {
+    return APP_NOT_OK;
+  }
+
+  peripherals_t *peripherals = get_peripherals();
+  uint8_t wra_read_cmd = POTENTIOMETER_WRA_ADDRESS;
+
+  HAL_StatusTypeDef err = HAL_I2C_Master_Transmit(
+      &peripherals->hi2c1, POTENTIOMETER_ADDRESS, &wra_read_cmd,
+      sizeof(wra_read_cmd), HAL_MAX_DELAY);
+
+  if (err != HAL_OK) {
+    printf("Error: failed to transmit read cmd: %d\r\n", err);
+    return APP_NOT_OK;
+  }
+
+  err = HAL_I2C_Master_Receive(&peripherals->hi2c1, POTENTIOMETER_ADDRESS,
+                               pot_value, sizeof(uint8_t), HAL_MAX_DELAY);
+  if (err != HAL_OK) {
+    printf("Error: failed to read pot value: %d\r\n", err);
+    return APP_NOT_OK;
+  }
+
+  return APP_OK;
+}

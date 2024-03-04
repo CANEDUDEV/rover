@@ -11,6 +11,7 @@ servo_src = files(
   'src' / 'peripherals.c',
   'src' / 'potentiometer.c',
   'src' / 'pwm.c',
+  'src' / 'servo.c',
 )
 
 servo_elf = executable(

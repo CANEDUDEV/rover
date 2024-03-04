@@ -7,6 +7,7 @@
 #include "ck-data.h"
 #include "ck-rx-letters.h"
 #include "peripherals.h"
+#include "servo.h"
 
 // STM32Common
 #include "error.h"
@@ -82,30 +83,27 @@ void measure(void *unused) {
   volatile adc_samples_t adc_samples;
   adc_reading_t adc_average;
 
-  int16_t servo_position = 0;
-  uint16_t servo_current = 0;
   uint16_t battery_voltage = 0;
-  uint16_t servo_voltage = 0;
   uint16_t h_bridge_current = 0;
+
+  servo_init();
+  servo_t *servo = get_servo_state();
 
   for (;;) {
     sample_adc(&adc_samples);
     adc_average_samples(&adc_average, &adc_samples);
-
-    servo_position = adc_to_servo_position(adc_average.adc1_buf[0]);
-    servo_current = adc_to_servo_current(adc_average.adc1_buf[1]);
+    update_servo_state(&adc_average);
     battery_voltage = adc_to_battery_voltage(adc_average.adc1_buf[2]);
-    servo_voltage = adc_to_servo_voltage(adc_average.adc2_buf[0]);
     h_bridge_current = adc_to_h_bridge_current(adc_average.adc2_buf[1]);
 
-    memcpy(ck_data->servo_position_page->lines, &servo_position,
-           sizeof(servo_position));
-    memcpy(ck_data->servo_current_page->lines, &servo_current,
-           sizeof(servo_current));
+    memcpy(ck_data->servo_position_page->lines, &servo->position,
+           sizeof(servo->position));
+    memcpy(ck_data->servo_current_page->lines, &servo->current,
+           sizeof(servo->current));
     memcpy(ck_data->battery_voltage_page->lines, &battery_voltage,
            sizeof(battery_voltage));
-    memcpy(ck_data->servo_voltage_page->lines, &servo_voltage,
-           sizeof(servo_voltage));
+    memcpy(ck_data->servo_voltage_page->lines, &servo->voltage,
+           sizeof(servo->voltage));
     memcpy(ck_data->h_bridge_current_page->lines, &h_bridge_current,
            sizeof(h_bridge_current));
 
