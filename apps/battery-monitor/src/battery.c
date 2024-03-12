@@ -135,49 +135,20 @@ void handle_faults(void) {
 }
 
 void update_battery_cells(const adc_reading_t *adc_reading) {
-  // NOLINTBEGIN(*-magic-numbers)
+  // adc1 ch 0-3 and adc2 ch 0-1 are cell measure channels and packed in order
+  // in adc_reading_t, so it's possible to use pointer arithmetic.
+  const uint16_t *adc_channel = &adc_reading->adc1_buf[0];
   int32_t total_voltage = 0;
-  int32_t cell_voltage = adc_to_cell_voltage(adc_reading->adc1_buf[0]);
-  if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
-    cell_voltage = 0;
-  }
-  battery_state.cells.voltage[0] = cell_voltage;
-  total_voltage = battery_state.cells.voltage[0];
 
-  cell_voltage = adc_to_cell_voltage(adc_reading->adc1_buf[1]) - total_voltage;
-  if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
-    cell_voltage = 0;
+  for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
+    int32_t cell_voltage = adc_to_cell_voltage(*adc_channel) - total_voltage;
+    if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
+      cell_voltage = 0;
+    }
+    battery_state.cells.voltage[i] = cell_voltage;
+    total_voltage += cell_voltage;
+    adc_channel++;
   }
-  battery_state.cells.voltage[1] = cell_voltage;
-  total_voltage += battery_state.cells.voltage[1];
-
-  cell_voltage = adc_to_cell_voltage(adc_reading->adc1_buf[2]) - total_voltage;
-  if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
-    cell_voltage = 0;
-  }
-  battery_state.cells.voltage[2] = cell_voltage;
-  total_voltage += battery_state.cells.voltage[2];
-
-  cell_voltage = adc_to_cell_voltage(adc_reading->adc1_buf[3]) - total_voltage;
-  if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
-    cell_voltage = 0;
-  }
-  battery_state.cells.voltage[3] = cell_voltage;
-  total_voltage += battery_state.cells.voltage[3];
-
-  cell_voltage = adc_to_cell_voltage(adc_reading->adc2_buf[0]) - total_voltage;
-  if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
-    cell_voltage = 0;
-  }
-  battery_state.cells.voltage[4] = cell_voltage;
-  total_voltage += battery_state.cells.voltage[4];
-
-  cell_voltage = adc_to_cell_voltage(adc_reading->adc2_buf[1]) - total_voltage;
-  if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
-    cell_voltage = 0;
-  }
-  battery_state.cells.voltage[5] = cell_voltage;
-  // NOLINTEND(*-magic-numbers)
 }
 
 // Always report lowest detected charge to detect the most discharged cell.
