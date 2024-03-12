@@ -38,8 +38,8 @@ void battery_state_init(void) {
   led_init();
   battery_state_reset();
 
-  battery_state.cells.min_voltage = LIPO_CELL_MIN_VOLTAGE;
-  battery_state.cells.max_voltage = LIPO_CELL_MAX_VOLTAGE;
+  battery_state.cells.min_voltage = LIPO_CELL_MIN_VOLTAGE_MV;
+  battery_state.cells.max_voltage = LIPO_CELL_MAX_VOLTAGE_MV;
   battery_state.cells.high_load_threshold = DEFAULT_HIGH_LOAD_THRESHOLD_MA;
   battery_state.cells.low_voltage_cutoff_low =
       DEFAULT_LOW_VOLTAGE_CUTOFF_LOW_MV;
@@ -142,7 +142,7 @@ void update_battery_cells(const adc_reading_t *adc_reading) {
 
   for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
     int32_t cell_voltage = adc_to_cell_voltage(*adc_channel) - total_voltage;
-    if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD) {
+    if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD_MV) {
       cell_voltage = 0;
     }
     battery_state.cells.voltage[i] = cell_voltage;
@@ -254,7 +254,7 @@ uint16_t *get_lowest_cell(void) {
   for (uint8_t i = 0; i < BATTERY_CELLS_MAX; i++) {
     // If cell is not connected, do not use its values in the low voltage
     // detection logic.
-    if (battery_state.cells.voltage[i] < BATTERY_CELL_DETECTION_THRESHOLD) {
+    if (battery_state.cells.voltage[i] < BATTERY_CELL_DETECTION_THRESHOLD_MV) {
       continue;
     }
     if (battery_state.cells.voltage[i] <= lowest_voltage) {

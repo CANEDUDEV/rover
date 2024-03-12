@@ -8,8 +8,8 @@
 #include "battery-test-utils.h"
 #include "test.h"
 
-#define LIPO_OVERVOLTAGE (LIPO_CELL_MAX_VOLTAGE + 100)
-#define LIPO_UNDERVOLTAGE (LIPO_CELL_MIN_VOLTAGE - 100)
+#define LIPO_OVERVOLTAGE (LIPO_CELL_MAX_VOLTAGE_MV + 100)
+#define LIPO_UNDERVOLTAGE (LIPO_CELL_MIN_VOLTAGE_MV - 100)
 
 void test_handle_faults_vbat_out_overcurrent_fault(void);
 void test_handle_faults_reg_out_overcurrent_fault(void);
@@ -66,11 +66,11 @@ int main(void) {
 void setup_test(void) {
   battery_state_init();
   battery_state_t* battery_state = get_battery_state();
-  battery_state->cells.min_voltage = LIPO_CELL_MIN_VOLTAGE;
-  battery_state->cells.max_voltage = LIPO_CELL_MAX_VOLTAGE;
+  battery_state->cells.min_voltage = LIPO_CELL_MIN_VOLTAGE_MV;
+  battery_state->cells.max_voltage = LIPO_CELL_MAX_VOLTAGE_MV;
   // 4 cell setup
   for (int i = 0; i < 4; i++) {
-    battery_state->cells.voltage[i] = LIPO_CELL_MAX_VOLTAGE;
+    battery_state->cells.voltage[i] = LIPO_CELL_MAX_VOLTAGE_MV;
   }
   battery_state->charge = BATTERY_CHARGE_100_PERCENT;
   battery_state->target_reg_out_voltage = 0;
@@ -171,7 +171,7 @@ void test_update_battery_charge(void) {
   setup_test();
   battery_state_t* battery_state = get_battery_state();
   const uint16_t half_charge_cell_value =
-      (LIPO_CELL_MIN_VOLTAGE + LIPO_CELL_MAX_VOLTAGE) / 2;
+      (LIPO_CELL_MIN_VOLTAGE_MV + LIPO_CELL_MAX_VOLTAGE_MV) / 2;
 
   battery_state->cells.voltage[1] = half_charge_cell_value;
 
@@ -339,8 +339,8 @@ void test_get_lowest_cell_all_full(void) {
   uint16_t* lowest_cell = get_lowest_cell();
 
   ASSERT(lowest_cell != NULL, "lowest_cell should point to something");
-  ASSERT(*lowest_cell == LIPO_CELL_MAX_VOLTAGE, "expected: %u, got: %u",
-         LIPO_CELL_MAX_VOLTAGE, *lowest_cell);
+  ASSERT(*lowest_cell == LIPO_CELL_MAX_VOLTAGE_MV, "expected: %u, got: %u",
+         LIPO_CELL_MAX_VOLTAGE_MV, *lowest_cell);
 }
 
 void test_get_lowest_cell_one_lowest(void) {

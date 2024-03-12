@@ -10,22 +10,23 @@ extern "C" {
 
 #include "adc.h"
 
-#define BATTERY_CELLS_MAX 6  // Max number of battery cells supported
+// Max number of battery cells supported
+#define BATTERY_CELLS_MAX 6
 // Cells that don't exist will report a value close to 0. We set a cell
 // detection threshold voltage at 100 mV.
-#define BATTERY_CELL_DETECTION_THRESHOLD 100
+#define BATTERY_CELL_DETECTION_THRESHOLD_MV 100
 
 #define BATTERY_CHARGE_100_PERCENT 100
 
-#define LIPO_CELL_MIN_VOLTAGE 3200
-#define LIPO_CELL_MAX_VOLTAGE 4200
+#define LIPO_CELL_MIN_VOLTAGE_MV 3200
+#define LIPO_CELL_MAX_VOLTAGE_MV 4200
 
 #define DEFAULT_LOW_VOLTAGE_CUTOFF_LOW_MV 3700
 #define DEFAULT_LOW_VOLTAGE_CUTOFF_HIGH_MV 3200
-#define DEFAULT_HIGH_LOAD_THRESHOLD_MA 10000
+#define DEFAULT_HIGH_LOAD_THRESHOLD_MA (10 * 1000)
 
-#define DEFAULT_OVERCURRENT_THRESHOLD_MA 100000
-#define DEFAULT_REG_OUT_OVERCURRENT_THRESHOLD_MA 8000
+#define DEFAULT_OVERCURRENT_THRESHOLD_MA (95 * 1000)
+#define DEFAULT_REG_OUT_OVERCURRENT_THRESHOLD_MA (8 * 1000)
 
 typedef struct {
   uint32_t voltage;
