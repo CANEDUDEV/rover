@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -25,6 +26,14 @@ typedef enum {
       exit(TEST_FAIL);                                                        \
     }                                                                         \
   } while (0)
+
+typedef struct {
+  float actual_value;
+  float expected_value;
+  float accepted_error;
+} measurement_t;
+
+bool is_acceptable_measurement(measurement_t *measurement);
 
 #ifdef __cplusplus
 }

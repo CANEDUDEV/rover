@@ -2,7 +2,6 @@
 #include "jumpers.h"
 
 // Testing
-#include "battery-test-utils.h"
 #include "test.h"
 
 void test_adc_to_cell_voltage(void);
@@ -36,7 +35,7 @@ void test_adc_to_cell_voltage(void) {
       .accepted_error = accepted_error_mv,
   };
 
-  ASSERT(is_acceptable_measurement(&measurement), "expected: %u, got: %u",
+  ASSERT(is_acceptable_measurement(&measurement), "expected: %.0f, got: %.0f",
          measurement.expected_value, measurement.actual_value);
 }
 
@@ -51,7 +50,7 @@ void test_adc_to_reg_out_current(void) {
       .accepted_error = accepted_error_ma,
   };
 
-  ASSERT(is_acceptable_measurement(&measurement), "expected: %u, got: %u",
+  ASSERT(is_acceptable_measurement(&measurement), "expected: %.0f, got: %.0f",
          measurement.expected_value, measurement.actual_value);
 }
 
@@ -66,7 +65,7 @@ void test_adc_to_reg_out_voltage(void) {
       .accepted_error = accepted_error_mv,
   };
 
-  ASSERT(is_acceptable_measurement(&measurement), "expected: %u, got: %u",
+  ASSERT(is_acceptable_measurement(&measurement), "expected: %.0f, got: %.0f",
          measurement.expected_value, measurement.actual_value);
 }
 
@@ -78,12 +77,12 @@ void test_adc_to_vbat_out_current_x11_on_x12_on(void) {
   set_current_measure_jumper_config(X11_ON_X12_ON);
 
   measurement_t measurement = {
-      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_66a),
-      .expected_value = expected_current_ma,
+      .actual_value = (float)adc_to_vbat_out_current(adc_value_66a),
+      .expected_value = (float)expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
 
-  ASSERT(is_acceptable_measurement(&measurement), "expected: %u, got: %u",
+  ASSERT(is_acceptable_measurement(&measurement), "expected: %.0f, got: %.0f",
          measurement.expected_value, measurement.actual_value);
 }
 
@@ -95,12 +94,12 @@ void test_adc_to_vbat_out_current_x11_on(void) {
   set_current_measure_jumper_config(X11_ON_X12_OFF);
 
   measurement_t measurement = {
-      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_33a),
+      .actual_value = (float)adc_to_vbat_out_current(adc_value_33a),
       .expected_value = expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
 
-  ASSERT(is_acceptable_measurement(&measurement), "expected: %u, got: %u",
+  ASSERT(is_acceptable_measurement(&measurement), "expected: %.0f, got: %.0f",
          measurement.expected_value, measurement.actual_value);
 }
 
@@ -112,12 +111,12 @@ void test_adc_to_vbat_out_current_x12_on(void) {
   set_current_measure_jumper_config(X11_OFF_X12_ON);
 
   measurement_t measurement = {
-      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_49a),
+      .actual_value = (float)adc_to_vbat_out_current(adc_value_49a),
       .expected_value = expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
 
-  ASSERT(is_acceptable_measurement(&measurement), "expected: %u, got: %u",
+  ASSERT(is_acceptable_measurement(&measurement), "expected: %.0f, got: %.0f",
          measurement.expected_value, measurement.actual_value);
 }
 
@@ -129,12 +128,12 @@ void test_adc_to_vbat_out_current_x11_off_x12_off(void) {
   set_current_measure_jumper_config(X11_OFF_X12_OFF);
 
   measurement_t measurement = {
-      .actual_value = (int32_t)adc_to_vbat_out_current(adc_value_16a),
+      .actual_value = (float)adc_to_vbat_out_current(adc_value_16a),
       .expected_value = expected_current_ma,
       .accepted_error = accepted_error_ma,
   };
 
-  ASSERT(is_acceptable_measurement(&measurement), "expected: %u, got: %u",
+  ASSERT(is_acceptable_measurement(&measurement), "expected: %.0f, got: %.0f",
          measurement.expected_value, measurement.actual_value);
 }
 
@@ -149,6 +148,6 @@ void test_adc_to_vbat_out_voltage(void) {
       .accepted_error = accepted_error_mv,
   };
 
-  ASSERT(is_acceptable_measurement(&measurement), "expected: %u, got: %u",
+  ASSERT(is_acceptable_measurement(&measurement), "expected: %.0f, got: %.0f",
          measurement.expected_value, measurement.actual_value);
 }

@@ -1,7 +1,7 @@
 battery_test_suite = 'battery'
 
 battery_common_test_src = files(
-  'battery-test-utils.c',
+  'battery-fakes.c',
   '..' / 'src' / 'adc.c',
   '..' / 'src' / 'battery.c',
   '..' / 'src' / 'jumpers.c',

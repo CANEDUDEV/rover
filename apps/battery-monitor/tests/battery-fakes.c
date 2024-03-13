@@ -1,4 +1,4 @@
-#include "battery-test-utils.h"
+#include "battery-fakes.h"
 
 #include "led.h"
 #include "power.h"
@@ -26,14 +26,4 @@ DEFINE_FAKE_VALUE_FUNC(power_state_t, get_reg_out_power_state)
 void reset_fakes(void) {
   FFF_FAKES_LIST(RESET_FAKE);
   FFF_RESET_HISTORY();
-}
-
-bool is_acceptable_measurement(measurement_t *measurement) {
-  int32_t min_accepted_measurement =
-      measurement->expected_value - measurement->accepted_error;
-  int32_t max_accepted_measurement =
-      measurement->expected_value + measurement->accepted_error;
-
-  return (measurement->actual_value >= min_accepted_measurement &&
-          measurement->actual_value <= max_accepted_measurement);
 }

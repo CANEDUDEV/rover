@@ -41,14 +41,6 @@ DECLARE_FAKE_VALUE_FUNC(power_state_t, get_reg_out_power_state)
   FAKE(get_vbat_power_state)      \
   FAKE(get_reg_out_power_state)
 
-typedef struct {
-  int32_t actual_value;
-  int32_t expected_value;
-  int32_t accepted_error;
-} measurement_t;
-
-bool is_acceptable_measurement(measurement_t *measurement);
-
 void reset_fakes(void);
 
 #ifdef __cplusplus

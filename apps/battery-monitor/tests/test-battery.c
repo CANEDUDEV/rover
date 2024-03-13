@@ -5,7 +5,7 @@
 #include "error.h"
 
 // Testing
-#include "battery-test-utils.h"
+#include "battery-fakes.h"
 #include "test.h"
 
 #define LIPO_OVERVOLTAGE (LIPO_CELL_MAX_VOLTAGE_MV + 100)
