@@ -54,8 +54,8 @@ uint16_t adc_to_servo_current(uint16_t adc_value) {
   return (uint16_t)roundf(i_sense);
 }
 
-/* To get v_battery we need to add the voltage drop of the Schottky diode,
- * around 300 mV => v_battery = v_in + 300.
+/* To get battery voltage we need to add the voltage drop of the Schottky diode
+ * which is around 300 mV.
  */
 uint16_t adc_to_battery_voltage(uint16_t adc_value) {
   const voltage_divider_t divider = {

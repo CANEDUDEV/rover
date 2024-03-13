@@ -49,4 +49,6 @@ motor_bin = custom_target(
   build_by_default: true,
 )
 
-servo_tidy_files = servo_src
+subdir('tests')
+
+servo_tidy_files = [servo_src, servo_test_tidy_files]
