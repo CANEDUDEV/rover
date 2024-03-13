@@ -6,9 +6,9 @@
 void update_voltage_controller(void);
 bool is_servo_voltage_stable(void);
 
-static servo_t servo;
+static servo_state_t servo;
 
-servo_t* get_servo_state(void) {
+servo_state_t* get_servo_state(void) {
   return &servo;
 }
 

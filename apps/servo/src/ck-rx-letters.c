@@ -25,7 +25,7 @@ int process_set_servo_voltage_letter(const ck_letter_t *letter) {
     return APP_NOT_OK;
   }
 
-  servo_t *servo = get_servo_state();
+  servo_state_t *servo = get_servo_state();
 
   memcpy(&servo->target_voltage, letter->page.lines,
          sizeof(servo->target_voltage));
@@ -94,7 +94,7 @@ int process_steering_letter(const ck_letter_t *letter) {
       return APP_NOT_OK;
   }
 
-  servo_t *servo_state = get_servo_state();
+  servo_state_t *servo_state = get_servo_state();
   if (servo_state->reverse) {
     pulse_float = 2 * m_angle_to_pulse - pulse_float;
   }
@@ -118,7 +118,7 @@ int process_subtrim_letter(const ck_letter_t *letter) {
   int16_t trim_pulse = 0;
   memcpy(&trim_pulse, letter->page.lines, sizeof(trim_pulse));
 
-  servo_t *servo_state = get_servo_state();
+  servo_state_t *servo_state = get_servo_state();
   if (servo_state->reverse) {
     trim_pulse = (int16_t)-trim_pulse;
   }
@@ -152,7 +152,7 @@ int process_reverse_letter(const ck_letter_t *letter) {
     return APP_NOT_OK;
   }
 
-  servo_t *servo_state = get_servo_state();
+  servo_state_t *servo_state = get_servo_state();
   servo_state->reverse = !servo_state->reverse;
 
   return APP_OK;

@@ -18,9 +18,9 @@ typedef struct {
   uint16_t current;
   int16_t position;  // Reported position
   bool reverse;      // Reverse steering direction
-} servo_t;
+} servo_state_t;
 
-servo_t* get_servo_state(void);
+servo_state_t* get_servo_state(void);
 void servo_init(void);
 void update_servo_state(adc_reading_t* adc_reading);
 

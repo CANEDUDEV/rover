@@ -87,7 +87,7 @@ void measure(void *unused) {
   uint16_t h_bridge_current = 0;
 
   servo_init();
-  servo_t *servo = get_servo_state();
+  servo_state_t *servo = get_servo_state();
 
   for (;;) {
     sample_adc(&adc_samples);

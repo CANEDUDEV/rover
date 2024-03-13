@@ -50,7 +50,7 @@ void setup_test(void) {
 void test_update_voltage_controller_stable_voltage(void) {
   setup_test();
 
-  servo_t* servo_state = get_servo_state();
+  servo_state_t* servo_state = get_servo_state();
   const uint16_t target_voltage = 7400;
   const uint16_t actual_voltage = target_voltage;
   servo_state->target_voltage = target_voltage;
@@ -66,7 +66,7 @@ void test_update_voltage_controller_stable_voltage(void) {
 
 void test_update_voltage_controller_increase_voltage(void) {
   setup_test();
-  servo_t* servo_state = get_servo_state();
+  servo_state_t* servo_state = get_servo_state();
   const uint16_t target_voltage = 7400;
   const uint16_t actual_voltage = 6000;
   servo_state->target_voltage = target_voltage;
@@ -104,7 +104,7 @@ void test_update_voltage_controller_increase_voltage(void) {
 
 void test_update_voltage_controller_decrease_voltage(void) {
   setup_test();
-  servo_t* servo_state = get_servo_state();
+  servo_state_t* servo_state = get_servo_state();
   const uint16_t target_voltage = 7400;
   const uint16_t actual_voltage = 8000;
   servo_state->target_voltage = target_voltage;
