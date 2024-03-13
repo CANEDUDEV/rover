@@ -24,7 +24,8 @@
 
 #define REPORT_DEFAULT_PERIOD_MS 200
 
-#define MEASURE_STACK_SIZE (sizeof(adc_samples_t) + configMINIMAL_STACK_SIZE)
+#define MEASURE_STACK_SIZE \
+  (sizeof(adc_samples_t) + 2 * configMINIMAL_STACK_SIZE)
 
 task_periods_t task_periods = {
     .report_period_ms = REPORT_DEFAULT_PERIOD_MS,

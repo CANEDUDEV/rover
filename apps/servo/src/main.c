@@ -1,10 +1,8 @@
 #include <stdio.h>
 
 #include "ck-data.h"
-#include "failsafe.h"
 #include "freertos-tasks.h"
 #include "peripherals.h"
-#include "potentiometer.h"
 #include "pwm.h"
 #include "rover.h"
 
@@ -39,17 +37,6 @@ int main(void) {
 
   // Initialize all configured peripherals
   peripherals_init();
-
-  // Configure potentiometers
-  init_potentiometers();
-  write_servo_potentiometer(POTENTIOMETER_SERVO_DEFAULT);
-  write_sensor_potentiometer(POTENTIOMETER_SENSOR_DEFAULT);
-
-  pwm_init();
-  pwm_set_pulse(PWM_NEUTRAL_PULSE_MUS);  // Start at neutral
-
-  failsafe_init();
-  failsafe_on();  // On by default
 
   task_init();
   mayor_init();

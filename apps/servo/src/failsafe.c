@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "pwm.h"
+#include "servo.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"
@@ -17,8 +18,11 @@ static uint16_t failsafe_pulse = PWM_NEUTRAL_PULSE_MUS;
 
 void failsafe_timer_callback(TimerHandle_t timer) {
   (void)timer;
-  pwm_set_pulse(failsafe_pulse);
-  printf("Failsafe activated.\r\n");
+  servo_state_t *servo_state = get_servo_state();
+  if (servo_state->steering_pulse != failsafe_pulse) {
+    update_servo_pulse(failsafe_pulse);
+    printf("Failsafe triggered.\r\n");
+  }
 }
 
 void failsafe_init(void) {

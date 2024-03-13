@@ -1,6 +1,5 @@
 #include "ck-rx-letters.h"
 
-#include <math.h>
 #include <string.h>
 
 #include "ck-data.h"
@@ -9,13 +8,6 @@
 #include "freertos-tasks.h"
 #include "pwm.h"
 #include "servo.h"
-
-// y = kx + m. 500 µs pulse corresponds to 45 degree movement,
-// yielding k = 500/45. m is the neutral position.
-static const float k_angle_to_pulse = 500 / 45.0F;
-static const float m_angle_to_pulse = PWM_NEUTRAL_PULSE_MUS;
-
-static int16_t steering_pulse = PWM_NEUTRAL_PULSE_MUS;
 
 // 2 bytes in page
 // bytes 1-2: desired servo voltage in mV.
@@ -69,42 +61,23 @@ int process_steering_letter(const ck_letter_t *letter) {
     return APP_NOT_OK;
   }
 
-  int16_t pulse = 0;
-  float pulse_float = 0;
+  steering_mode_t steering_mode = letter->page.lines[0];
 
-  switch (letter->page.lines[0]) {
-    case 0:
+  uint16_t pulse = 0;
+  float angle = 0;
+
+  switch (steering_mode) {
+    case STEERING_MODE_PULSE:
       memcpy(&pulse, &letter->page.lines[1], sizeof(pulse));
-      pulse_float = pulse;
-      break;
+      return update_servo_pulse(pulse);
 
-    case 1: {
-      float angle = 0;
+    case STEERING_MODE_ANGLE:
       memcpy(&angle, &letter->page.lines[1], sizeof(angle));
-      if (angle < -90 || angle > 90) {  // NOLINT
-        return APP_NOT_OK;
-      }
-
-      pulse_float = angle * k_angle_to_pulse + m_angle_to_pulse;
-
-      break;
-    }
+      return update_servo_angle(angle);
 
     default:
       return APP_NOT_OK;
   }
-
-  servo_state_t *servo_state = get_servo_state();
-  if (servo_state->reverse) {
-    pulse_float = 2 * m_angle_to_pulse - pulse_float;
-  }
-
-  steering_pulse = (int16_t)roundf(pulse_float);
-
-  pwm_set_pulse(steering_pulse);
-  failsafe_refresh();
-
-  return APP_OK;
 }
 
 // 2 bytes in page.
