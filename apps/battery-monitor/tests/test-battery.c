@@ -3,6 +3,7 @@
 #include "battery-internal.h"
 #include "battery.h"
 #include "error.h"
+#include "jumpers.h"
 
 // Testing
 #include "battery-fakes.h"
@@ -32,6 +33,8 @@ void test_get_lowest_cell_no_cells(void);
 void test_update_reg_out_voltage_controller_stable_voltage(void);
 void test_update_reg_out_voltage_controller_increase_voltage(void);
 void test_update_reg_out_voltage_controller_decrease_voltage(void);
+void test_update_reg_out_voltage_controller_startup_low_voltage(void);
+void test_update_reg_out_voltage_controller_startup_high_voltage(void);
 
 // Helpers
 int read_potentiometer_value_returns_almost_max(uint8_t* pot_value);
@@ -61,6 +64,8 @@ int main(void) {
   test_update_reg_out_voltage_controller_stable_voltage();
   test_update_reg_out_voltage_controller_increase_voltage();
   test_update_reg_out_voltage_controller_decrease_voltage();
+  test_update_reg_out_voltage_controller_startup_low_voltage();
+  test_update_reg_out_voltage_controller_startup_high_voltage();
 }
 
 void setup_test(void) {
@@ -452,6 +457,44 @@ void test_update_reg_out_voltage_controller_decrease_voltage(void) {
   // higher than the target votlage.
   ASSERT(write_potentiometer_value_fake.arg0_val == 0, "expected: 0, got: %u",
          write_potentiometer_value_fake.arg0_val);
+}
+
+void test_update_reg_out_voltage_controller_startup_low_voltage(void) {
+  setup_test();
+  battery_state_t* battery_state = get_battery_state();
+
+  ASSERT(battery_state->target_reg_out_voltage == 0,
+         "Test written assuming target voltage is initialized to 0.");
+
+  const uint16_t startup_voltage = 2500;
+  battery_state->reg_out.voltage = startup_voltage;
+
+  update_voltage_regulator_jumper_state();
+  update_reg_out_voltage_controller();
+
+  ASSERT(
+      battery_state->target_reg_out_voltage == DEFAULT_REG_OUT_VOLTAGE_LOW_MV,
+      "expected: %u, got: %u", DEFAULT_REG_OUT_VOLTAGE_LOW_MV,
+      battery_state->target_reg_out_voltage);
+}
+
+void test_update_reg_out_voltage_controller_startup_high_voltage(void) {
+  setup_test();
+  battery_state_t* battery_state = get_battery_state();
+
+  ASSERT(battery_state->target_reg_out_voltage == 0,
+         "Test written assuming target voltage is initialized to 0.");
+
+  const uint16_t startup_voltage = 6000;
+  battery_state->reg_out.voltage = startup_voltage;
+
+  update_voltage_regulator_jumper_state();
+  update_reg_out_voltage_controller();
+
+  ASSERT(
+      battery_state->target_reg_out_voltage == DEFAULT_REG_OUT_VOLTAGE_HIGH_MV,
+      "expected: %u, got: %u", DEFAULT_REG_OUT_VOLTAGE_HIGH_MV,
+      battery_state->target_reg_out_voltage);
 }
 
 int read_potentiometer_value_returns_almost_max(uint8_t* pot_value) {
