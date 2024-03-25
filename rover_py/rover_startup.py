@@ -14,7 +14,5 @@ with canlib.openChannel(
 
     # Default to reversing servo direction.
     ch.writeWait(servo.set_reverse_direction(), -1)
-    # 5V on regulated output if possible.
-    ch.writeWait(battery.set_reg_out_voltage_frame(5000), -1)
 
     ch.busOff()

@@ -199,6 +199,16 @@ void update_battery_leds(void) {
 }
 
 void update_reg_out_voltage_controller(void) {
+  // Target voltage is set to 0 on init. Default to 5V or 12V depending on
+  // jumper state.
+  if (battery_state.target_reg_out_voltage == 0) {
+    if (get_voltage_regulator_jumper_state() == VOUT_0_TO_6V) {
+      battery_state.target_reg_out_voltage = DEFAULT_REG_OUT_VOLTAGE_LOW_MV;
+    } else {
+      battery_state.target_reg_out_voltage = DEFAULT_REG_OUT_VOLTAGE_HIGH_MV;
+    }
+  }
+
   if (is_reg_out_voltage_stable()) {
     return;
   }

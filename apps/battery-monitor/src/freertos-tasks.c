@@ -104,6 +104,8 @@ void battery_monitor(void *unused) {
   set_reg_out_power_on();
   set_vbat_power_on();
 
+  vTaskDelay(pdMS_TO_TICKS(20));  // Wait for power outputs to stabilize
+
   volatile adc_samples_t adc_samples;
   adc_reading_t adc_average;
 
