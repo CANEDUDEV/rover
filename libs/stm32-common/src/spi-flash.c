@@ -107,8 +107,8 @@ int program(uint32_t address, uint8_t *bytes, size_t size) {
 // Can read whole flash using one command
 int read(uint32_t address, uint8_t *data, size_t size) {
   // Bounds check
-  if (size > SPI_FLASH_SIZE) {
-    printf("error: size too big\r\n");
+  if (address + size > SPI_FLASH_SIZE) {
+    printf("error: size out of bounds\r\n");
     return APP_NOT_OK;
   }
 
