@@ -18,6 +18,11 @@ int erase(uint32_t sector_address);
 int program(uint32_t address, uint8_t *bytes, size_t size);
 int read(uint32_t address, uint8_t *data, size_t size);
 
+// Tries to write the whole flash and read back. Useful for debugging.
+void test_spi_flash(void);
+// Hexdump of flash
+void dump_flash(uint32_t start_address, uint32_t size);
+
 #ifdef __cplusplus
 }
 #endif

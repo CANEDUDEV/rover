@@ -1,6 +1,7 @@
 #include "spi-flash.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include "common-peripherals.h"
 #include "common-ports.h"
@@ -291,4 +292,72 @@ static void start_spi_cmd(void) {
 static void end_spi_cmd(void) {
   HAL_GPIO_WritePin(SPI_FLASH_GPIO_PORT, SPI_FLASH_NSS_PIN, GPIO_PIN_SET);
   taskEXIT_CRITICAL();
+}
+
+void dump_flash(uint32_t start_address, uint32_t size) {
+  if (start_address + size > SPI_FLASH_SIZE) {
+    printf("Error: out of bounds\r\n");
+    return;
+  }
+
+  const uint8_t row_length = 16;
+  uint8_t read_buf[row_length];
+
+  for (uint32_t addr = start_address; addr < start_address + size;
+       addr += row_length) {
+    int err = read(addr, read_buf, row_length);
+    if (err != APP_OK) {
+      printf("Failed to read, exiting.\r\n");
+      error();
+    }
+
+    printf("%08x ", addr);
+    for (uint8_t byte = 0; byte < row_length; byte++) {
+      printf("%02x ", read_buf[byte]);
+      if (byte == 7) {  // NOLINT
+        printf(" ");
+      }
+    }
+    printf(" |%.16s|\r\n", &read_buf[addr]);
+  }
+}
+
+void test_spi_flash(void) {
+  for (int i = 0; i < SPI_FLASH_SECTOR_COUNT; i++) {
+    printf("Erasing sector %d...\r\n", i);
+    int err = erase(i * SPI_FLASH_SECTOR_SIZE);
+    if (err != APP_OK) {
+      printf("Failed to erase, exiting.\r\n");
+      error();
+    }
+  }
+
+  uint8_t write_buf[SPI_FLASH_SECTOR_SIZE];
+  for (int i = 0; i < SPI_FLASH_SECTOR_SIZE; i++) {
+    write_buf[i] = 0xAA;  // NOLINT
+  }
+
+  for (int i = 0; i < SPI_FLASH_SECTOR_COUNT; i++) {
+    printf("programming sector %d...\r\n", i);
+    int err = program(i * SPI_FLASH_SECTOR_SIZE, write_buf, sizeof(write_buf));
+    if (err != APP_OK) {
+      printf("Failed to program, exiting.\r\n");
+      error();
+    }
+  }
+
+  uint8_t read_buf[SPI_FLASH_SECTOR_SIZE];
+  for (int i = 0; i < SPI_FLASH_SECTOR_COUNT; i++) {
+    memset(read_buf, 0, sizeof(read_buf));
+    printf("reading sector %d...\r\n", i);
+    int err = read(i * SPI_FLASH_SECTOR_SIZE, read_buf, sizeof(read_buf));
+    if (err != APP_OK) {
+      printf("Failed to read, exiting.\r\n");
+      error();
+    }
+    if (memcmp(read_buf, write_buf, sizeof(write_buf)) != 0) {
+      printf("Sector %d was not written properly. Expected: %u, got: %u\r\n", i,
+             write_buf[i], read_buf[i]);
+    }
+  }
 }
