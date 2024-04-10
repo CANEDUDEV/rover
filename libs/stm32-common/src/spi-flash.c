@@ -30,6 +30,19 @@ static int set_write_enable_flag(void);
 static void start_spi_cmd(void);
 static void end_spi_cmd(void);
 
+int spi_flash_workaround_init(void) {
+  // There is a timing issue on cold reset where the flash cannot be read
+  // properly without first writing or erasing some part of the flash. We work
+  // around this by writing the last byte in the flash.
+
+  uint8_t data = 0xFF;  // NOLINT(*-magic-numbers)
+  if (program_page(SPI_FLASH_SIZE - 1, &data, sizeof(data)) != APP_OK) {
+    printf("Program didn't work, trying erase instead");
+    return erase(SPI_FLASH_SIZE - SPI_FLASH_SECTOR_SIZE);
+  }
+  return APP_OK;
+}
+
 int erase(uint32_t sector_address) {
   // sector_address bounds and alignment check
   if (sector_address > SPI_FLASH_SECTOR_SIZE * (SPI_FLASH_SECTOR_COUNT - 1) ||

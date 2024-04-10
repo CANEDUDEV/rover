@@ -14,6 +14,7 @@ extern "C" {
 #define SPI_FLASH_SIZE (SPI_FLASH_SECTOR_SIZE * SPI_FLASH_SECTOR_COUNT)
 
 // SPI flash driver interface
+int spi_flash_workaround_init(void);
 int erase(uint32_t sector_address);
 int program(uint32_t address, uint8_t *bytes, size_t size);
 int read(uint32_t address, uint8_t *data, size_t size);

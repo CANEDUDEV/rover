@@ -63,7 +63,9 @@ static const struct lfs_config lfs_cfg = {
     .read_size = SPI_FLASH_SECTOR_SIZE,
     .prog_size = SPI_FLASH_SECTOR_SIZE,
     .block_size = SPI_FLASH_SECTOR_SIZE,
-    .block_count = SPI_FLASH_SECTOR_COUNT,
+
+    // Last sector reserved for SPI flash init
+    .block_count = SPI_FLASH_SECTOR_COUNT - 1,
     .block_cycles = 100,  // Optimize for wear leveling
 
     .cache_size = sizeof(lfs_read_buf),
@@ -77,6 +79,11 @@ static const struct lfs_config lfs_cfg = {
 void lfs_init(void) {
   if (lfs_is_mounted) {
     return;
+  }
+
+  if (spi_flash_workaround_init() != APP_OK) {
+    printf("error: couldn't init SPI flash.");
+    error();
   }
 
   int err = lfs_mount(&lfs, &lfs_cfg);
