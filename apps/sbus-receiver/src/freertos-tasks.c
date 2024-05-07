@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "airbridge.h"
 #include "ck-data.h"
 #include "rover.h"
 #include "sbus.h"
@@ -57,6 +58,8 @@ void sbus_read_and_steer(void *unused) {
 
   init_steering();
 
+  send_airbridge_disconnect();
+
   for (;;) {
     sbus_message_t message;
     steering_command_t steering_command = neutral_steering_command();
@@ -78,6 +81,8 @@ void sbus_read_and_steer(void *unused) {
     }
 
     send_steering_command(&steering_command);
+
+    handle_airbridge_command(&message);
   }
 }
 
@@ -103,6 +108,9 @@ void send_steering_command(steering_command_t *command) {
 
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
   (void)folder;
-  (void)letter;
+  if (letter->envelope.envelope_no == AIRBRIDGE_DISCONNECT_ID) {
+    printf("hello\r\n");
+    send_airbridge_disconnect();
+  }
   return APP_OK;
 }

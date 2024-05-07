@@ -8,6 +8,8 @@ sbus_receiver_src = files(
   'src' / 'peripherals.c',
   'src' / 'sbus.c',
   'src' / 'steering.c',
+
+  'src' / 'airbridge.c',
 )
 
 sbus_receiver_elf = executable(

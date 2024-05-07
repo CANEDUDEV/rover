@@ -84,4 +84,14 @@ void folder_init(void) {
       ck_data.steering_subtrim_page->line_count;
   ck_data.throttle_subtrim_folder->dlc =
       ck_data.throttle_subtrim_page->line_count;
+
+  // NOLINTBEGIN (*-magic-numbers)
+  // Air bridge disconnect folder
+  ck_data.folders[6].folder_no = 2 + CK_DATA_TX_FOLDER_COUNT;
+  ck_data.folders[6].direction = CK_DIRECTION_RECEIVE;
+  ck_data.folders[6].doc_list_no = 0;
+  ck_data.folders[6].enable = true;
+  ck_data.folders[6].doc_no = 0;
+  ck_data.folders[6].dlc = 0;
+  // NOLINTEND
 }

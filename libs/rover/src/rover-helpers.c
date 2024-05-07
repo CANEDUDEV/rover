@@ -356,5 +356,10 @@ static void init_assignments(void) {
   // assignments[index].envelope = ROVER_SERVO_POSITION_ENVELOPE;
   // assignments[index].folder = 2;
   // index++;
+
+  assignments[index].city = ROVER_SBUS_RECEIVER_ID;
+  assignments[index].envelope = 0x4FF;  // NOLINT
+  assignments[index].folder = 6;
+  index++;
 }
 // NOLINTEND(*-magic-numbers)
