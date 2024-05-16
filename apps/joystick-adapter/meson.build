@@ -6,9 +6,9 @@ joystick_adapter_src = files(
 
 joystick_adapter_elf = executable(
   'joystick-adapter.elf',
-  [common_libs_src, joystick_adapter_src],
-  include_directories: [common_libs_inc, joystick_adapter_inc],
-  link_with: common_libs,
+  joystick_adapter_src,
+  include_directories: joystick_adapter_inc,
+  dependencies: common_deps,
   link_depends: app_linker_script,
   link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )

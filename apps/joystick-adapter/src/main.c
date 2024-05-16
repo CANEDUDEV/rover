@@ -11,6 +11,7 @@
 #define THROTTLE_ID 4
 
 void process_letter(void *unused);
+void set_sbus_silent(void);
 void handle_steering_id(const uint8_t *data);
 void handle_throttle_id(const uint8_t *data);
 void update_trim(int16_t *trim, uint8_t trim_signal);
@@ -50,6 +51,8 @@ void process_letter(void *unused) {
       continue;
     }
 
+    set_sbus_silent();
+
     switch (header.StdId) {
       case STEERING_ID:
         handle_steering_id(data);
@@ -61,6 +64,25 @@ void process_letter(void *unused) {
         break;
     }
   }
+}
+
+void set_sbus_silent(void) {
+  common_peripherals_t *peripherals = get_common_peripherals();
+
+  uint8_t set_sbus_silent_data[] = {4, 0, 0, 1, 0, 0, 0, 0};
+  CAN_TxHeaderTypeDef set_sbus_silent_header = {
+      .StdId = 0,
+      .DLC = 8,
+  };
+
+  uint32_t mailbox = 0;
+
+  while (HAL_CAN_GetTxMailboxesFreeLevel(&peripherals->hcan) < 1) {
+    // Wait
+  }
+
+  HAL_CAN_AddTxMessage(&peripherals->hcan, &set_sbus_silent_header,
+                       set_sbus_silent_data, &mailbox);
 }
 
 void handle_steering_id(const uint8_t *data) {
@@ -75,31 +97,22 @@ void handle_steering_id(const uint8_t *data) {
 
   CAN_TxHeaderTypeDef steering_header = {
       .StdId = ROVER_STEERING_ENVELOPE,
-      .DLC = 3,
+      .DLC = 5,
   };
 
-  CAN_TxHeaderTypeDef trim_header = {
-      .StdId = ROVER_STEERING_TRIM_ENVELOPE,
-      .DLC = 3,
-  };
-
-  uint8_t steering_data[3];
+  uint8_t steering_data[5];
   steering_data[0] = 0;
-  *(uint16_t *)&steering_data[1] = joystick_to_pwm(joystick_signal, false);
-
-  uint8_t trim_data[3];
-  trim_data[0] = 0;
-  memcpy(&trim_data[1], &trim, sizeof(trim));
+  *(uint16_t *)&steering_data[1] =
+      joystick_to_pwm(joystick_signal, false) + trim;
 
   uint32_t mailbox = 0;
 
-  while (HAL_CAN_GetTxMailboxesFreeLevel(&peripherals->hcan) < 2) {
+  while (HAL_CAN_GetTxMailboxesFreeLevel(&peripherals->hcan) < 1) {
     // Wait
   }
 
   HAL_CAN_AddTxMessage(&peripherals->hcan, &steering_header, steering_data,
                        &mailbox);
-  HAL_CAN_AddTxMessage(&peripherals->hcan, &trim_header, trim_data, &mailbox);
 }
 
 void update_trim(int16_t *trim, uint8_t trim_signal) {
@@ -148,21 +161,13 @@ void handle_throttle_id(const uint8_t *data) {
 
   CAN_TxHeaderTypeDef throttle_header = {
       .StdId = ROVER_THROTTLE_ENVELOPE,
-      .DLC = 3,
+      .DLC = 5,
   };
 
-  CAN_TxHeaderTypeDef trim_header = {
-      .StdId = ROVER_THROTTLE_TRIM_ENVELOPE,
-      .DLC = 3,
-  };
-
-  uint8_t throttle_data[3];
+  uint8_t throttle_data[5];
   throttle_data[0] = 0;
-  *(uint16_t *)&throttle_data[1] = joystick_to_pwm(joystick_signal, true);
-
-  uint8_t trim_data[3];
-  trim_data[0] = 0;
-  memcpy(&trim_data[1], &trim, sizeof(trim));
+  *(uint16_t *)&throttle_data[1] =
+      joystick_to_pwm(joystick_signal, true) + trim;
 
   uint32_t mailbox = 0;
 
@@ -172,7 +177,6 @@ void handle_throttle_id(const uint8_t *data) {
 
   HAL_CAN_AddTxMessage(&peripherals->hcan, &throttle_header, throttle_data,
                        &mailbox);
-  HAL_CAN_AddTxMessage(&peripherals->hcan, &trim_header, trim_data, &mailbox);
 }
 
 void HAL_CAN_MspInit(CAN_HandleTypeDef *hcan) {
