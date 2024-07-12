@@ -401,6 +401,9 @@ void test_update_reg_out_voltage_controller_increase_voltage(void) {
   };
   SET_CUSTOM_FAKE_SEQ(read_potentiometer_value, custom_fakes, 2);
 
+  power_state_t reg_out_state_return_values[2] = {POWER_ON, POWER_ON};
+  SET_RETURN_SEQ(get_reg_out_power_state, reg_out_state_return_values, 2);
+
   update_reg_out_voltage_controller();
 
   ASSERT(read_potentiometer_value_fake.call_count == 1, "expected: 1, got: %u",
@@ -440,6 +443,9 @@ void test_update_reg_out_voltage_controller_decrease_voltage(void) {
   };
   SET_CUSTOM_FAKE_SEQ(read_potentiometer_value, custom_fakes, 2);
 
+  power_state_t reg_out_state_return_values[2] = {POWER_ON, POWER_ON};
+  SET_RETURN_SEQ(get_reg_out_power_state, reg_out_state_return_values, 2);
+
   update_reg_out_voltage_controller();
 
   ASSERT(write_potentiometer_value_fake.call_count == 1, "expected: 1, got: %u",
@@ -469,6 +475,9 @@ void test_update_reg_out_voltage_controller_startup_low_voltage(void) {
   const uint16_t startup_voltage = 2500;
   battery_state->reg_out.voltage = startup_voltage;
 
+  power_state_t reg_out_state_return_values[2] = {POWER_ON, POWER_ON};
+  SET_RETURN_SEQ(get_reg_out_power_state, reg_out_state_return_values, 2);
+
   update_voltage_regulator_jumper_state();
   update_reg_out_voltage_controller();
 
@@ -487,6 +496,9 @@ void test_update_reg_out_voltage_controller_startup_high_voltage(void) {
 
   const uint16_t startup_voltage = 6000;
   battery_state->reg_out.voltage = startup_voltage;
+
+  power_state_t reg_out_state_return_values[2] = {POWER_ON, POWER_ON};
+  SET_RETURN_SEQ(get_reg_out_power_state, reg_out_state_return_values, 2);
 
   update_voltage_regulator_jumper_state();
   update_reg_out_voltage_controller();

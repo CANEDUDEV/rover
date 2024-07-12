@@ -199,6 +199,11 @@ void update_battery_leds(void) {
 }
 
 void update_reg_out_voltage_controller(void) {
+  // Not relevant to update the controller when the reg out is off.
+  if (get_reg_out_power_state() == POWER_OFF) {
+    return;
+  }
+
   // Target voltage is set to 0 on init. Default to 5V or 12V depending on
   // jumper state.
   if (battery_state.target_reg_out_voltage == 0) {

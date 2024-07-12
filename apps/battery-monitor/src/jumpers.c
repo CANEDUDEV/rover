@@ -3,6 +3,7 @@
 #include "battery.h"
 #include "error.h"
 #include "potentiometer.h"
+#include "power.h"
 
 /*
  * X11 and X12 jumper configuration
@@ -51,6 +52,11 @@ uint16_t get_current_measure_jumper_r_out(void) {
 }
 
 void update_voltage_regulator_jumper_state(void) {
+  // The jumper state cannot be determined if the reg out is off.
+  if (get_reg_out_power_state() == POWER_OFF) {
+    return;
+  }
+
   battery_state_t *battery_state = get_battery_state();
   uint8_t pot_val = 0;
 
