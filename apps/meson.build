@@ -3,6 +3,8 @@ subdir('joystick')
 subdir('sbus-receiver')
 subdir('servo')
 
+subdir('gpio-port-test')
+
 # Build binaries with bootloader. Loops through the app_binaries dictionary and
 # creates binaries with both the bootloader and the app, using cat.
 app_binaries = {
@@ -11,6 +13,8 @@ app_binaries = {
   'motor': [motor_bin], # Built from servo app
   'sbus-receiver': [sbus_receiver_bin],
   'servo': [servo_bin],
+
+  'gpio-port-test': [gpio_port_test_bin],
 }
 
 foreach name, app : app_binaries
