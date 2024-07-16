@@ -203,15 +203,21 @@ def flash_program(ch, binary_data):
     chunks[-1] += [0] * (chunk_size - last_chunk_length)
 
     current_page_number = 3
+    batch_size = 128  # Set to avoid TX buffer overflow
 
-    for chunk in chunks:
+    for chunk_no, chunk in enumerate(chunks):
         data = [current_page_number] + chunk
-        ch.writeWait(Frame(id_=FLASH_PROGRAM_ID, dlc=8, data=data), -1)
+        ch.write(Frame(id_=FLASH_PROGRAM_ID, dlc=8, data=data))
+
+        if chunk_no % batch_size == 0:
+            ch.writeSync(timeout=50)
 
         if current_page_number == 3:
             current_page_number = 4
         else:
             current_page_number = 3
+
+    ch.writeSync(timeout=100)
 
     try:
         ch.readSyncSpecific(FLASH_PROGRAM_ID, timeout=1000)

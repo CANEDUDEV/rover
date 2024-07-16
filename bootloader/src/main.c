@@ -58,7 +58,7 @@ static StaticTask_t flash_program_buf;
 static StackType_t flash_program_stack[configMINIMAL_STACK_SIZE];
 static StreamBufferHandle_t program_stream;
 static StaticStreamBuffer_t program_stream_buf;
-static uint8_t program_stream_storage[4096];  // NOLINT(*-magic-numbers)
+static uint8_t program_stream_storage[32 * 1024];  // NOLINT(*-magic-numbers)
 static void flash_program(void *unused);
 static void send_abort_page(void);
 
@@ -328,7 +328,7 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
 
   // These symbols are defined by CK as part of the block transfer page.
   const uint16_t send_all = 0xFFFF;          // Request whole bundle
-  const uint16_t receive_complete = 0x0000;  // Received bundle uccessfully.
+  const uint16_t receive_complete = 0x0000;  // Received bundle successfully.
 
   // Setup page
   // If the transfer has already been set up, we need to reset the state.
@@ -443,6 +443,8 @@ static void flash_program(void *unused) {
     // Wait for task activation
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
+    HAL_FLASH_Unlock();
+
     for (;;) {
       memset(word, 0, sizeof(word));
       read_bytes = xStreamBufferReceive(program_stream, &word, sizeof(word),
@@ -461,13 +463,9 @@ static void flash_program(void *unused) {
       }
 
       // Program flash with word
-      taskENTER_CRITICAL();
-      HAL_FLASH_Unlock();
       HAL_StatusTypeDef status = HAL_OK;
       status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, current_address,
                                  *(uint32_t *)word);
-      HAL_FLASH_Lock();
-      taskEXIT_CRITICAL();
 
       if (status != HAL_OK) {
         ck_data_t *ck_data = get_ck_data();
@@ -484,6 +482,8 @@ static void flash_program(void *unused) {
       // Increment address
       current_address += sizeof(word);
     }
+
+    HAL_FLASH_Lock();
   }
 }
 
