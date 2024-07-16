@@ -121,6 +121,9 @@ ck_err_t set_action_mode(ck_action_mode_t mode) {
     pwm_set_pulse(PWM_NEUTRAL_PULSE_MUS);
     HAL_NVIC_SystemReset();
   }
+  if (mode == CK_ACTION_MODE_FREEZE) {
+    pwm_set_pulse(PWM_NEUTRAL_PULSE_MUS);
+  }
   return CK_OK;
 }
 

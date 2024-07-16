@@ -112,7 +112,10 @@ void battery_monitor(void *unused) {
   for (;;) {
     sample_adc(&adc_samples);
     adc_average_samples(&adc_average, &adc_samples);
-    update_battery_state(&adc_average);
+
+    if (ck_get_action_mode() != CK_ACTION_MODE_FREEZE) {
+      update_battery_state(&adc_average);
+    }
   }
 }
 
@@ -146,7 +149,10 @@ void battery_report(void *unused) {
 
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
     update_pages();
-    send_docs();
+
+    if (ck_get_action_mode() != CK_ACTION_MODE_FREEZE) {
+      send_docs();
+    }
   }
 }
 
@@ -191,6 +197,10 @@ void send_docs(void) {
 }
 
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
+  if (ck_get_action_mode() == CK_ACTION_MODE_FREEZE) {
+    return APP_OK;
+  }
+
   ck_data_t *ck_data = get_ck_data();
 
   if (folder->folder_no == ck_data->jumper_config_folder->folder_no) {

@@ -115,6 +115,9 @@ ck_err_t set_action_mode(ck_action_mode_t mode) {
     vTaskDelay(pdMS_TO_TICKS(10));
     HAL_NVIC_SystemReset();
   }
+  if (mode == CK_ACTION_MODE_FREEZE) {
+    // Do nothing here, is handled by tasks individually.
+  }
   return CK_OK;
 }
 

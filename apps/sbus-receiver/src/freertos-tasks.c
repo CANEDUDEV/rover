@@ -82,7 +82,8 @@ void sbus_read_and_steer(void *unused) {
 }
 
 void send_steering_command(steering_command_t *command) {
-  if (!command->steering_is_on) {
+  if (!command->steering_is_on ||
+      ck_get_action_mode() == CK_ACTION_MODE_FREEZE) {
     return;
   }
 

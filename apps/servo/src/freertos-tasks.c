@@ -93,7 +93,6 @@ void measure(void *unused) {
   for (;;) {
     sample_adc(&adc_samples);
     adc_average_samples(&adc_average, &adc_samples);
-    update_servo_state(&adc_average);
     battery_voltage = adc_to_battery_voltage(adc_average.adc1_buf[2]);
     h_bridge_current = adc_to_h_bridge_current(adc_average.adc2_buf[1]);
 
@@ -107,6 +106,10 @@ void measure(void *unused) {
            sizeof(servo->voltage));
     memcpy(ck_data->h_bridge_current_page->lines, &h_bridge_current,
            sizeof(h_bridge_current));
+
+    if (ck_get_action_mode() != CK_ACTION_MODE_FREEZE) {
+      update_servo_state(&adc_average);
+    }
 
     // Delay since ADC_NUM_SAMPLES is only 1.
     vTaskDelay(pdMS_TO_TICKS(1));
@@ -137,7 +140,10 @@ void report(void *unused) {
   for (;;) {
     xTimerChangePeriod(timer, task_periods.report_period_ms, portMAX_DELAY);
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for task activation
-    send_docs();
+
+    if (ck_get_action_mode() != CK_ACTION_MODE_FREEZE) {
+      send_docs();
+    }
   }
 }
 
@@ -167,6 +173,10 @@ void send_docs(void) {
 }
 
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
+  if (ck_get_action_mode() == CK_ACTION_MODE_FREEZE) {
+    return APP_OK;
+  }
+
   ck_data_t *ck_data = get_ck_data();
 
   if (folder->folder_no == ck_data->set_servo_voltage_folder->folder_no) {
