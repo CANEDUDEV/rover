@@ -22,6 +22,9 @@ struct mayor_state {
   ck_comm_mode_t comm_mode;
   ck_comm_flags_t comm_flags;
 
+  ck_action_mode_t action_mode;
+  ck_city_mode_t city_mode;
+
   ck_can_bit_timing_t current_bit_timing;
   ck_can_bit_timing_t next_bit_timing;
 
@@ -385,6 +388,14 @@ ck_comm_mode_t ck_get_comm_mode(void) {
   return mayor.comm_mode;
 }
 
+ck_action_mode_t ck_get_action_mode(void) {
+  return mayor.action_mode;
+}
+
+ck_city_mode_t ck_get_city_mode(void) {
+  return mayor.city_mode;
+}
+
 uint32_t ck_get_base_number(void) {
   return mayor.user_data.ck_id.base_no;
 }
@@ -564,6 +575,7 @@ static ck_err_t process_kp0(const ck_page_t *page) {
   if (ret != CK_OK) {
     return ret;
   }
+  mayor.action_mode = action_mode;
 
   ck_comm_mode_t comm_mode = page->lines[3] & 0x3;
   ret = ck_check_comm_mode(comm_mode);
@@ -625,6 +637,7 @@ static ck_err_t process_kp0(const ck_page_t *page) {
 
   // Mayor will have to handle invalid city modes themselves.
   ck_city_mode_t city_mode = page->lines[4];
+  mayor.city_mode = city_mode;
   return mayor.user_data.set_city_mode(city_mode);
 }
 

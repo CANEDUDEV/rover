@@ -252,6 +252,18 @@ ck_err_t ck_set_comm_mode(ck_comm_mode_t mode);
 ck_comm_mode_t ck_get_comm_mode(void);
 
 /*******************************************************************************
+ * Return the last set action mode. Returned value is not valid if mayor is not
+ * initialized.
+ ******************************************************************************/
+ck_action_mode_t ck_get_action_mode(void);
+
+/*******************************************************************************
+ * Return the last set city mode. Returned value is not valid if mayor is not
+ * initialized.
+ ******************************************************************************/
+ck_city_mode_t ck_get_city_mode(void);
+
+/*******************************************************************************
  * Returns the current base number. Returned value is not valid if mayor is not
  * initialized.
  ******************************************************************************/
