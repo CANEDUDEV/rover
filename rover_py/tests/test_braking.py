@@ -15,7 +15,10 @@ with canlib.openChannel(
     rover.start(ch)
 
     # Disable SBUS receiver city's communication
-    ch.writeWait(rover.set_silent_mode(city=rover.City.SBUS_RECEIVER), -1)
+    ch.writeWait(
+        rover.set_comm_mode(city=rover.City.SBUS_RECEIVER, mode=rover.CommMode.SILENT),
+        -1,
+    )
     sleep(3)
 
     # Disable failsafe

@@ -13,6 +13,20 @@ class City(IntEnum):
     SBUS_RECEIVER = 4
 
 
+class CommMode(IntEnum):
+    KEEP_CURRENT = 0
+    SILENT = 1
+    LISTEN_ONLY = 2
+    COMMUNICATE = 3
+
+
+class ActionMode(IntEnum):
+    KEEP_CURRENT = 0
+    RUN = 1
+    FREEZE = 2
+    RESET = 3
+
+
 ROVER_BASE_NUMBER = 0x400
 
 
@@ -91,14 +105,12 @@ def default_letter():
     return Frame(id_=2031, data=[0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA])
 
 
-# Set communication mode to COMMUNICATE
-def set_communicate(city=City.ALL_CITIES):
-    return Frame(id_=0, dlc=8, data=[city, 0, 0, 0x3, 0, 0, 0, 0])
+def set_comm_mode(city=City.ALL_CITIES, mode=CommMode.KEEP_CURRENT):
+    return Frame(id_=0, dlc=8, data=[city, 0, 0, mode, 0, 0, 0, 0])
 
 
-# Set communication mode to SILENT
-def set_silent_mode(city=City.ALL_CITIES):
-    return Frame(id_=0, dlc=8, data=[city, 0, 0, 0x1, 0, 0, 0, 0])
+def set_action_mode(city=City.ALL_CITIES, mode=ActionMode.KEEP_CURRENT):
+    return Frame(id_=0, dlc=8, data=[city, 0, mode, 0, 0, 0, 0, 0])
 
 
 # Give base number and ask for response page
@@ -132,19 +144,26 @@ def change_bitrate_1mbit(city=City.ALL_CITIES):
     return change_bit_timing(prescaler=4, tq=9, phase_seg2=1, sjw=1, city=city)
 
 
-# Reset communication and set communication mode to SILENT
+# Reset communication mode. Useful when switching bitrates.
 # Optionally skip startup sequence after reset.
-def restart_communication(city=City.ALL_CITIES, skip_startup=False):
-    flags = 0x55
+def restart_communication(
+    city=City.ALL_CITIES, skip_startup=False, comm_mode=CommMode.SILENT
+):
+    frame = set_comm_mode(city=city, mode=comm_mode)
+    # See CanKingdom v4 KP0 for definition
+    reset_flag = 1 << 2
     if skip_startup:
-        flags = 0x2D
+        skip_listen_flag = 1 << 3
+        skip_wait_flag = 1 << 5
+    else:
+        skip_listen_flag = 1 << 4
+        skip_wait_flag = 1 << 6
 
-    return Frame(id_=0, dlc=8, data=[city, 0, 0, flags, 0, 0, 0, 0])
+    frame.data[3] |= reset_flag
+    frame.data[3] |= skip_listen_flag
+    frame.data[3] |= skip_wait_flag
 
-
-# Perform a software reset of the target CPU
-def restart(city=City.ALL_CITIES):
-    return Frame(id_=0, dlc=8, data=[city, 0, 0x3, 0, 0, 0, 0, 0])
+    return frame
 
 
 # Start the kingdom
@@ -164,4 +183,4 @@ def start(channel):
     for assignment in KINGDOM_ASSIGNMENTS:
         channel.writeWait(assign_envelope(*assignment), -1)
 
-    channel.writeWait(set_communicate(), -1)
+    channel.writeWait(set_comm_mode(mode=CommMode.COMMUNICATE), -1)
