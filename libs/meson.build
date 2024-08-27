@@ -3,6 +3,7 @@ subdir('can-kingdom')
 subdir('rover')
 subdir('stm32-common')
 subdir('circuits')
+subdir('arena')
 
 common_deps += [
     rover_dep,
@@ -16,4 +17,5 @@ common_libs_tidy_files = [
     rover_tidy_files,
     stm32_common_tidy_files,
     circuits_tidy_files,
+    arena_tidy_files,
 ]
