@@ -4,6 +4,7 @@ subdir('rover')
 subdir('stm32-common')
 subdir('circuits')
 subdir('arena')
+subdir('json')
 
 common_deps += [
     rover_dep,
@@ -18,4 +19,5 @@ common_libs_tidy_files = [
     stm32_common_tidy_files,
     circuits_tidy_files,
     arena_tidy_files,
+    json_tidy_files,
 ]
