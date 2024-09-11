@@ -25,15 +25,15 @@ typedef struct {
 } json_parser_t;
 
 // Helpers
-int parse_object(json_parser_t *parser);
-int parse_value(json_parser_t *parser);
-int parse_object_name(json_parser_t *parser);
-char *parse_string(json_parser_t *parser);
-int json_strlen(const char *str);
-json_object_t *get_parent(json_object_t *object);
-bool is_empty(json_object_t *object);
-void new_child_object(json_parser_t *parser);
-void new_object(json_parser_t *parser);
+static int parse_object(json_parser_t *parser);
+static int parse_value(json_parser_t *parser);
+static int parse_object_name(json_parser_t *parser);
+static char *parse_string(json_parser_t *parser);
+static int json_strlen(const char *str);
+static json_object_t *get_parent(json_object_t *object);
+static bool is_empty(json_object_t *object);
+static void new_child_object(json_parser_t *parser);
+static void new_object(json_parser_t *parser);
 
 json_t *json_parse(const char *data) {
   json_arena.arena = arena_init(json_arena.buf, JSON_MAX_SIZE);
@@ -60,7 +60,7 @@ json_t *json_parse(const char *data) {
   return json;
 }
 
-int parse_object(json_parser_t *parser) {
+static int parse_object(json_parser_t *parser) {
   json_object_t *root = parser->current;
 
   while (parser->current != NULL) {
@@ -182,7 +182,7 @@ int json_insert_object(const char *json, json_object_t *root) {
   return 0;
 }
 
-int parse_value(json_parser_t *parser) {
+static int parse_value(json_parser_t *parser) {
   int bytes_read = 0;
 
   // Skip whitespace
@@ -290,7 +290,7 @@ int parse_value(json_parser_t *parser) {
   return 0;
 }
 
-int parse_object_name(json_parser_t *parser) {
+static int parse_object_name(json_parser_t *parser) {
   char *str = parse_string(parser);
   if (!str) {
     return -1;
@@ -311,7 +311,7 @@ int parse_object_name(json_parser_t *parser) {
   return 0;
 }
 
-char *parse_string(json_parser_t *parser) {
+static char *parse_string(json_parser_t *parser) {
   size_t str_len = json_strlen(parser->ptr);
   char *str = arena_alloc(&json_arena.arena, str_len + 1);
   if (!str) {
@@ -324,7 +324,7 @@ char *parse_string(json_parser_t *parser) {
   return str;
 }
 
-int json_strlen(const char *str) {
+static int json_strlen(const char *str) {
   const char *ptr = str;
 
   if (*ptr == '\"') {
@@ -340,11 +340,11 @@ int json_strlen(const char *str) {
   return (int)(ptr - str);
 }
 
-bool is_empty(json_object_t *object) {
+static bool is_empty(json_object_t *object) {
   return !object->child && !object->value && object->type != JSON_NULL;
 }
 
-json_object_t *get_parent(json_object_t *object) {
+static json_object_t *get_parent(json_object_t *object) {
   json_object_t *current = object;
   while (true) {
     if (!current->prev) {
@@ -357,7 +357,7 @@ json_object_t *get_parent(json_object_t *object) {
   }
 }
 
-void new_child_object(json_parser_t *parser) {
+static void new_child_object(json_parser_t *parser) {
   parser->current->child =
       arena_alloc(&json_arena.arena, sizeof(json_object_t));
   if (!parser->current->child) {
@@ -369,7 +369,7 @@ void new_child_object(json_parser_t *parser) {
   parser->current = parser->current->child;
 }
 
-void new_object(json_parser_t *parser) {
+static void new_object(json_parser_t *parser) {
   parser->current->next = arena_alloc(&json_arena.arena, sizeof(json_object_t));
   if (!parser->current->next) {
     printf("error: out of memory.\r\n");
@@ -382,7 +382,7 @@ void new_object(json_parser_t *parser) {
 
 // print functions for testing and debugging
 
-int json_sprint_value(json_object_t *current, char *str) {
+static int json_sprint_value(json_object_t *current, char *str) {
   switch (current->type) {
     case JSON_BOOL:
       if (current->value->boolean == true) {

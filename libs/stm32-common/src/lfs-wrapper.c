@@ -36,7 +36,7 @@ static StackType_t
 SemaphoreHandle_t mutex = NULL;
 StaticSemaphore_t mutex_buf;
 
-void write_file_task(void *unused);
+static void write_file_task(void *unused);
 
 // Functions required by littlefs
 int spi_flash_read(const struct lfs_config *config, lfs_block_t block,
@@ -47,9 +47,9 @@ int spi_flash_erase(const struct lfs_config *config, lfs_block_t block);
 int spi_flash_sync(const struct lfs_config *config);
 
 // Helpers
-void format_and_mount(void);
-void lfs_lock(void);
-void lfs_unlock(void);
+static void format_and_mount(void);
+static void lfs_lock(void);
+static void lfs_unlock(void);
 
 static const struct lfs_config lfs_cfg = {
     // Operations
@@ -140,7 +140,7 @@ int init_lfs_task(uint32_t write_priority) {
   return APP_OK;
 }
 
-void write_file_task(void *unused) {
+static void write_file_task(void *unused) {
   (void)unused;
 
   for (;;) {
@@ -270,7 +270,7 @@ int spi_flash_sync(const struct lfs_config *config) {
   return APP_OK;
 }
 
-void format_and_mount(void) {
+static void format_and_mount(void) {
   int err = lfs_format(&lfs, &lfs_cfg);
   if (err < 0) {
     printf("Fatal flash error, couldn't format flash: %d\r\n", err);
@@ -283,13 +283,13 @@ void format_and_mount(void) {
   }
 }
 
-void lfs_lock(void) {
+static void lfs_lock(void) {
   if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
     xSemaphoreTake(mutex, portMAX_DELAY);
   }
 }
 
-void lfs_unlock(void) {
+static void lfs_unlock(void) {
   if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
     xSemaphoreGive(mutex);
   }

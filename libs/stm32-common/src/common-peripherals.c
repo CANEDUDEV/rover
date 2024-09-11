@@ -9,11 +9,11 @@
 
 static common_peripherals_t common_peripherals;
 
-void can_init(void);
-void crc_init(void);
-void canfd_init(void);
-void spi_flash_init(void);
-void uart1_init(void);
+static void can_init(void);
+static void crc_init(void);
+static void canfd_init(void);
+static void spi_flash_init(void);
+static void uart1_init(void);
 
 common_peripherals_t* get_common_peripherals(void) {
   return &common_peripherals;
@@ -32,7 +32,7 @@ void common_peripherals_init(void) {
  * @param None
  * @retval None
  */
-void can_init(void) {
+static void can_init(void) {
   CAN_HandleTypeDef* hcan = &common_peripherals.hcan;
   hcan->Instance = CAN;
   hcan->Init.Mode = CAN_MODE_NORMAL;
@@ -67,7 +67,7 @@ void can_init(void) {
   }
 }
 
-void canfd_init(void) {
+static void canfd_init(void) {
   SPI_HandleTypeDef* hcanfd = &common_peripherals.hcanfd;
   /* SPI1 parameter configuration*/
   hcanfd->Instance = SPI1;
@@ -89,7 +89,7 @@ void canfd_init(void) {
   }
 }
 
-void crc_init(void) {
+static void crc_init(void) {
   CRC_HandleTypeDef* hcrc = &common_peripherals.hcrc;
 
   hcrc->Instance = CRC;
@@ -103,7 +103,7 @@ void crc_init(void) {
   }
 }
 
-void spi_flash_init(void) {
+static void spi_flash_init(void) {
   SPI_HandleTypeDef* hspi_flash = &common_peripherals.hspi_flash;
   /* SPI2 parameter configuration*/
   hspi_flash->Instance = SPI2;
@@ -127,7 +127,7 @@ void spi_flash_init(void) {
  * @param None
  * @retval None
  */
-void uart1_init(void) {
+static void uart1_init(void) {
   UART_HandleTypeDef* huart1 = &common_peripherals.huart1;
   huart1->Instance = USART1;
   huart1->Init.BaudRate = 115200;  // NOLINT

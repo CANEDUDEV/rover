@@ -24,11 +24,11 @@
 #define MAX_BLOCK_TIME_MS 100
 
 // Helpers
-int program_page(uint32_t page_address, uint8_t *bytes, size_t size);
-int wait_until_ready(void);
-int set_write_enable_flag(void);
-void start_spi_cmd(void);
-void end_spi_cmd(void);
+static int program_page(uint32_t page_address, uint8_t *bytes, size_t size);
+static int wait_until_ready(void);
+static int set_write_enable_flag(void);
+static void start_spi_cmd(void);
+static void end_spi_cmd(void);
 
 int spi_flash_workaround_init(void) {
   // There is a timing issue on cold reset where the flash cannot be read
@@ -178,7 +178,7 @@ int read(uint32_t address, uint8_t *data, size_t size) {
   return APP_OK;
 }
 
-int program_page(uint32_t page_address, uint8_t *bytes, size_t size) {
+static int program_page(uint32_t page_address, uint8_t *bytes, size_t size) {
   // Command consists of command number followed by page address in big
   // endian format. If an entire page should be programmed the last address byte
   // should be set to 0.
@@ -225,7 +225,7 @@ int program_page(uint32_t page_address, uint8_t *bytes, size_t size) {
   return wait_until_ready();
 }
 
-int wait_until_ready(void) {
+static int wait_until_ready(void) {
   common_peripherals_t *peripherals = get_common_peripherals();
   uint8_t cmd = READ_SR1_COMMAND;
 
@@ -251,7 +251,7 @@ int wait_until_ready(void) {
   return APP_OK;
 }
 
-int set_write_enable_flag(void) {
+static int set_write_enable_flag(void) {
   common_peripherals_t *peripherals = get_common_peripherals();
   uint8_t cmd = WRITE_ENABLE_COMMAND;
 
@@ -297,12 +297,12 @@ int set_write_enable_flag(void) {
   return APP_OK;
 }
 
-void start_spi_cmd(void) {
+static void start_spi_cmd(void) {
   taskENTER_CRITICAL();
   HAL_GPIO_WritePin(SPI_FLASH_GPIO_PORT, SPI_FLASH_NSS_PIN, GPIO_PIN_RESET);
 }
 
-void end_spi_cmd(void) {
+static void end_spi_cmd(void) {
   HAL_GPIO_WritePin(SPI_FLASH_GPIO_PORT, SPI_FLASH_NSS_PIN, GPIO_PIN_SET);
   taskEXIT_CRITICAL();
 }
