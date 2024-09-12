@@ -14,15 +14,14 @@ struct json_arena {
 
 static struct json_arena json_arena;
 
-#define PARSER_BUFSIZE 64
-
 // Parser state tracker
 typedef struct {
-  char buf[PARSER_BUFSIZE];
   const char *ptr;
   json_object_t *current;
   bool in_array;
 } json_parser_t;
+
+const int numeric_base = 10;
 
 // Helpers
 static int parse_object(json_parser_t *parser);
@@ -34,6 +33,8 @@ static json_object_t *get_parent(json_object_t *object);
 static bool is_empty(json_object_t *object);
 static void new_child_object(json_parser_t *parser);
 static void new_object(json_parser_t *parser);
+static void skip_whitespace(json_parser_t *parser);
+static float parse_float(json_parser_t *parser, int significand);
 
 json_t *json_parse(const char *data) {
   json_arena.arena = arena_init(json_arena.buf, JSON_MAX_SIZE);
@@ -64,38 +65,39 @@ static int parse_object(json_parser_t *parser) {
   json_object_t *root = parser->current;
 
   while (parser->current != NULL) {
-    int bytes_read = 0;
-    sscanf(parser->ptr, "%1s %n", parser->buf, &bytes_read);
-    if (bytes_read < 1) {
-      // Reached EOF
-      return 0;
-    }
-    parser->ptr += bytes_read;
+    skip_whitespace(parser);
 
     // Handle object
-    switch (parser->buf[0]) {
+    switch (parser->ptr[0]) {
+      case '\0':  // Reached EOF
+        return 0;
+
       case '{':  // Start of object
         parser->current->type = JSON_OBJECT;
         parser->in_array = false;
         new_child_object(parser);
+        parser->ptr++;
         continue;
 
       case '[':  // Start of array
         parser->current->type = JSON_ARRAY;
         parser->in_array = true;
         new_child_object(parser);
+        parser->ptr++;
         continue;
 
       case '\"':  // Start of object name, or string value in array
         if (parser->in_array) {
-          parser->ptr--;
-        } else if (parse_object_name(parser) < 0) {
+          break;
+        }
+        if (parse_object_name(parser) < 0) {
           return -1;
         }
         break;
 
       case ',':  // Next object or value
         new_object(parser);
+        parser->ptr++;
         continue;
 
       case '}':  // End of object or array
@@ -120,6 +122,8 @@ static int parse_object(json_parser_t *parser) {
 
         parser->current = parent;
 
+        parser->ptr++;
+
         continue;
       }
 
@@ -129,7 +133,6 @@ static int parse_object(json_parser_t *parser) {
           return -1;
         }
 
-        parser->ptr -= bytes_read;
         break;
     }
 
@@ -157,7 +160,7 @@ json_object_t *json_get_object(const char *name, json_object_t *root) {
 }
 
 int json_insert_object(const char *json, json_object_t *root) {
-  if (!root->child || root->child->type != JSON_OBJECT) {
+  if (!root->child || root->type != JSON_OBJECT) {
     printf("error: cannot insert object: root is not a JSON object\r\n");
     return -1;
   }
@@ -183,22 +186,12 @@ int json_insert_object(const char *json, json_object_t *root) {
 }
 
 static int parse_value(json_parser_t *parser) {
-  int bytes_read = 0;
-
-  // Skip whitespace
-  sscanf(parser->ptr, "%*[\n\r\t ] %n", &bytes_read);
-  parser->ptr += bytes_read;
-
-  // Determine value type
-  if (sscanf(parser->ptr, "%c", parser->buf) < 1) {
-    printf("error: invalid value: %c\r\n", *parser->buf);
-    return -1;
-  }
+  skip_whitespace(parser);
 
   json_value_t value;
 
   // Parse value
-  switch (parser->buf[0]) {
+  switch (parser->ptr[0]) {
       // Handle in json_parse()
     case '{':
     case '[':
@@ -206,7 +199,6 @@ static int parse_value(json_parser_t *parser) {
 
     case '\"':  // String
       parser->current->type = JSON_STRING;
-      parser->ptr++;
       value.string = parse_string(parser);
       if (!value.string) {
         return -1;
@@ -214,68 +206,60 @@ static int parse_value(json_parser_t *parser) {
       break;
 
     case 't':  // true
-      if (sscanf(parser->ptr, "%[^] \n\r\t , } ] %n", parser->buf,
-                 &bytes_read) < 1 ||
-          strcmp(parser->buf, "true") != 0) {
-        printf("error: invalid value: %s\r\n", parser->buf);
+      if (strncmp(parser->ptr, "true", strlen("true")) != 0) {
+        printf("error: invalid value: %4s\r\n", parser->ptr);
         return -1;
       }
       parser->current->type = JSON_BOOL;
       value.boolean = true;
-      parser->ptr += bytes_read;
+      parser->ptr += strlen("true");
       break;
 
     case 'f':  // false
-      if (sscanf(parser->ptr, "%[^] \n\r\t , } ] %n", parser->buf,
-                 &bytes_read) < 1 ||
-          strcmp(parser->buf, "false") != 0) {
-        printf("error: invalid value: %s\r\n", parser->buf);
+      if (strncmp(parser->ptr, "false", strlen("false")) != 0) {
+        printf("error: invalid value: %5s\r\n", parser->ptr);
         return -1;
       }
       parser->current->type = JSON_BOOL;
       value.boolean = false;
-      parser->ptr += bytes_read;
+      parser->ptr += strlen("false");
       break;
 
     case 'n':  // null
-      if (sscanf(parser->ptr, "%[^] \n\r\t , } ] %n", parser->buf,
-                 &bytes_read) < 1 ||
-          strcmp(parser->buf, "null") != 0) {
-        printf("error: invalid value: %s\r\n", parser->buf);
+      if (strncmp(parser->ptr, "null", strlen("null")) != 0) {
+        printf("error: invalid value: %4s\r\n", parser->ptr);
         return -1;
       }
       parser->current->type = JSON_NULL;
       parser->current->value = NULL;
-      parser->ptr += bytes_read;
+      parser->ptr += strlen("null");
       return 0;
 
     default:  // Number
     {
-      if (sscanf(parser->ptr, "%[^] \n\r\t , } ] %n", parser->buf,
-                 &bytes_read) < 1) {
-        printf("error: invalid JSON\r\n");
-        return -1;
-      }
+      parser->current->type = JSON_INT;
 
-      char *err = "";
+      char *end = "";
 
-      if (strchr(parser->buf, '.')) {
+      value.int_ = (int)strtol(parser->ptr, &end, numeric_base);
+
+      parser->ptr = end;
+
+      if (*end == '.' || *end == 'e' || *end == 'E') {
         parser->current->type = JSON_FLOAT;
-        value.float_ = strtof(parser->buf, &err);
-      } else {
-        parser->current->type = JSON_INT;
-        // NOLINTNEXTLINE(*-magic-numbers)  // Base 10 number
-        value.int_ = (int)strtol(parser->buf, &err, 10);
+        value.float_ = parse_float(parser, value.int_);
       }
-      if (*err) {
-        printf("error: invalid JSON\r\n");
-        return -1;
-      }
-
-      parser->ptr += bytes_read;
 
       break;
     }
+  }
+
+  // Check end of value
+  skip_whitespace(parser);
+  if (parser->ptr[0] != '\0' && parser->ptr[0] != ',' &&
+      parser->ptr[0] != '}' && parser->ptr[0] != ']') {
+    printf("error: invalid JSON\r\n");
+    return -1;
   }
 
   // Allocate value struct
@@ -298,16 +282,14 @@ static int parse_object_name(json_parser_t *parser) {
 
   parser->current->name = str;
 
-  int bytes_read = 0;
-
   // Check colon and skip whitespace
-  if (sscanf(parser->ptr, "%[\n\r\t : ] %n", parser->buf, &bytes_read) < 1 ||
-      !strchr(parser->buf, ':')) {
+  skip_whitespace(parser);
+  if (parser->ptr[0] != ':') {
     printf("error: no colon after name.\r\n");
     return -1;
   }
 
-  parser->ptr += bytes_read;
+  parser->ptr++;
   return 0;
 }
 
@@ -318,14 +300,17 @@ static char *parse_string(json_parser_t *parser) {
     printf("error: out of memory.\r\n");
     return NULL;
   }
+  parser->ptr++;
   strncpy(str, parser->ptr, str_len);
   str[str_len] = '\0';
-  parser->ptr += str_len + 1;  // Go to char just after the string
+  parser->ptr += str_len + 1;  // Skip starting and closing quotes
   return str;
 }
 
 static int json_strlen(const char *str) {
   const char *ptr = str;
+
+  ptr++;  // Skip first quote
 
   if (*ptr == '\"') {
     return 0;
@@ -337,7 +322,50 @@ static int json_strlen(const char *str) {
     }
   }
 
-  return (int)(ptr - str);
+  return (int)(ptr - str - 1);
+}
+
+static float parse_float(json_parser_t *parser, int significand) {
+  char *end = "";
+
+  // Parse fraction
+  float fraction = 0;
+  if (parser->ptr[0] == '.') {
+    parser->ptr++;
+    int decimals = 0;
+    float fractional_divisor = 1;
+    decimals = (int)strtol(parser->ptr, &end, numeric_base);
+    while (parser->ptr[0] != *end) {
+      fractional_divisor *= 10;  // NOLINT
+      parser->ptr++;
+    }
+    fraction = (float)decimals / fractional_divisor;
+    if (significand < 0) {
+      fraction = -fraction;
+    }
+  }
+
+  // Parse exponent
+  float exponent = 0;
+  float multiplier = 1;
+  if (parser->ptr[0] == 'e' || parser->ptr[0] == 'E') {
+    parser->ptr++;
+    exponent = (float)strtol(parser->ptr, &end, numeric_base);
+    parser->ptr = end;
+    if (exponent < 0) {
+      while (exponent < 0) {
+        multiplier /= 10;  // NOLINT
+        exponent++;
+      }
+    } else {
+      while (exponent > 0) {
+        multiplier *= 10;  // NOLINT
+        exponent--;
+      }
+    }
+  }
+
+  return ((float)significand + fraction) * multiplier;
 }
 
 static bool is_empty(json_object_t *object) {
@@ -380,7 +408,15 @@ static void new_object(json_parser_t *parser) {
   parser->current = parser->current->next;
 }
 
-// print functions for testing and debugging
+static int isspace(int token) {
+  return token == '\n' || token == '\r' || token == '\t' || token == ' ';
+}
+
+static void skip_whitespace(json_parser_t *parser) {
+  while (isspace(parser->ptr[0])) {
+    parser->ptr++;
+  }
+}
 
 static int json_sprint_value(json_object_t *current, char *str) {
   switch (current->type) {

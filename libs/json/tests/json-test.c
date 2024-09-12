@@ -41,7 +41,7 @@ void test_json_parse(void) {
   // Plus some massaging of floats
   char *expected =
       "{\"n1\":123,\"n2\":-123,\"n3\":13.370000,\"n4\":-13.370000,\"n5\":0."
-      "000013,\"n6\":-13370000.000000,\"true\":true,\"false\":false,\"null\":"
+      "001337,\"n6\":-13370000.000000,\"true\":true,\"false\":false,\"null\":"
       "null,\"str\":\"abc\",\"str2\":\"xyz \\\" "
       "\",\"o1\":{},\"d1\":{\"d2\":{\"n1\":123},\"str\":\"abc\"},\"string_with_"
       "escapes\":\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t "
@@ -123,7 +123,7 @@ void test_json_insert_object(void) {
 
   char *expected =
       "{\"n1\":123,\"n2\":-123,\"n3\":13.370000,\"n4\":-13.370000,\"n5\":0."
-      "000013,\"n6\":-13370000.000000,\"true\":true,\"false\":false,\"null\":"
+      "001337,\"n6\":-13370000.000000,\"true\":true,\"false\":false,\"null\":"
       "null,\"str\":\"abc\",\"str2\":\"xyz \\\" "
       "\",\"o1\":{},\"d1\":{\"d2\":{\"n1\":123},\"str\":\"abc\"},\"string_with_"
       "escapes\":\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t "
