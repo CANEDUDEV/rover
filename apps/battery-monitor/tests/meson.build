@@ -9,10 +9,6 @@ battery_common_test_src = files(
 
 battery_adc_test_src = files('test-adc.c')
 
-cc_native = meson.get_compiler('c', native: true)
-
-math_dep = cc_native.find_library('m')
-
 battery_adc_test = executable(
     'battery-adc-test',
     [battery_adc_test_src, battery_common_test_src],

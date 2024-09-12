@@ -1,11 +1,10 @@
 project(
-
     'Rover',
     'c',
     meson_version: '>=1.2.0',
     version: '0.1',
     default_options: [
-        'buildtype=debugoptimized',
+        'optimization=2',
         'default_library=static',
         'warning_level=3',
         'werror=true',
@@ -14,6 +13,10 @@ project(
 )
 
 add_project_arguments('-DLFS_NO_MALLOC', language: 'c')
+add_project_arguments('-O0', '-g', language: 'c', native: true)
+
+cc_native = meson.get_compiler('c', native: true)
+math_dep = cc_native.find_library('m')
 
 objcopy = find_program('objcopy')
 clang_tidy = find_program('clang-tidy')

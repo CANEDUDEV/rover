@@ -2,7 +2,7 @@
 
 #include "postmaster.h"
 
-inline int min(int a, int b) {  // NOLINT
+static inline int min(int a, int b) {  // NOLINT
   if (a < b) {
     return a;
   }

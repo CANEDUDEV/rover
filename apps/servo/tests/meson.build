@@ -4,10 +4,6 @@ servo_common_test_src = files('..' / 'src' / 'adc.c')
 
 servo_adc_test_src = files('test-adc.c')
 
-cc_native = meson.get_compiler('c', native: true)
-
-math_dep = cc_native.find_library('m')
-
 servo_adc_test = executable(
     'servo-adc-test',
     [servo_adc_test_src, servo_common_test_src],
