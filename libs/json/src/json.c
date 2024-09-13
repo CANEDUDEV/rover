@@ -25,8 +25,10 @@ const int numeric_base = 10;
 
 // Helpers
 static int parse_object(json_parser_t *parser);
-static int parse_value(json_parser_t *parser);
+static void start_object(json_parser_t *parser);
+static void start_array(json_parser_t *parser);
 static int parse_object_name(json_parser_t *parser);
+static int parse_value(json_parser_t *parser);
 static char *parse_string(json_parser_t *parser);
 static int json_strlen(const char *str);
 static json_object_t *get_parent(json_object_t *object);
@@ -36,20 +38,20 @@ static void new_object(json_parser_t *parser);
 static void skip_whitespace(json_parser_t *parser);
 static float parse_float(json_parser_t *parser, int significand);
 
-json_t *json_parse(const char *data) {
+json_object_t *json_parse(const char *data) {
   json_arena.arena = arena_init(json_arena.buf, JSON_MAX_SIZE);
 
-  json_t *json = arena_alloc(&json_arena.arena, sizeof(json_t));
-  if (!json) {
+  json_object_t *root = arena_alloc(&json_arena.arena, sizeof(json_object_t));
+  if (!root) {
     printf("error: out of memory.\r\n");
     return NULL;
   }
 
-  json->root.prev = NULL;
+  root->prev = NULL;
 
   json_parser_t parser = {
       .ptr = data,
-      .current = &json->root,
+      .current = root,
       .in_array = false,
   };
 
@@ -58,7 +60,7 @@ json_t *json_parse(const char *data) {
     return NULL;
   }
 
-  return json;
+  return root;
 }
 
 static int parse_object(json_parser_t *parser) {
@@ -73,17 +75,11 @@ static int parse_object(json_parser_t *parser) {
         return 0;
 
       case '{':  // Start of object
-        parser->current->type = JSON_OBJECT;
-        parser->in_array = false;
-        new_child_object(parser);
-        parser->ptr++;
+        start_object(parser);
         continue;
 
       case '[':  // Start of array
-        parser->current->type = JSON_ARRAY;
-        parser->in_array = true;
-        new_child_object(parser);
-        parser->ptr++;
+        start_array(parser);
         continue;
 
       case '\"':  // Start of object name, or string value in array
@@ -107,11 +103,6 @@ static int parse_object(json_parser_t *parser) {
         // Reached end of object
         if (parent == root) {
           return 0;
-        }
-
-        // Fill in correct type if object is empty
-        if (is_empty(parser->current)) {
-          parser->current->type = parent->type;
         }
 
         // In arrays, objects have no name
@@ -141,8 +132,7 @@ static int parse_object(json_parser_t *parser) {
     }
   }
 
-  // We end up here if new_object() or new_child_object() return NULL,
-  // i.e. we run out of memory
+  // We end up here if we run out of memory
   return -1;
 }
 
@@ -160,22 +150,26 @@ json_object_t *json_get_object(const char *name, json_object_t *root) {
 }
 
 int json_insert_object(const char *json, json_object_t *root) {
-  if (!root->child || root->type != JSON_OBJECT) {
+  if (root->type != JSON_OBJECT) {
     printf("error: cannot insert object: root is not a JSON object\r\n");
     return -1;
   }
 
   json_parser_t parser = {
       .ptr = json,
-      .current = root->child,
       .in_array = false,
   };
 
-  while (parser.current->next != NULL) {
-    parser.current = parser.current->next;
+  if (!root->child) {
+    parser.current = root;
+    new_child_object(&parser);  // Out of memory handled in parse_object
+  } else {
+    parser.current = root->child;
+    while (parser.current->next != NULL) {
+      parser.current = parser.current->next;
+    }
+    new_object(&parser);  // Out of memory handled in parse_object
   }
-
-  new_object(&parser);  // Out of memory handled in parse_object
 
   if (parse_object(&parser) < 0) {
     printf("error: failed to parse object\r\n");
@@ -183,6 +177,30 @@ int json_insert_object(const char *json, json_object_t *root) {
   }
 
   return 0;
+}
+
+static void start_object(json_parser_t *parser) {
+  parser->current->type = JSON_OBJECT;
+  parser->in_array = false;
+  parser->ptr++;
+  skip_whitespace(parser);
+  if (parser->ptr[0] == '}') {  // Empty object
+    parser->ptr++;
+  } else {
+    new_child_object(parser);
+  }
+}
+
+static void start_array(json_parser_t *parser) {
+  parser->current->type = JSON_ARRAY;
+  parser->ptr++;
+  skip_whitespace(parser);
+  if (parser->ptr[0] == ']') {  // Empty array
+    parser->ptr++;
+  } else {
+    new_child_object(parser);
+    parser->in_array = true;
+  }
 }
 
 static int parse_value(json_parser_t *parser) {
@@ -445,8 +463,8 @@ static int json_sprint_value(json_object_t *current, char *str) {
 }
 
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-void json_sprint(json_t *json, char *str) {
-  json_object_t *current = &json->root;
+void json_sprint(json_object_t *root, char *str) {
+  json_object_t *current = root;
 
   while (current != NULL) {
     if (current->name) {
@@ -456,7 +474,7 @@ void json_sprint(json_t *json, char *str) {
     switch (current->type) {
       case JSON_OBJECT:
         str += sprintf(str, "{");
-        if (is_empty(current->child)) {
+        if (is_empty(current)) {
           str += sprintf(str, "}");
           break;
         }
@@ -465,7 +483,7 @@ void json_sprint(json_t *json, char *str) {
 
       case JSON_ARRAY:
         str += sprintf(str, "[");
-        if (is_empty(current->child)) {
+        if (is_empty(current)) {
           str += sprintf(str, "]");
           break;
         }

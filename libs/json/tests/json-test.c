@@ -13,7 +13,9 @@ void test_json_parse(void);
 void test_get_object(void);
 void test_get_nonexistent_object(void);
 void test_get_nested_object(void);
+void test_empty_object(void);
 void test_json_insert_object(void);
+void test_json_insert_nested_object(void);
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -26,11 +28,13 @@ int main(int argc, char **argv) {
   test_get_object();
   test_get_nonexistent_object();
   test_get_nested_object();
+  test_empty_object();
   test_json_insert_object();
+  test_json_insert_nested_object();
 }
 
 void test_json_parse(void) {
-  json_t *json = json_parse(test_data);
+  json_object_t *json = json_parse(test_data);
   ASSERT(json != NULL, "couldn't parse JSON");
 
   char str[JSON_MAX_SIZE];
@@ -62,10 +66,10 @@ void test_json_parse(void) {
 }
 
 void test_get_object(void) {
-  json_t *json = json_parse(test_data);
+  json_object_t *json = json_parse(test_data);
   ASSERT(json != NULL, "couldn't parse JSON");
 
-  json_object_t *object = json_get_object("n1", &json->root);
+  json_object_t *object = json_get_object("n1", json);
   ASSERT(object != NULL, "couldn't find object");
   ASSERT(object->value != NULL, "object has no value");
 
@@ -75,18 +79,18 @@ void test_get_object(void) {
 }
 
 void test_get_nonexistent_object(void) {
-  json_t *json = json_parse(test_data);
+  json_object_t *json = json_parse(test_data);
   ASSERT(json != NULL, "couldn't parse JSON");
 
-  json_object_t *object = json_get_object("none", &json->root);
+  json_object_t *object = json_get_object("none", json);
   ASSERT(object == NULL, "found nonexistent object");
 }
 
 void test_get_nested_object(void) {
-  json_t *json = json_parse(test_data);
+  json_object_t *json = json_parse(test_data);
   ASSERT(json != NULL, "couldn't parse JSON");
 
-  json_object_t *object = json_get_object("d1", &json->root);
+  json_object_t *object = json_get_object("d1", json);
   ASSERT(object != NULL, "couldn't find object");
 
   json_object_t *nested_object = json_get_object("str", object);
@@ -99,16 +103,24 @@ void test_get_nested_object(void) {
          "expected: %s, got: %s", expected, nested_object->value->string);
 }
 
+void test_empty_object(void) {
+  json_object_t *json = json_parse(test_data);
+  ASSERT(json != NULL, "couldn't parse JSON");
+  json_object_t *object = json_get_object("o1", json);
+  ASSERT(object != NULL, "couldn't find object");
+  ASSERT(object->value == NULL, "empty object has value");
+  ASSERT(object->child == NULL, "empty object has child object");
+}
+
 void test_json_insert_object(void) {
-  json_t *json = json_parse(test_data);
+  json_object_t *json = json_parse(test_data);
   ASSERT(json != NULL, "couldn't parse JSON");
 
   const char *new_object = "\"new\": \"object\"";
 
-  ASSERT(json_insert_object(new_object, &json->root) == 0,
-         "failed to insert object");
+  ASSERT(json_insert_object(new_object, json) == 0, "failed to insert object");
 
-  json_object_t *object = json_get_object("new", &json->root);
+  json_object_t *object = json_get_object("new", json);
 
   ASSERT(object != NULL, "couldn't find object");
   ASSERT(object->value != NULL, "object has no value");
@@ -129,6 +141,44 @@ void test_json_insert_object(void) {
       "escapes\":\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t "
       "\\u0000\",\"arr1\":[],\"arr2\":[true,false,null,[],1,\"a\",[1,2],{\"b\":"
       "\"c\",\"a\":[1,[[{}],2]]}],\"new\":\"object\"}";
+
+  ASSERT(strcmp(expected, str) == 0, "\nexpected:\n%s\n\ngot:\n%s\n", expected,
+         str);
+}
+
+void test_json_insert_nested_object(void) {
+  json_object_t *json = json_parse(test_data);
+  ASSERT(json != NULL, "couldn't parse JSON");
+
+  const char *new_object = "\"new\": \"object\"";
+
+  json_object_t *object = json_get_object("o1", json);
+  ASSERT(object != NULL, "couldn't find object");
+
+  ASSERT(json_insert_object(new_object, object) == 0,
+         "failed to insert object");
+
+  object = json_get_object("new", object);
+
+  ASSERT(object != NULL, "couldn't find object");
+  ASSERT(object->value != NULL, "object has no value");
+
+  ASSERT(strcmp(object->name, "new") == 0, "object's name is incorrect");
+  ASSERT(strcmp(object->value->string, "object") == 0,
+         "object's value is incorrect");
+
+  // Check if new print includes new object
+  char str[JSON_MAX_SIZE];
+  json_sprint(json, str);
+
+  char *expected =
+      "{\"n1\":123,\"n2\":-123,\"n3\":13.370000,\"n4\":-13.370000,\"n5\":0."
+      "001337,\"n6\":-13370000.000000,\"true\":true,\"false\":false,\"null\":"
+      "null,\"str\":\"abc\",\"str2\":\"xyz \\\" "
+      "\",\"o1\":{\"new\":\"object\"},\"d1\":{\"d2\":{\"n1\":123},\"str\":"
+      "\"abc\"},\"string_with_escapes\":\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t "
+      "\\u0000\",\"arr1\":[],\"arr2\":[true,false,null,[],1,\"a\",[1,2],{\"b\":"
+      "\"c\",\"a\":[1,[[{}],2]]}]}";
 
   ASSERT(strcmp(expected, str) == 0, "\nexpected:\n%s\n\ngot:\n%s\n", expected,
          str);

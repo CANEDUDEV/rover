@@ -39,15 +39,11 @@ typedef struct json_object {
 
 } json_object_t;
 
-typedef struct {
-  json_object_t root;
-} json_t;
-
-json_t *json_parse(const char *data);
+json_object_t *json_parse(const char *data);
 json_object_t *json_get_object(const char *name, json_object_t *root);
 int json_insert_object(const char *json, json_object_t *root);
 
-void json_sprint(json_t *json, char *str);
+void json_sprint(json_object_t *root, char *str);
 
 #ifdef __cplusplus
 } /* extern "C" */
