@@ -36,9 +36,8 @@ void servo_init(void) {
   servo.reverse = false;
 
   init_potentiometers();
-  // Doesn't really fit here.
   write_sensor_potentiometer(POTENTIOMETER_SENSOR_DEFAULT);
-  write_servo_potentiometer(servo.target_voltage);
+  write_servo_potentiometer(POTENTIOMETER_SERVO_DEFAULT);
 
   failsafe_init();
   failsafe_on();
