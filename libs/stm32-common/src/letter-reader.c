@@ -8,8 +8,8 @@
 #include "stm32f3xx_hal_can.h"
 
 // CK
-#include "mayor.h"
 #include "ck-types.h"
+#include "mayor.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"

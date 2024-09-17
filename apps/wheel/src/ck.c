@@ -1,21 +1,24 @@
 #include <stdio.h>
 
 #include "ck-data.h"
-#include "freertos-tasks.h"
-#include "peripherals.h"
+#include "report.h"
+#include "wheel-speed.h"
+
+// Libs
 #include "rover.h"
 
-// CK
-#include "ck-types.h"
-#include "mayor.h"
-
 // STM32Common
-#include "clock.h"
 #include "device-id.h"
 #include "error.h"
+#include "letter-reader.h"
+#include "stm32f3xx_hal_cortex.h"
+
+// CK
+#include "mayor.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"
+#include "task.h"
 #include "timers.h"
 
 // For the CK startup sequence timer
@@ -28,26 +31,19 @@ void mayor_init(void);
 ck_err_t set_action_mode(ck_action_mode_t mode);
 ck_err_t set_city_mode(ck_city_mode_t mode);
 
-int main(void) {
-  // Reset of all peripherals, Initializes the Flash interface and the Systick.
-  HAL_Init();
+int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
 
-  system_clock_init();
+void init_ck_task(uint8_t priority) {
+  letter_reader_cfg_t letter_reader_cfg = {
+      .priority = priority++,
+      .app_letter_handler_func = handle_letter,
+  };
 
-  // Initialize all configured peripherals
-  peripherals_init();
-
-  task_init();
-  mayor_init();
-
-  printf("Starting application...\r\n");
-
-  // Start scheduler
-  vTaskStartScheduler();
-
-  // We should never get here as control is now taken by the scheduler.
-  while (1) {
+  if (init_letter_reader_task(letter_reader_cfg) != APP_OK) {
+    error();
   }
+
+  mayor_init();
 }
 
 void mayor_init(void) {
@@ -60,7 +56,7 @@ void mayor_init(void) {
   ck_data_init();
   ck_data_t *ck_data = get_ck_data();
 
-  uint32_t city_address = ROVER_BATTERY_MONITOR_ID;
+  uint32_t city_address = ROVER_WHEEL_FRONT_LEFT_ID;
 
   ck_id_t ck_id;
 
@@ -115,13 +111,27 @@ ck_err_t set_action_mode(ck_action_mode_t mode) {
     vTaskDelay(pdMS_TO_TICKS(10));
     HAL_NVIC_SystemReset();
   }
-  if (mode == CK_ACTION_MODE_FREEZE) {
-    // Do nothing here, is handled by tasks individually.
-  }
   return CK_OK;
 }
 
 ck_err_t set_city_mode(ck_city_mode_t mode) {
   (void)mode;
   return CK_OK;
+}
+
+int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
+  if (ck_get_action_mode() == CK_ACTION_MODE_FREEZE) {
+    return APP_OK;
+  }
+
+  ck_data_t *ck_data = get_ck_data();
+
+  if (folder->folder_no == ck_data->set_wheel_parameters_folder->folder_no) {
+    return process_set_wheel_parameters_letter(letter);
+  }
+  if (folder->folder_no == ck_data->set_report_freq_folder->folder_no) {
+    return process_report_freq_letter(letter);
+  }
+
+  return APP_OK;
 }

@@ -2,8 +2,8 @@
 
 #include <string.h>
 
-#include "postmaster.h"
 #include "ck-types.h"
+#include "postmaster.h"
 
 struct mayor_state {
   ck_mayor_t user_data;  // Data provided by the user.
