@@ -127,7 +127,9 @@ class Flasher:
         target_nodes = set(self.node_binary_map.keys())
 
         if not target_nodes.issubset(self.online_nodes):
-            raise RuntimeError(f"Error: {target_nodes - online_nodes} did not respond.")
+            raise RuntimeError(
+                f"Error: {target_nodes - self.online_nodes} did not respond."
+            )
 
     def __flash_node(self, node):
         print(f"{node.name}: Starting flash procedure.")
