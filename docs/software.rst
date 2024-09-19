@@ -57,9 +57,9 @@ is hardware dependent.
 
 .. _types:
 
-types.h
-```````
-.. doxygenfile:: types.h
+ck-types.h
+``````````
+.. doxygenfile:: ck-types.h
    :project: Rover
 
 

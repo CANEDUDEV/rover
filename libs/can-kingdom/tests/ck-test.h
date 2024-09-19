@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "types.h"
+#include "ck-types.h"
 
 // Some helpers for testing
 const uint64_t test_ean_no = 123;

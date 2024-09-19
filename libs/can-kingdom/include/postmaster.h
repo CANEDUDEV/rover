@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#include "types.h"
+#include "ck-types.h"
 
 /*******************************************************************************
  * Try to send a letter.

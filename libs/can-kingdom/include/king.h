@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include "types.h"
+#include "ck-types.h"
 
 /******************************************************************************
  * Struct defining parameters for king's page 0.

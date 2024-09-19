@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "types.h"
+#include "ck-types.h"
 
 bool someone_else_is_king(void);
 ck_err_t send_default_letter(void);

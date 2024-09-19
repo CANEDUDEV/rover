@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#include "types.h"
+#include "ck-types.h"
 
 /*******************************************************************************
  * Struct contains pointers to parameters that should be defined by the user.

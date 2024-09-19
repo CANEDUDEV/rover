@@ -37,10 +37,10 @@ can_kingdom_mayor_test = executable(
 
 test('ck-mayor', can_kingdom_mayor_test, suite: can_kingdom_test_suite)
 
-can_kingdom_types_test_src = files('types-test.c')
+can_kingdom_types_test_src = files('ck-types-test.c')
 
 can_kingdom_types_test = executable(
-  'can-kingdom-types-test',
+  'can-kingdom-ck-types-test',
   can_kingdom_types_test_src,
   dependencies: [can_kingdom_native_dep, test_utils_dep],
   native: true,

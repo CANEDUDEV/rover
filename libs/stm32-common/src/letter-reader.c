@@ -9,7 +9,7 @@
 
 // CK
 #include "mayor.h"
-#include "types.h"
+#include "ck-types.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"

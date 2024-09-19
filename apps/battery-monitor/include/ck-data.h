@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "types.h"
+#include "ck-types.h"
 
 #define CK_DATA_TX_PAGE_COUNT 4
 #define CK_DATA_TX_DOC_COUNT 3

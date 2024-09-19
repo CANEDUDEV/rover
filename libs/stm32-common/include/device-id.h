@@ -1,7 +1,7 @@
 #ifndef DEVICE_ID_H
 #define DEVICE_ID_H
 
-#include "types.h"
+#include "ck-types.h"
 
 #ifdef __cplusplus
 extern "C" {

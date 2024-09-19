@@ -2,12 +2,12 @@ can_kingdom_inc = include_directories('include')
 
 can_kingdom_mayor_src = files(
   'src' / 'mayor.c',
-  'src' / 'types.c',
+  'src' / 'ck-types.c',
 )
 
 can_kingdom_king_src = files(
   'src' / 'king.c',
-  'src' / 'types.c',
+  'src' / 'ck-types.c',
 )
 
 can_kingdom_mayor_dep = declare_dependency(

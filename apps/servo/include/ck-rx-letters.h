@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "types.h"
+#include "ck-types.h"
 
 int process_set_servo_voltage_letter(const ck_letter_t *letter);
 int process_pwm_conf_letter(const ck_letter_t *letter);

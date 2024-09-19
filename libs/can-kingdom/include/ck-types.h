@@ -1,5 +1,5 @@
 /*******************************************************************************
- * @file types.h
+ * @file ck-types.h
  *
  * CAN Kingdom building blocks.
  *

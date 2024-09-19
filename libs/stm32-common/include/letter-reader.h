@@ -7,7 +7,7 @@ extern "C" {
 
 #include <stdint.h>
 
-#include "types.h"
+#include "ck-types.h"
 
 typedef struct {
   uint32_t priority;
