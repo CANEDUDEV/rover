@@ -47,6 +47,17 @@ run_target(
     ],
 )
 
+run_target(
+    'check',
+    command: [
+        'bash',
+        meson.project_source_root() / 'scripts' / 'check-src.sh',
+        meson.project_source_root(),
+        meson.project_build_root(),
+    ],
+)
+
+rover_dbc = fs.copyfile(files('rover.dbc'))
 binary_files = [
     battery_monitor_bin,
     joystick_bin,
@@ -57,7 +68,7 @@ binary_files = [
     wheel_bin,
 ]
 
-rover_dbc = fs.copyfile(files('rover.dbc'))
+release_files = [binary_files, rover_dbc]
 
 run_target(
     'release',
@@ -65,5 +76,5 @@ run_target(
         'bash',
         meson.project_source_root() / 'scripts' / 'create-release.sh',
     ],
-    depends: [binary_files, rover_dbc],
+    depends: release_files,
 )

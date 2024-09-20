@@ -33,10 +33,10 @@ throttle_values = collections.deque(maxlen=max_items_sent)
 
 def receive_can_messages():
     # If packaged as one binary using pyinstaller,
-    # we need to look for the file in sys._MEIPASS.
+    # we need to look for the file in sys._MEIPASS, which is set by pyinstaller.
     # Otherwise, just look in the current dir.
     try:
-        base_path = sys._MEIPASS
+        base_path = sys._MEIPASS  # pyright: ignore [reportAttributeAccessIssue]
     except Exception:
         base_path = os.path.abspath(".")
 
@@ -191,7 +191,7 @@ def parse_frame(db, frame):
 
 
 def animate(_):
-    ax1, ax2, ax3 = fig.get_axes()
+    ax1, ax2, ax3 = fig.get_axes()  # pyright: ignore [reportAttributeAccessIssue]
 
     # Clear current data
     ax1.cla()

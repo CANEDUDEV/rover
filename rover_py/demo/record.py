@@ -24,8 +24,6 @@ with canlib.openChannel(
     ch.setBusOutputControl(canlib.Driver.NORMAL)
     ch.busOn()
 
-    # Adjust the servo monitoring and report frequency to pick up current spikes.
-    ch.writeWait(servo.set_measure_period_frame(20), -1)
     ch.writeWait(servo.set_report_period_frame(20), -1)
 
     try:
@@ -35,6 +33,9 @@ with canlib.openChannel(
         ):
             frame = ch.read(timeout=-1)
             if frame is None:
+                continue
+
+            if frame.timestamp is None:
                 continue
 
             timestamp = frame.timestamp / 1000

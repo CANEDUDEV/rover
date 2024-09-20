@@ -14,7 +14,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          cache: 'pip' # caching pip dependencies
+
+      - name: Cache python venv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
 
       - name: Cache meson subprojects
         uses: actions/cache@v4
@@ -26,6 +31,12 @@ jobs:
       - name: Bootstrap build
         run: ./scripts/bootstrap.sh
 
+      - name: Activate python venv
+        run: |
+          source .venv/bin/activate
+          echo "$VIRTUAL_ENV/bin" >> $GITHUB_PATH
+          echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
+
       - name: Build source
         run: meson compile -C build
 
@@ -33,7 +44,7 @@ jobs:
         run: meson test -v -C build
 
       - name: Check source
-        run: ./scripts/check-src.sh
+        run: meson compile -C build check
 
       - name: Build documentation
         run: meson compile -C build docs

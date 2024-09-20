@@ -25,10 +25,10 @@ with canlib.openChannel(
     # Measure time between two reports
     t_before = time.time()
 
-    ch.iocontrol.flush_rx_buffer()
+    ch.iocontrol.flush_rx_buffer()  # pyright: ignore [reportCallIssue]
     ch.readSyncSpecific(rover.Envelope.BATTERY_BATTERY_OUTPUT_ENVELOPE, timeout=2000)
 
-    ch.iocontrol.flush_rx_buffer()
+    ch.iocontrol.flush_rx_buffer()  # pyright: ignore [reportCallIssue]
     ch.readSyncSpecific(rover.Envelope.BATTERY_BATTERY_OUTPUT_ENVELOPE, timeout=2000)
 
     t_after = time.time()
