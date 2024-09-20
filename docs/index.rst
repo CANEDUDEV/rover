@@ -1,14 +1,12 @@
 Welcome to the Rover's documentation!
 =====================================
-This page contains the documentation for the CANEDUDEV Rover.
+This page contains the software documentation for the CanEduDev Rover.
 
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
 
-   getting-started
-   hardware
-   software
+   can-kingdom
 
 Indices and tables
 ==================
