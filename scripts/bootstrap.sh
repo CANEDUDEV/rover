@@ -7,32 +7,32 @@ YAMLFMT=https://github.com/google/yamlfmt/releases/download/v0.13.0/yamlfmt_0.13
 echo "Installing APT dependencies..."
 sudo apt-get -qq update
 sudo apt-get -qq install --no-upgrade -y \
-	curl \
-	clang-format \
-	clang-tidy \
-	doxygen \
-	gcc-arm-none-eabi \
-	libc6-dev-armhf-cross \
-	python3-pip \
-	zip
+    curl \
+    clang-format \
+    clang-tidy \
+    doxygen \
+    gcc-arm-none-eabi \
+    libc6-dev-armhf-cross \
+    python3-pip \
+    zip
 
 echo "Downloading yamlfmt..."
 if [[ ! -x .bin/yamlfmt ]]; then
-	mkdir -p .bin
-	curl -L -s "${YAMLFMT}" | tar -C .bin -xzf - yamlfmt
-	chmod +x .bin/yamlfmt
+    mkdir -p .bin
+    curl -L -s "${YAMLFMT}" | tar -C .bin -xzf - yamlfmt
+    chmod +x .bin/yamlfmt
 fi
 
 if [[ ! -d .venv ]]; then
-	echo "Creating Python virtualenv..."
-	python3 -m venv .venv
+    echo "Creating Python virtualenv..."
+    python3 -m venv .venv
 fi
 
 # shellcheck disable=SC1091,SC2312
 source .venv/bin/activate
 
 if [[ -z ${VIRTUAL_ENV} ]]; then
-	exit 1
+    exit 1
 fi
 
 echo "Populating virtualenv..."

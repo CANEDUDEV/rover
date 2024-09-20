@@ -12,32 +12,32 @@ OTHER_FILES=()
 FLASHER_PATH=""
 
 while [[ $# -gt 0 ]]; do
-	case "$1" in
-	--flasher-path)
-		FLASHER_PATH="$2"
-		shift 2
-		;;
-	*)
+    case "$1" in
+    --flasher-path)
+        FLASHER_PATH="$2"
+        shift 2
+        ;;
+    *)
 
-		if [[ $1 == *.bin ]]; then
-			BINARIES+=("$1")
-		else
-			OTHER_FILES+=("$1")
-		fi
-		shift
-		;;
+        if [[ $1 == *.bin ]]; then
+            BINARIES+=("$1")
+        else
+            OTHER_FILES+=("$1")
+        fi
+        shift
+        ;;
 
-	esac
+    esac
 done
 
 if [[ -z ${FLASHER_PATH} ]]; then
-	echo "Error: --flasher-path is required."
-	exit 1
+    echo "Error: --flasher-path is required."
+    exit 1
 fi
 
 if [[ ! -d ${FLASHER_PATH} ]]; then
-	echo "Error: ${FLASHER_PATH} is not a valid directory."
-	exit 1
+    echo "Error: ${FLASHER_PATH} is not a valid directory."
+    exit 1
 fi
 
 rm -rf release
