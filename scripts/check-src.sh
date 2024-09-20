@@ -14,8 +14,9 @@ main() {
 		BUILD_DIR=build
 	fi
 
-	pushd "${SRC_DIR}"
+	pushd "${SRC_DIR}" >/dev/null
 
+	echo "Formatting..."
 	shfmt -w -s .
 	.bin/yamlfmt -formatter type=basic,retain_line_breaks=true . .clang-tidy .clang-format
 	isort --gitignore --profile black .
@@ -24,12 +25,13 @@ main() {
 	ninja -C "${BUILD_DIR}" clang-format
 
 	# Check
+	echo "Linting..."
 	shfmt -f . | grep -v ^subprojects | xargs shellcheck -o all
 	pyright rover_py
 	ninja -C "${BUILD_DIR}" clang-tidy
 	check_git_index
 
-	popd
+	popd >/dev/null
 }
 
 # Check for untracked/modified git files

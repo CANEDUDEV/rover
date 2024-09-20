@@ -5,22 +5,54 @@ set -eo pipefail
 TAG=$(git describe --tags --always)
 RELEASE_FILE="rover-release-${TAG}.zip"
 
-echo
-echo "Creating release..."
+echo "Creating release ${TAG}..."
 
-if [[ -f ${RELEASE_FILE} ]]; then
-	echo
-	echo "ERROR: File ${PWD}/${RELEASE_FILE} already exists."
-	echo "Remove it or create a new tag before retrying."
-	echo "Exiting..."
-	echo
+BINARIES=()
+OTHER_FILES=()
+FLASHER_PATH=""
+
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+	--flasher-path)
+		FLASHER_PATH="$2"
+		shift 2
+		;;
+	*)
+
+		if [[ $1 == *.bin ]]; then
+			BINARIES+=("$1")
+		else
+			OTHER_FILES+=("$1")
+		fi
+		shift
+		;;
+
+	esac
+done
+
+if [[ -z ${FLASHER_PATH} ]]; then
+	echo "Error: --flasher-path is required."
 	exit 1
 fi
 
-# Add all .bin files
-find . -type f -name "*.bin" | zip -q -j "${RELEASE_FILE}" -@
+if [[ ! -d ${FLASHER_PATH} ]]; then
+	echo "Error: ${FLASHER_PATH} is not a valid directory."
+	exit 1
+fi
 
-# Add DBC file
-zip -q -u "${RELEASE_FILE}" rover.dbc
+rm -rf release
+rm -f "rover-release"*
+
+mkdir release
+cp "${OTHER_FILES[@]}" release
+cp "${FLASHER_PATH}/fw_update.py" release
+
+mkdir release/binaries
+cp "${BINARIES[@]}" release/binaries
+
+mkdir release/rover
+cp -r "${FLASHER_PATH}/rover/"*.py release/rover
+
+zip -q -r "${RELEASE_FILE}" release
 
 echo "Finished creating release."

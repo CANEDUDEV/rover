@@ -24,6 +24,9 @@ fff_dep = dependency('fff')
 
 common_deps = [stm32f3_hal_dep, freertos_dep, littlefs_dep]
 
+# Populated in subdirs
+release_files = []
+
 # Order is important
 fs = import('fs')
 subdir('libs')
@@ -57,24 +60,16 @@ run_target(
     ],
 )
 
-rover_dbc = fs.copyfile(files('rover.dbc'))
-binary_files = [
-    battery_monitor_bin,
-    joystick_bin,
-    motor_bin,
-    obstacle_detector_bin,
-    sbus_receiver_bin,
-    servo_bin,
-    wheel_bin,
-]
-
-release_files = [binary_files, rover_dbc]
+release_files += fs.copyfile(files('rover.dbc'))
 
 run_target(
     'release',
     command: [
         'bash',
         meson.project_source_root() / 'scripts' / 'create-release.sh',
+        '--flasher-path',
+        meson.project_source_root() / 'rover_py',
+        release_files,
     ],
     depends: release_files,
 )

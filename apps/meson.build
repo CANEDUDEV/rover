@@ -18,7 +18,8 @@ app_binaries = {
 }
 
 foreach name, app : app_binaries
-    custom_target(
+    release_files += app
+    release_files += custom_target(
         '@0@-with-bootloader.bin'.format(name),
         build_by_default: true,
         capture: true,  # This makes stdout of cat be captured and written to output file.
@@ -31,9 +32,9 @@ endforeach
 
 apps_tidy_files = [
     battery_monitor_tidy_files,
-    wheel_tidy_files,
     joystick_tidy_files,
     obstacle_detector_tidy_files,
     sbus_receiver_tidy_files,
     servo_tidy_files,
+    wheel_tidy_files,
 ]

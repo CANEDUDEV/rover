@@ -34,4 +34,6 @@ bootloader_bin = custom_target(
     build_by_default: true,
 )
 
+release_files += bootloader_bin
+
 bootloader_tidy_files = [bootloader_src]
