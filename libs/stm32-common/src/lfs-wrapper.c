@@ -17,9 +17,10 @@
 #define WRITE_QUEUE_ITEM_SIZE sizeof(file_t)
 
 // Statically allocate buffers for littelfs
-static uint8_t lfs_read_buf[SPI_FLASH_SECTOR_SIZE];
-static uint8_t lfs_prog_buf[SPI_FLASH_SECTOR_SIZE];
-static uint8_t lfs_lookahead_buf[SPI_FLASH_SECTOR_SIZE];
+static uint8_t lfs_read_buf[SPI_FLASH_PAGE_SIZE];
+static uint8_t lfs_prog_buf[SPI_FLASH_PAGE_SIZE];
+static uint8_t lfs_file_buf[SPI_FLASH_PAGE_SIZE];
+static uint8_t lfs_lookahead_buf[SPI_FLASH_PAGE_SIZE];
 static lfs_t lfs = {0};
 static bool lfs_is_mounted = false;
 
@@ -47,7 +48,6 @@ int spi_flash_erase(const struct lfs_config *config, lfs_block_t block);
 int spi_flash_sync(const struct lfs_config *config);
 
 // Helpers
-static void format_and_mount(void);
 static void lfs_lock(void);
 static void lfs_unlock(void);
 
@@ -59,21 +59,21 @@ static const struct lfs_config lfs_cfg = {
     .sync = spi_flash_sync,
 
     // Configuration
-    .read_size = SPI_FLASH_SECTOR_SIZE,
-    .prog_size = SPI_FLASH_SECTOR_SIZE,
+    .cache_size = sizeof(lfs_read_buf),
+    .read_size = sizeof(lfs_read_buf),
+    .prog_size = sizeof(lfs_prog_buf),
+    .lookahead_size = sizeof(lfs_lookahead_buf),
     .block_size = SPI_FLASH_SECTOR_SIZE,
+    .read_buffer = lfs_read_buf,
+    .prog_buffer = lfs_prog_buf,
+    .lookahead_buffer = lfs_lookahead_buf,
 
     // Last sector reserved for SPI flash init
     .block_count = SPI_FLASH_SECTOR_COUNT - 1,
     .block_cycles = 100,  // Optimize for wear leveling
-
-    .cache_size = sizeof(lfs_read_buf),
-    .read_buffer = lfs_read_buf,
-    .prog_buffer = lfs_prog_buf,
-
-    .lookahead_size = sizeof(lfs_lookahead_buf),
-    .lookahead_buffer = lfs_lookahead_buf,
 };
+
+static const struct lfs_file_config lfs_file_cfg = {.buffer = lfs_file_buf};
 
 void lfs_init(void) {
   if (lfs_is_mounted) {
@@ -89,7 +89,9 @@ void lfs_init(void) {
 
   if (err < 0) {  // Should only happen on first boot
     printf("Formatting flash...\r\n");
-    format_and_mount();
+    if (format_and_mount() != APP_OK) {
+      error();
+    }
   }
 
   lfs_dir_t dir;
@@ -97,7 +99,9 @@ void lfs_init(void) {
 
   if (err == LFS_ERR_CORRUPT) {
     printf("Corrupt filesystem, reformatting flash...\r\n");
-    format_and_mount();
+    if (format_and_mount() != APP_OK) {
+      error();
+    }
   }
 
   if (err == LFS_ERR_OK) {
@@ -163,11 +167,11 @@ int write_file(const file_t *file) {
   lfs_lock();
 
   lfs_file_t lfs_file;
-  int err =
-      lfs_file_open(&lfs, &lfs_file, file->name, LFS_O_CREAT | LFS_O_WRONLY);
+  int err = lfs_file_opencfg(&lfs, &lfs_file, file->name,
+                             LFS_O_CREAT | LFS_O_WRONLY, &lfs_file_cfg);
 
   if (err < 0) {
-    printf("lfs_file_open error: %d\r\n", err);
+    printf("lfs_file_opencfg error: %d\r\n", err);
     lfs_unlock();
     return err;
   }
@@ -200,12 +204,13 @@ int read_file(file_t *file) {
   lfs_lock();
 
   lfs_file_t lfs_file;
-  int err = lfs_file_open(&lfs, &lfs_file, file->name, LFS_O_RDONLY);
+  int err = lfs_file_opencfg(&lfs, &lfs_file, file->name, LFS_O_RDONLY,
+                             &lfs_file_cfg);
   if (err < 0) {
     if (err == LFS_ERR_NOENT) {
       printf("Couldn't find file: %s.\r\n", file->name);
     } else {
-      printf("lfs_file_open error: %d\r\n", err);
+      printf("lfs_file_opencfg error: %d\r\n", err);
     }
     lfs_unlock();
     return err;
@@ -270,17 +275,22 @@ int spi_flash_sync(const struct lfs_config *config) {
   return APP_OK;
 }
 
-static void format_and_mount(void) {
+int format_and_mount(void) {
+  lfs_is_mounted = false;
   int err = lfs_format(&lfs, &lfs_cfg);
   if (err < 0) {
     printf("Fatal flash error, couldn't format flash: %d\r\n", err);
-    error();
+    return APP_NOT_OK;
   }
   err = lfs_mount(&lfs, &lfs_cfg);
   if (err < 0) {
     printf("Fatal flash error, couldn't mount after format: %d\r\n", err);
-    error();
+    return APP_NOT_OK;
   }
+
+  lfs_is_mounted = true;
+
+  return APP_OK;
 }
 
 static void lfs_lock(void) {

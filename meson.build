@@ -13,6 +13,8 @@ project(
     ],
 )
 
+add_project_arguments('-DLFS_NO_MALLOC', language: 'c')
+
 objcopy = find_program('objcopy')
 clang_tidy = find_program('clang-tidy')
 cat = find_program('cat')

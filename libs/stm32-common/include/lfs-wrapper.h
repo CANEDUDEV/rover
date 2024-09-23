@@ -31,6 +31,8 @@ int write_file_async(const file_t *file);
 // Blocking read.
 int read_file(file_t *file);
 
+int format_and_mount(void);
+
 #ifdef __cplusplus
 }
 #endif
