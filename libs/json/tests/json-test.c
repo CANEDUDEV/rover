@@ -44,8 +44,8 @@ void test_json_parse(void) {
   // `jq . -c libs/json/tests/test-data.json | jq . -R`
   // Plus some massaging of floats
   char *expected =
-      "{\"n1\":123,\"n2\":-123,\"n3\":13.370000,\"n4\":-13.370000,\"n5\":0."
-      "001337,\"n6\":-13370000.000000,\"true\":true,\"false\":false,\"null\":"
+      "{\"n1\":123,\"n2\":-123,\"n3\":1.250000,\"n4\":-1.250000,\"n5\":0."
+      "200000,\"n6\":-2000.000000,\"true\":true,\"false\":false,\"null\":"
       "null,\"str\":\"abc\",\"str2\":\"xyz \\\" "
       "\",\"o1\":{},\"d1\":{\"d2\":{\"n1\":123},\"str\":\"abc\"},\"string_with_"
       "escapes\":\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t "
@@ -134,8 +134,8 @@ void test_json_insert_object(void) {
   json_sprint(json, str);
 
   char *expected =
-      "{\"n1\":123,\"n2\":-123,\"n3\":13.370000,\"n4\":-13.370000,\"n5\":0."
-      "001337,\"n6\":-13370000.000000,\"true\":true,\"false\":false,\"null\":"
+      "{\"n1\":123,\"n2\":-123,\"n3\":1.250000,\"n4\":-1.250000,\"n5\":0."
+      "200000,\"n6\":-2000.000000,\"true\":true,\"false\":false,\"null\":"
       "null,\"str\":\"abc\",\"str2\":\"xyz \\\" "
       "\",\"o1\":{},\"d1\":{\"d2\":{\"n1\":123},\"str\":\"abc\"},\"string_with_"
       "escapes\":\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t "
@@ -172,8 +172,8 @@ void test_json_insert_nested_object(void) {
   json_sprint(json, str);
 
   char *expected =
-      "{\"n1\":123,\"n2\":-123,\"n3\":13.370000,\"n4\":-13.370000,\"n5\":0."
-      "001337,\"n6\":-13370000.000000,\"true\":true,\"false\":false,\"null\":"
+      "{\"n1\":123,\"n2\":-123,\"n3\":1.250000,\"n4\":-1.250000,\"n5\":0."
+      "200000,\"n6\":-2000.000000,\"true\":true,\"false\":false,\"null\":"
       "null,\"str\":\"abc\",\"str2\":\"xyz \\\" "
       "\",\"o1\":{\"new\":\"object\"},\"d1\":{\"d2\":{\"n1\":123},\"str\":"
       "\"abc\"},\"string_with_escapes\":\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t "

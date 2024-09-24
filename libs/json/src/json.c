@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "arena.h"
+#include "float.h"
 
 struct json_arena {
   arena_t arena;
@@ -452,7 +453,7 @@ static int json_sprint_value(json_object_t *current, char *str) {
       return sprintf(str, "%d", current->value->int_);
 
     case JSON_FLOAT:
-      return sprintf(str, "%f", current->value->float_);
+      return float_sprint(str, current->value->float_);
 
     case JSON_NULL:
       return sprintf(str, "null");
@@ -462,7 +463,6 @@ static int json_sprint_value(json_object_t *current, char *str) {
   }
 }
 
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void json_sprint(json_object_t *root, char *str) {
   json_object_t *current = root;
 

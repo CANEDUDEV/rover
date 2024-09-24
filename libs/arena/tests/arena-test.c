@@ -5,7 +5,6 @@
 
 #include "test.h"
 
-void setup_test(void);
 void test_arena_reset(void);
 void test_arena_alloc(void);
 

@@ -4,7 +4,7 @@ json_native_lib = library(
     json_src,
     include_directories: json_inc,
     native: true,
-    dependencies: arena_native_dep,
+    dependencies: [arena_native_dep, float_dep],
 )
 
 json_native_dep = declare_dependency(

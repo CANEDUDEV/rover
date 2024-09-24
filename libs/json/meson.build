@@ -5,7 +5,7 @@ json_src = files('src' / 'json.c')
 json_dep = declare_dependency(
     include_directories: json_inc,
     sources: json_src,
-    dependencies: arena_dep,
+    dependencies: [arena_dep, float_dep],
 )
 
 subdir('tests')
