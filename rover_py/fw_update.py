@@ -228,8 +228,8 @@ class Flasher:
         ]
 
         # Pad last chunk if needed
-        last_chunk_length = len(chunks[default_timeout_ms])
-        chunks[default_timeout_ms] += [0] * (chunk_size - last_chunk_length)
+        last_chunk_length = len(chunks[-1])
+        chunks[-1] += [0] * (chunk_size - last_chunk_length)
 
         current_page_number = 3
         batch_size = 128  # Set to avoid TX buffer overflow
