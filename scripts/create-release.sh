@@ -40,18 +40,22 @@ if [[ ! -d ${FLASHER_PATH} ]]; then
     exit 1
 fi
 
-rm -rf release
+RELEASE_DIR=release
+rm -rf "${RELEASE_DIR}"
 rm -f "rover-release"*
 
 mkdir release
-cp "${OTHER_FILES[@]}" release
-cp "${FLASHER_PATH}/fw_update.py" release
+cp "${OTHER_FILES[@]}" "${RELEASE_DIR}"
+cp "${FLASHER_PATH}/fw_update.py" "${RELEASE_DIR}"
 
-mkdir release/binaries
-cp "${BINARIES[@]}" release/binaries
+mkdir "${RELEASE_DIR}"/binaries
+cp "${BINARIES[@]}" "${RELEASE_DIR}"/binaries
 
-mkdir release/rover
-cp -r "${FLASHER_PATH}/rover/"*.py release/rover
+mkdir "${RELEASE_DIR}"/rover
+cp -r "${FLASHER_PATH}/rover"/*.py "${RELEASE_DIR}"/rover
+
+mkdir "${RELEASE_DIR}"/flasher
+cp -r "${FLASHER_PATH}/flasher"/*.py "${RELEASE_DIR}"/flasher
 
 zip -q -r "${RELEASE_FILE}" release
 

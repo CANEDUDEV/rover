@@ -25,7 +25,12 @@ with canlib.openChannel(
     # Switch to 500 kbit/s
     print("Switching to 500 kbit/s")
     ch.writeWait(rover.change_bitrate_500kbit(), -1)
-    ch.writeWait(rover.restart_communication(), -1)
+    ch.writeWait(
+        rover.restart_communication(
+            skip_startup=True, comm_mode=rover.CommMode.COMMUNICATE
+        ),
+        -1,
+    )
 
     ch.busOff()
     ch.setBusParams(canlib.Bitrate.BITRATE_500K)

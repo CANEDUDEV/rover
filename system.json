@@ -1,0 +1,106 @@
+{
+    "battery-monitor": {
+        "id": 1,
+        "binary": "battery-monitor.bin",
+        "config": {
+            "ck_id": {
+                "city_address": 1,
+                "group_addresses": [],
+                "base_no": 1024,
+                "base_no_has_extended_id": false,
+                "base_no_is_known": true
+            }
+        }
+    },
+    "servo": {
+        "id": 2,
+        "binary": "servo.bin",
+        "config": {
+            "ck_id": {
+                "city_address": 2,
+                "group_addresses": [],
+                "base_no": 1024,
+                "base_no_has_extended_id": false,
+                "base_no_is_known": true
+            }
+        }
+    },
+    "motor": {
+        "id": 3,
+        "binary": "motor.bin",
+        "config": {
+            "ck_id": {
+                "city_address": 3,
+                "group_addresses": [],
+                "base_no": 1024,
+                "base_no_has_extended_id": false,
+                "base_no_is_known": true
+            }
+        }
+    },
+    "sbus-receiver": {
+        "id": 4,
+        "binary": "sbus-receiver.bin",
+        "config": {
+            "ck_id": {
+                "city_address": 4,
+                "group_addresses": [],
+                "base_no": 1024,
+                "base_no_has_extended_id": false,
+                "base_no_is_known": true
+            }
+        }
+    },
+    "wheel-front-left": {
+        "id": 5,
+        "binary": "wheel.bin",
+        "config": {
+            "ck_id": {
+                "city_address": 5,
+                "group_addresses": [],
+                "base_no": 1024,
+                "base_no_has_extended_id": false,
+                "base_no_is_known": true
+            }
+        }
+    },
+    "wheel-front-right": {
+        "id": 6,
+        "binary": "wheel.bin",
+        "config": {
+            "ck_id": {
+                "city_address": 6,
+                "group_addresses": [],
+                "base_no": 1024,
+                "base_no_has_extended_id": false,
+                "base_no_is_known": true
+            }
+        }
+    },
+    "wheel-rear-left": {
+        "id": 7,
+        "binary": "wheel.bin",
+        "config": {
+            "ck_id": {
+                "city_address": 7,
+                "group_addresses": [],
+                "base_no": 1024,
+                "base_no_has_extended_id": false,
+                "base_no_is_known": true
+            }
+        }
+    },
+    "wheel-rear-right": {
+        "id": 8,
+        "binary": "wheel.bin",
+        "config": {
+            "ck_id": {
+                "city_address": 8,
+                "group_addresses": [],
+                "base_no": 1024,
+                "base_no_has_extended_id": false,
+                "base_no_is_known": true
+            }
+        }
+    }
+}

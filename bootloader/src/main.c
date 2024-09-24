@@ -12,6 +12,9 @@
 #include "letter-reader.h"
 #include "lfs-wrapper.h"
 
+// JSON
+#include "json.h"
+
 // CK
 #include "mayor.h"
 
@@ -20,16 +23,23 @@
 #include "stream_buffer.h"
 #include "timers.h"
 
-// CK
-#define CK_FOLDER_COUNT 2
-#define CK_LIST_COUNT 2
-
 // Symbols defined in bootloader linker script
 extern const uint32_t APPROM_START;
 extern const uint32_t APPROM_SIZE;
 // Used to store symbol values
 static uint32_t approm_start;
 static uint32_t approm_size;
+
+// These symbols are defined by CK as part of the block transfer page.
+enum bundle_request_command {
+  BUNDLE_RECEIVE_COMPLETE = 0,
+  BUNDLE_REQUEST_WHOLE = 0xFFFF,
+};
+
+enum block_type {
+  BLOCK_PROGRAM_DATA,
+  BLOCK_CONFIG_DATA,
+};
 
 // CK
 static void mayor_init(void);
@@ -48,20 +58,41 @@ static bool bootloader_entered = false;
 static void enter_bootloader(const ck_letter_t *letter);
 static void exit_bootloader(const ck_letter_t *letter);
 static int process_flash_erase_letter(const ck_letter_t *letter);
-static int process_flash_program_letter(const ck_letter_t *letter);
+static int process_fs_format_letter(const ck_letter_t *letter);
+static int process_block_transfer(const ck_letter_t *letter,
+                                  enum block_type block_type);
 
-// Flag indicating HW failure in flash.
-static bool flash_failed = false;
+static bool transfer_in_progress = false;
+static bool transfer_failed = false;
 
+#define WRITE_CONFIG_STACK_SIZE (4 * configMINIMAL_STACK_SIZE)
+
+char *flash_program_task_name = "flash program";
 static TaskHandle_t flash_program_task;
 static StaticTask_t flash_program_buf;
 static StackType_t flash_program_stack[configMINIMAL_STACK_SIZE];
-static StreamBufferHandle_t program_stream;
-static StaticStreamBuffer_t program_stream_buf;
-static uint8_t program_stream_storage[32 * 1024];  // NOLINT(*-magic-numbers)
-static void flash_program(void *unused);
-static void send_abort_page(void);
 
+char *write_config_task_name = "write config";
+static TaskHandle_t write_config_task;
+static StaticTask_t write_config_buf;
+static StackType_t write_config_stack[WRITE_CONFIG_STACK_SIZE];
+
+static StreamBufferHandle_t byte_stream;
+static StaticStreamBuffer_t byte_stream_buf;
+static uint8_t byte_stream_storage[32 * 1024];  // NOLINT(*-magic-numbers)
+static void flash_program(void *unused);
+static void write_config(void *unused);
+
+static char config_storage[JSON_MAX_SIZE];
+static file_t config_file = {
+    .name = "settings.json",
+    .data = config_storage,
+    .size = sizeof(config_storage),
+};
+
+static void send_abort_page(uint8_t folder_no);
+static int send_bundle_request_page(uint8_t folder_no,
+                                    enum bundle_request_command command);
 static void send_ack(const ck_letter_t *letter);
 static void send_nack(const ck_letter_t *letter);
 
@@ -80,8 +111,12 @@ int main(void) {
   }
 
   flash_program_task = xTaskCreateStatic(
-      flash_program, "flash program", configMINIMAL_STACK_SIZE, NULL,
+      flash_program, flash_program_task_name, configMINIMAL_STACK_SIZE, NULL,
       priority++, flash_program_stack, &flash_program_buf);
+
+  write_config_task = xTaskCreateStatic(
+      write_config, write_config_task_name, WRITE_CONFIG_STACK_SIZE, NULL,
+      priority++, write_config_stack, &write_config_buf);
 
   letter_reader_cfg_t letter_reader_cfg = {
       .priority = priority++,
@@ -93,6 +128,12 @@ int main(void) {
   }
 
   mayor_init();
+
+  byte_stream = xStreamBufferCreateStatic(
+      sizeof(byte_stream_storage),
+      sizeof(uint32_t),  // Set trigger level to word size (4 bytes),
+                         // since flash is programmed one word at a time.
+      byte_stream_storage, &byte_stream_buf);
 
   // Get values from symbol table
   approm_start = (uint32_t)&APPROM_START;
@@ -151,10 +192,6 @@ static void mayor_init(void) {
 static void default_letter_timer_callback(TimerHandle_t timer) {
   (void)timer;
 
-  if (ck_default_letter_timeout() != CK_OK) {
-    printf("CAN Kingdom error in ck_default_letter_timeout().\r\n");
-  }
-
   if (!bootloader_entered) {
     exit_bootloader(NULL);
   }
@@ -198,12 +235,23 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
   if (folder->folder_no == ck_data->flash_erase_folder->folder_no) {
     return process_flash_erase_letter(letter);
   }
-  // The folder_no given could refer to either of the two folders, since they
-  // share the same envelope.
-  if (folder->folder_no == ck_data->flash_program_receive_folder->folder_no ||
-      folder->folder_no == ck_data->flash_program_transmit_folder->folder_no) {
-    return process_flash_program_letter(letter);
+
+  if (folder->folder_no == ck_data->fs_format_folder->folder_no) {
+    return process_fs_format_letter(letter);
   }
+
+  // The folder_no given could refer to either of the two folders that are part
+  // of the same block transfer document, since they share the same envelope.
+  if (folder->folder_no == ck_data->program_receive_folder->folder_no ||
+      folder->folder_no == ck_data->program_transmit_folder->folder_no) {
+    return process_block_transfer(letter, BLOCK_PROGRAM_DATA);
+  }
+
+  if (folder->folder_no == ck_data->config_receive_folder->folder_no ||
+      folder->folder_no == ck_data->config_transmit_folder->folder_no) {
+    return process_block_transfer(letter, BLOCK_CONFIG_DATA);
+  }
+
   return APP_OK;
 }
 
@@ -250,7 +298,7 @@ static int process_flash_erase_letter(const ck_letter_t *letter) {
     return APP_NOT_OK;
   }
 
-  printf("Erasing flash...\r\n");
+  printf("flash erase: starting...\r\n");
 
   // Get start and end addresses of erase operation
   uint32_t bytes_to_erase = 0;
@@ -280,45 +328,80 @@ static int process_flash_erase_letter(const ck_letter_t *letter) {
   uint32_t err = 0;
   HAL_StatusTypeDef status = HAL_OK;
 
-  taskENTER_CRITICAL();
   HAL_FLASH_Unlock();
   status = HAL_FLASHEx_Erase(&flash_erase_conf, &err);
   HAL_FLASH_Lock();
-  taskEXIT_CRITICAL();
 
   if (err != flash_erase_ok || status != HAL_OK) {
-    flash_failed = true;
-    printf("Failed to erase flash.\r\n");
+    printf("flash erase: fatal flash error. Aborting.\r\n");
     send_nack(letter);
     return APP_NOT_OK;
   }
 
   send_ack(letter);
 
-  printf("Finished erasing flash.\r\n");
+  printf("flash erase: finished.\r\n");
   return APP_OK;
 }
 
-static int process_flash_program_letter(const ck_letter_t *letter) {
-  static bool transfer_started = false;
-
+static int process_fs_format_letter(const ck_letter_t *letter) {
   ck_data_t *ck_data = get_ck_data();
 
-  // Fatal error, something is wrong with the flash.
-  if (flash_failed) {
-    printf("Fatal flash error. Aborting.\r\n");
-    send_abort_page();
-    transfer_started = false;  // Reset transfer state
+  if (letter->page.line_count != ck_data->fs_format_folder->dlc) {
+    printf("fs format: incorrect page length.\r\n");
+    send_nack(letter);
     return APP_NOT_OK;
   }
 
+  printf("fs format: starting...\r\n");
+
+  if (format_and_mount() != APP_OK) {
+    printf("fs format: fatal fs error. Aborting.\r\n");
+    send_nack(letter);
+    return APP_NOT_OK;
+  }
+
+  send_ack(letter);
+
+  printf("fs format: finished.\r\n");
+
+  return APP_OK;
+}
+
+static int process_block_transfer(const ck_letter_t *letter,
+                                  enum block_type block_type) {
+  ck_data_t *ck_data = get_ck_data();
+
+  uint32_t folder_no = 0;
+  uint32_t dlc = 0;
+  size_t max_data_size = 0;
+  void *task = NULL;
+  char *task_name = NULL;
+
+  switch (block_type) {
+    case BLOCK_PROGRAM_DATA:
+      folder_no = ck_data->program_transmit_folder->folder_no;
+      dlc = ck_data->program_transmit_folder->dlc;
+      task = flash_program_task;
+      task_name = flash_program_task_name;
+      max_data_size = approm_size;
+      break;
+    case BLOCK_CONFIG_DATA:
+      folder_no = ck_data->config_transmit_folder->folder_no;
+      dlc = ck_data->config_transmit_folder->dlc;
+      task = write_config_task;
+      task_name = write_config_task_name;
+      max_data_size = sizeof(config_storage);
+      break;
+  }
+
   // Letter validation
-  if (letter->page.line_count != ck_data->flash_program_receive_folder->dlc ||
+  if (letter->page.line_count != dlc ||
       (letter->page.lines[0] != 1 && letter->page.lines[0] != 3 &&
        letter->page.lines[0] != 4)) {
-    printf("Incorrect flash program letter. Aborting.\r\n");
-    send_abort_page();
-    transfer_started = false;  // Reset transfer state
+    printf("%s: incorrect letter. Aborting.\r\n", task_name);
+    send_abort_page(folder_no);
+    transfer_in_progress = false;  // Reset transfer state
     return APP_NOT_OK;
   }
 
@@ -326,44 +409,37 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
   static uint32_t received_bytes = 0;
   static uint8_t expected_data_page = 0;
 
-  // These symbols are defined by CK as part of the block transfer page.
-  const uint16_t send_all = 0xFFFF;          // Request whole bundle
-  const uint16_t receive_complete = 0x0000;  // Received bundle successfully.
-
   // Setup page
   // If the transfer has already been set up, we need to reset the state.
   if (letter->page.lines[0] == 1) {
     memcpy(&bytes_to_receive, &letter->page.lines[1], sizeof(bytes_to_receive));
     // Check if we can receive that many bytes
     if (bytes_to_receive > approm_size) {
-      printf("Bytes to receive larger than approm size. Aborting.\r\n");
-      send_abort_page();
+      printf("%s: bytes to receive larger than max size: %d. Aborting.\r\n",
+             task_name, max_data_size);
+      send_abort_page(folder_no);
       return APP_NOT_OK;
     }
 
     // Respond that we can receive the whole bundle at once.
-    memcpy(&ck_data->flash_program_bundle_request_page->lines[1], &send_all,
-           sizeof(send_all));
-    if (ck_send_page(ck_data->flash_program_transmit_folder->folder_no,
-                     ck_data->flash_program_bundle_request_page->lines[0]) !=
-        CK_OK) {
-      printf("Error sending block transfer bundle request page.\r\n");
+    if (send_bundle_request_page(folder_no, BUNDLE_REQUEST_WHOLE) != APP_OK) {
       return APP_NOT_OK;
     }
 
-    printf("Flashing app...\r\n");
+    printf("%s: starting...\r\n", task_name);
 
     // Initial state for flashing
-    transfer_started = true;
+    transfer_in_progress = true;
+    transfer_failed = false;
     received_bytes = 0;
     expected_data_page = 3;
-    xTaskNotifyGive(flash_program_task);  // Activate flasher task
+    xTaskNotifyGive(task);  // Activate flasher task
     return APP_OK;
   }
 
-  if (!transfer_started) {
-    printf("Block transfer not initialized, Aborting.\r\n");
-    send_abort_page();
+  if (!transfer_in_progress) {
+    printf("%s: block transfer not initialized, Aborting.\r\n", task_name);
+    send_abort_page(folder_no);
     return APP_NOT_OK;
   }
 
@@ -371,7 +447,7 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
 
   // Duplicate transmission, discard message
   if (letter->page.lines[0] != expected_data_page) {
-    printf("Duplicate received, skipping.\r\n");
+    printf("%s: duplicate received, skipping.\r\n", task_name);
     return APP_OK;
   }
 
@@ -389,7 +465,7 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
     bytes_to_write = bytes_to_receive - received_bytes;
   }
 
-  received_bytes += xStreamBufferSend(program_stream, &letter->page.lines[1],
+  received_bytes += xStreamBufferSend(byte_stream, &letter->page.lines[1],
                                       bytes_to_write, portMAX_DELAY);
 
   // According to the CK specification, if the sender is transmitting less than
@@ -398,21 +474,19 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
   // error.
   if (received_bytes >= bytes_to_receive) {
     // Wait for stream buffer to empty
-    while (xStreamBufferIsEmpty(program_stream) != pdTRUE) {
-      vTaskDelay(pdMS_TO_TICKS(1));
+    while (xStreamBufferIsEmpty(byte_stream) != pdTRUE) {
+      vTaskDelay(pdMS_TO_TICKS(500));
     }
 
-    // Send "reception complete" message
-    memcpy(&ck_data->flash_program_bundle_request_page->lines[1],
-           &receive_complete, sizeof(receive_complete));
-    if (ck_send_page(ck_data->flash_program_transmit_folder->folder_no,
-                     ck_data->flash_program_bundle_request_page->lines[0]) !=
-        CK_OK) {
-      printf("Error sending block transfer bundle request page.\r\n");
-      return APP_NOT_OK;
+    if (!transfer_failed) {
+      if (send_bundle_request_page(folder_no, BUNDLE_RECEIVE_COMPLETE) !=
+          APP_OK) {
+        return APP_NOT_OK;
+      }
+      printf("%s: finished.\r\n", task_name);
+    } else {
+      printf("%s: failed.\r\n", task_name);
     }
-
-    printf("Finished flashing app.\r\n");
   }
 
   return APP_OK;
@@ -421,20 +495,12 @@ static int process_flash_program_letter(const ck_letter_t *letter) {
 static void flash_program(void *unused) {
   (void)unused;
 
-  // Set up the stream to which bytes will be buffered. Configure for reading
-  // one word (4 bytes) at a time, since we will program the flash one word at a
-  // time.
+  ck_data_t *ck_data = get_ck_data();
 
   uint8_t word[4];
-  program_stream = xStreamBufferCreateStatic(
-      sizeof(program_stream_storage) - 1, sizeof(word), program_stream_storage,
-      &program_stream_buf);
 
   for (;;) {
-    // Clear stream buffer
-    while (xStreamBufferReset(program_stream) != pdPASS) {
-      // Wait for successful clear of stream buffer.
-    }
+    xStreamBufferReset(byte_stream);
 
     // Reset parameters
     size_t read_bytes = 0;
@@ -447,8 +513,8 @@ static void flash_program(void *unused) {
 
     for (;;) {
       memset(word, 0, sizeof(word));
-      read_bytes = xStreamBufferReceive(program_stream, &word, sizeof(word),
-                                        pdMS_TO_TICKS(100));
+      read_bytes = xStreamBufferReceive(byte_stream, &word, sizeof(word),
+                                        pdMS_TO_TICKS(10));
 
       if (read_bytes == 0) {
         // No more bytes to read, finish.
@@ -458,7 +524,7 @@ static void flash_program(void *unused) {
       // Partial read
       if (read_bytes < sizeof(word)) {
         // Try to read the rest of the word
-        xStreamBufferReceive(program_stream, &word[read_bytes],
+        xStreamBufferReceive(byte_stream, &word[read_bytes],
                              sizeof(word) - read_bytes, pdMS_TO_TICKS(100));
       }
 
@@ -468,14 +534,9 @@ static void flash_program(void *unused) {
                                  *(uint32_t *)word);
 
       if (status != HAL_OK) {
-        ck_data_t *ck_data = get_ck_data();
-        printf("Fatal error, flashing failed.\r\n");
-        if (ck_send_page(ck_data->flash_program_transmit_folder->folder_no,
-                         ck_data->flash_program_abort_page->lines[0]) !=
-            CK_OK) {
-          printf("Error sending block transfer abort page.\r\n");
-        }
-        flash_failed = true;
+        printf("%s: fatal error: flashing failed.\r\n",
+               flash_program_task_name);
+        send_abort_page(ck_data->program_transmit_folder->folder_no);
         break;
       }
 
@@ -484,15 +545,91 @@ static void flash_program(void *unused) {
     }
 
     HAL_FLASH_Lock();
+    transfer_in_progress = false;
   }
 }
 
-static void send_abort_page(void) {
+static void write_config(void *unused) {
+  (void)unused;
+
   ck_data_t *ck_data = get_ck_data();
-  if (ck_send_page(ck_data->flash_program_transmit_folder->folder_no,
-                   ck_data->flash_program_abort_page->lines[0]) != CK_OK) {
+
+  for (;;) {
+    memset(config_storage, 0, sizeof(config_storage));
+    xStreamBufferReset(byte_stream);
+
+    bool fail = false;
+    size_t read_bytes = 0;
+    size_t written_bytes = 0;
+    const size_t chunk_size = 7;  // Payload bytes per CAN frame.
+    uint8_t buf[chunk_size];
+
+    // Wait for task activation
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    for (;;) {
+      // Don't read into config_storage directly, to avoid out of bounds access.
+      read_bytes =
+          xStreamBufferReceive(byte_stream, buf, chunk_size, pdMS_TO_TICKS(10));
+
+      if (read_bytes == 0) {
+        // No more bytes to read, finish.
+        break;
+      }
+
+      if (written_bytes + read_bytes >= sizeof(config_storage)) {
+        printf("%s: config too large. Aborting.\r\n", write_config_task_name);
+        send_abort_page(ck_data->config_transmit_folder->folder_no);
+        fail = true;
+        break;
+      }
+
+      memcpy(config_storage + written_bytes, buf, read_bytes);
+      written_bytes += read_bytes;
+    }
+
+    transfer_in_progress = false;
+
+    if (fail) {
+      continue;
+    }
+
+    json_object_t *json = json_parse(config_storage);
+    if (!json) {
+      printf("%s: invalid JSON received: \r\n%s.\r\n", write_config_task_name,
+             config_storage);
+      send_abort_page(ck_data->config_transmit_folder->folder_no);
+      continue;
+    }
+
+    if (write_file(&config_file) != APP_OK) {
+      printf("%s: fatal error: couldn't write to filesystem. Aborting.\r\n",
+             write_config_task_name);
+      send_abort_page(ck_data->config_transmit_folder->folder_no);
+    }
+  }
+}
+
+static void send_abort_page(uint8_t folder_no) {
+  ck_data_t *ck_data = get_ck_data();
+  if (ck_send_page(folder_no, ck_data->abort_page->lines[0]) != CK_OK) {
     printf("Error sending block transfer abort page.\r\n");
   }
+}
+
+// NOLINTNEXTLINE(readability*,bugprone*)
+static int send_bundle_request_page(uint8_t folder_no,
+                                    enum bundle_request_command command) {
+  ck_data_t *ck_data = get_ck_data();
+  uint16_t page_data = (uint16_t)command;
+  memcpy(&ck_data->bundle_request_page->lines[1], &page_data,
+         sizeof(page_data));
+  if (ck_send_page(folder_no, ck_data->bundle_request_page->lines[0]) !=
+      CK_OK) {
+    printf("Error sending block transfer bundle request page.\r\n");
+    return APP_NOT_OK;
+  }
+  return APP_OK;
 }
 
 static void send_ack(const ck_letter_t *letter) {

@@ -437,7 +437,7 @@ static void skip_whitespace(json_parser_t *parser) {
   }
 }
 
-static int json_sprint_value(json_object_t *current, char *str) {
+static int json_sprint_value(char *str, json_object_t *current) {
   switch (current->type) {
     case JSON_BOOL:
       if (current->value->boolean == true) {
@@ -463,7 +463,7 @@ static int json_sprint_value(json_object_t *current, char *str) {
   }
 }
 
-void json_sprint(json_object_t *root, char *str) {
+void json_sprint(char *str, json_object_t *root) {
   json_object_t *current = root;
 
   while (current != NULL) {
@@ -491,7 +491,7 @@ void json_sprint(json_object_t *root, char *str) {
         continue;
 
       default:
-        str += json_sprint_value(current, str);
+        str += json_sprint_value(str, current);
         break;
     }
 

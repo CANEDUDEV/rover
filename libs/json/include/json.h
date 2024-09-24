@@ -26,7 +26,7 @@ typedef union {
   int int_;
   float float_;
   bool boolean;
-} json_value_t;
+} __attribute__((packed)) json_value_t;
 
 typedef struct json_object {
   char *name;
@@ -43,7 +43,7 @@ json_object_t *json_parse(const char *data);
 json_object_t *json_get_object(const char *name, json_object_t *root);
 int json_insert_object(const char *json, json_object_t *root);
 
-void json_sprint(json_object_t *root, char *str);
+void json_sprint(char *str, json_object_t *root);
 
 #ifdef __cplusplus
 } /* extern "C" */

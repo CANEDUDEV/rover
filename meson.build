@@ -65,16 +65,21 @@ run_target(
     ],
 )
 
-release_files += fs.copyfile(files('rover.dbc'))
+release_files += fs.copyfile('rover.dbc')
+release_files += fs.copyfile('system.json')
+release_script = fs.copyfile('scripts' / 'create-release.sh')
 
-run_target(
+custom_target(
     'release',
+    input: release_files,
+    output: 'release',
     command: [
         'bash',
-        meson.project_source_root() / 'scripts' / 'create-release.sh',
+        release_script,
         '--flasher-path',
         meson.project_source_root() / 'rover_py',
-        release_files,
+        '@INPUT@',
     ],
-    depends: release_files,
+    build_always_stale: true,
+    build_by_default: true,
 )

@@ -7,11 +7,12 @@ app_linker_script = fs.copyfile(files('src' / 'app.ld'))
 bootloader_linker_script = fs.copyfile(files('src' / 'bootloader.ld'))
 
 bootloader_elf = executable(
+
     'bootloader.elf',
     bootloader_src,
     c_args: ['-Os'],  # Optimize for size
     include_directories: bootloader_inc,
-    dependencies: common_deps,
+    dependencies: [common_deps, json_dep],
     link_depends: bootloader_linker_script,
     link_args: ['-T@0@'.format(bootloader_linker_script.full_path())],
 )

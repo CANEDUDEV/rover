@@ -38,7 +38,7 @@ void test_json_parse(void) {
   ASSERT(json != NULL, "couldn't parse JSON");
 
   char str[JSON_MAX_SIZE];
-  json_sprint(json, str);
+  json_sprint(str, json);
 
   // String generated using
   // `jq . -c libs/json/tests/test-data.json | jq . -R`
@@ -59,7 +59,7 @@ void test_json_parse(void) {
   json = json_parse(expected);
   ASSERT(json != NULL, "couldn't parse JSON");
 
-  json_sprint(json, str);
+  json_sprint(str, json);
 
   ASSERT(strcmp(str, expected) == 0, "\nexpected:\n%s\n\ngot:\n%s\n", expected,
          str);
@@ -131,7 +131,7 @@ void test_json_insert_object(void) {
 
   // Check if new print includes new object
   char str[JSON_MAX_SIZE];
-  json_sprint(json, str);
+  json_sprint(str, json);
 
   char *expected =
       "{\"n1\":123,\"n2\":-123,\"n3\":1.250000,\"n4\":-1.250000,\"n5\":0."
@@ -169,7 +169,7 @@ void test_json_insert_nested_object(void) {
 
   // Check if new print includes new object
   char str[JSON_MAX_SIZE];
-  json_sprint(json, str);
+  json_sprint(str, json);
 
   char *expected =
       "{\"n1\":123,\"n2\":-123,\"n3\":1.250000,\"n4\":-1.250000,\"n5\":0."
