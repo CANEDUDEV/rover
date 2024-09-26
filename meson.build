@@ -21,6 +21,8 @@ math_dep = cc_native.find_library('m')
 objcopy = find_program('objcopy')
 clang_tidy = find_program('clang-tidy')
 cat = find_program('cat')
+# Try to find python3.exe first, in case we're running in WSL.
+python = find_program('python3.exe', 'python3', required: false)
 
 stm32f3_hal_dep = dependency('stm32f3-hal')
 freertos_dep = dependency('freertos')
@@ -68,18 +70,36 @@ run_target(
 release_files += fs.copyfile('rover.dbc')
 release_files += fs.copyfile('system.json')
 release_script = fs.copyfile('scripts' / 'create-release.sh')
+flasher_path = meson.project_source_root() / 'rover_py'
+release_dir = 'release'
 
-custom_target(
+release_tgt = custom_target(
     'release',
     input: release_files,
-    output: 'release',
+    output: release_dir,
     command: [
         'bash',
         release_script,
+        '--release-dir',
+        release_dir,
         '--flasher-path',
-        meson.project_source_root() / 'rover_py',
+        flasher_path,
         '@INPUT@',
     ],
     build_always_stale: true,
     build_by_default: true,
+)
+
+run_target(
+    'flash',
+    command: [
+        python,
+        release_dir / 'fw_update.py',
+        'system',
+        '--config',
+        release_dir / 'system.json',
+        '--binary-dir',
+        release_dir / 'binaries',
+    ],
+    depends: release_tgt,
 )

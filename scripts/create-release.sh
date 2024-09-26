@@ -10,11 +10,17 @@ echo "Creating release ${TAG}..."
 BINARIES=()
 OTHER_FILES=()
 FLASHER_PATH=""
+RELEASE_DIR=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
     --flasher-path)
         FLASHER_PATH="$2"
+        shift 2
+        ;;
+
+    --release-dir)
+        RELEASE_DIR="$2"
         shift 2
         ;;
     *)
@@ -35,12 +41,16 @@ if [[ -z ${FLASHER_PATH} ]]; then
     exit 1
 fi
 
+if [[ -z ${RELEASE_DIR} ]]; then
+    echo "Error: --release-dir is required."
+    exit 1
+fi
+
 if [[ ! -d ${FLASHER_PATH} ]]; then
     echo "Error: ${FLASHER_PATH} is not a valid directory."
     exit 1
 fi
 
-RELEASE_DIR=release
 rm -rf "${RELEASE_DIR}"
 rm -f "rover-release"*
 
