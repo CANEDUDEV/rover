@@ -45,14 +45,11 @@ class Flasher:
         self.default_timeout_ms = 100
         self.ch.busOn()
 
-        try:
-            self.__detect_online_nodes()
-        except (Exception, canlib.exceptions.CanlibException):
-            raise
-
     def run(self):
         if not self.config:
             raise ValueError(f"run method requires config parameter")
+
+        self.__detect_online_nodes()
 
         # Flash all online nodes
         for node in self.config.get_nodes():
@@ -65,6 +62,8 @@ class Flasher:
         self.__restart_all()
 
     def run_single(self, id, binary_file=None, config_file=None):
+        self.__detect_online_nodes()
+
         if id not in self.online_node_ids:
             raise ValueError(
                 f"node {id}: node is offline. Found: {self.online_node_ids}"
@@ -84,6 +83,8 @@ class Flasher:
 
     def format_fs(self, id):
         prefix = f"node {id}"
+        self.__detect_online_nodes()
+
         if id not in self.online_node_ids:
             raise ValueError(
                 f"{prefix}: node is offline. Found: {self.online_node_ids}"
@@ -100,6 +101,18 @@ class Flasher:
 
         print(f"{prefix}: Exiting bootloader...")
         self.__exit_bootloader()
+        time.sleep(0.1)
+        self.__restart_all()
+
+    def enter_recovery_mode(self, binary_file, config_file):
+        # Send default letter. Send should succeed only if node is on the bus again.
+        self.ch.writeWait(rover.default_letter(), 30_000)  # 30 second delay
+        self.__enter_bootloader(0)
+        self.__detect_online_nodes()
+        id = self.online_node_ids.pop()
+        binary = _read_binary(binary_file)
+        config = _read_json(config_file)
+        self.__flash_node(id, binary=binary, config=config)
 
     def __flash_node(self, id, node=None, binary=None, config=None):
         if not binary and not config:

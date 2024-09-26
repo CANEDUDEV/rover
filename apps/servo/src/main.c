@@ -13,6 +13,7 @@
 #include "clock.h"
 #include "device-id.h"
 #include "error.h"
+#include "jsondb.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"
@@ -39,6 +40,7 @@ int main(void) {
   peripherals_init();
 
   task_init();
+  jsondb_init();
   mayor_init();
 
   printf("Starting application...\r\n");
@@ -71,14 +73,15 @@ void mayor_init(void) {
 
   // Hard coded ID for each rover city.
   // Written to flash here to be shared with the bootloader.
-  // We also verify that hard coded city address is correct.
+  // Can be overridden, in that case the original ID can be restored by
+  // formatting the FS.
   int err = read_ck_id(&ck_id);
-  if (err != APP_OK || ck_id.city_address != city_address) {
-    printf("Rewriting ck_id to SPI flash.\r\n");
+  if (err != APP_OK) {
+    printf("error: couldn't read ck_id. Writing default ck_id to FS.\r\n");
     ck_id = get_default_ck_id(city_address);
     err = write_ck_id(&ck_id);
     if (err != APP_OK) {
-      printf("Error writing ck_id to SPI flash: 0x%x\r\n", err);
+      printf("Error writing ck_id to FS: 0x%x\r\n", err);
     }
   }
 

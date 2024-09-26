@@ -1,11 +1,12 @@
+# Order is important
 subdir('test-utils')
-subdir('can-kingdom')
-subdir('rover')
-subdir('stm32-common')
 subdir('circuits')
 subdir('arena')
 subdir('float')
 subdir('json')
+subdir('can-kingdom')
+subdir('rover')
+subdir('stm32-common')
 
 common_deps += [
     rover_dep,

@@ -14,6 +14,7 @@
 
 // JSON
 #include "json.h"
+#include "jsondb.h"
 
 // CK
 #include "mayor.h"
@@ -83,13 +84,6 @@ static uint8_t byte_stream_storage[32 * 1024];  // NOLINT(*-magic-numbers)
 static void flash_program(void *unused);
 static void write_config(void *unused);
 
-static char config_storage[JSON_MAX_SIZE];
-static file_t config_file = {
-    .name = "settings.json",
-    .data = config_storage,
-    .size = sizeof(config_storage),
-};
-
 static void send_abort_page(uint8_t folder_no);
 static int send_bundle_request_page(uint8_t folder_no,
                                     enum bundle_request_command command);
@@ -126,6 +120,8 @@ int main(void) {
   if (init_letter_reader_task(letter_reader_cfg) != APP_OK) {
     error();
   }
+
+  jsondb_init();  // Ignore error
 
   mayor_init();
 
@@ -391,7 +387,7 @@ static int process_block_transfer(const ck_letter_t *letter,
       dlc = ck_data->config_transmit_folder->dlc;
       task = write_config_task;
       task_name = write_config_task_name;
-      max_data_size = sizeof(config_storage);
+      max_data_size = get_jsondb_max_size();
       break;
   }
 
@@ -554,8 +550,10 @@ static void write_config(void *unused) {
 
   ck_data_t *ck_data = get_ck_data();
 
+  char *config_storage = (char *)get_jsondb_raw();
+
   for (;;) {
-    memset(config_storage, 0, sizeof(config_storage));
+    memset(config_storage, 0, get_jsondb_max_size());
     xStreamBufferReset(byte_stream);
 
     bool fail = false;
@@ -577,7 +575,7 @@ static void write_config(void *unused) {
         break;
       }
 
-      if (written_bytes + read_bytes >= sizeof(config_storage)) {
+      if (written_bytes + read_bytes >= get_jsondb_max_size()) {
         printf("%s: config too large. Aborting.\r\n", write_config_task_name);
         send_abort_page(ck_data->config_transmit_folder->folder_no);
         fail = true;
@@ -602,8 +600,8 @@ static void write_config(void *unused) {
       continue;
     }
 
-    if (write_file(&config_file) != APP_OK) {
-      printf("%s: fatal error: couldn't write to filesystem. Aborting.\r\n",
+    if (jsondb_update(json) != APP_OK) {
+      printf("%s: fatal error: couldn't write config to FS. Aborting.\r\n",
              write_config_task_name);
       send_abort_page(ck_data->config_transmit_folder->folder_no);
     }

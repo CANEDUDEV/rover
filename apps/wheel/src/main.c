@@ -10,6 +10,7 @@
 // STM32Common
 #include "clock.h"
 #include "error.h"
+#include "jsondb.h"
 
 // FreeRTOS
 #include "FreeRTOS.h"
@@ -34,6 +35,8 @@ int main(void) {
   if (init_lfs_task(priority++) < 0) {
     error();
   }
+
+  jsondb_init();
 
   init_wheel_speed_task(priority++);
   init_report_task(priority++);
