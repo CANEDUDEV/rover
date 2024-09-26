@@ -18,17 +18,18 @@ main() {
 
     echo "Formatting..."
     shfmt -w -s -i 4 .
-    .bin/yamlfmt -formatter type=basic,retain_line_breaks=true . .clang-tidy .clang-format
-    isort --gitignore --profile black .
-    black .
+    .bin/yamlfmt -quiet -formatter type=basic,retain_line_breaks=true . .clang-tidy .clang-format
+    find system -type f -iname "*.json" -exec python -m json.tool {} {} \;
+    isort --quiet --gitignore --profile black .
+    black --quiet .
     meson fmt -i -r .
-    ninja -C "${BUILD_DIR}" clang-format
+    ninja --quiet -C "${BUILD_DIR}" clang-format
 
     # Check
     echo "Linting..."
     shfmt -f . | grep -v ^subprojects | xargs shellcheck -o all
     pyright rover_py
-    ninja -C "${BUILD_DIR}" clang-tidy
+    ninja --quiet -C "${BUILD_DIR}" clang-tidy
     check_git_index
 
     popd >/dev/null

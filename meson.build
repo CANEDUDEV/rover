@@ -39,6 +39,7 @@ fs = import('fs')
 subdir('libs')
 subdir('bootloader')
 subdir('apps')
+subdir('system')
 subdir('docs')
 
 tidy_files = [apps_tidy_files, bootloader_tidy_files, common_libs_tidy_files]
@@ -68,7 +69,6 @@ run_target(
 )
 
 release_files += fs.copyfile('rover.dbc')
-release_files += fs.copyfile('system.json')
 release_script = fs.copyfile('scripts' / 'create-release.sh')
 flasher_path = meson.project_source_root() / 'rover_py'
 release_dir = 'release'
