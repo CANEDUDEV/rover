@@ -10,7 +10,7 @@ stm32_lib_src = files(
     'src' / 'freertos-config.c',
     'src' / 'letter-reader.c',
     'src' / 'lfs-wrapper.c',
-    'src' / 'postmaster.c',
+    'src' / 'postmaster-base.c',
     'src' / 'print.c',
     'src' / 'spi-flash.c',
     'src' / 'jsondb.c',

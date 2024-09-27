@@ -19,7 +19,7 @@ battery_monitor_elf = executable(
     'battery-monitor.elf',
     battery_monitor_src,
     include_directories: battery_monitor_inc,
-    dependencies: common_deps,
+    dependencies: app_deps,
     link_depends: app_linker_script,
     link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )

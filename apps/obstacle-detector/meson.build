@@ -11,7 +11,7 @@ obstacle_detector_elf = executable(
     'obstacle-detector.elf',
     obstacle_detector_src,
     include_directories: obstacle_detector_inc,
-    dependencies: common_deps,
+    dependencies: app_deps,
     link_depends: app_linker_script,
     link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )

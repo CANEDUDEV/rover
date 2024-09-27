@@ -18,7 +18,7 @@ servo_elf = executable(
     'servo.elf',
     servo_src,
     include_directories: servo_inc,
-    dependencies: common_deps,
+    dependencies: app_deps,
     link_depends: app_linker_script,
     link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )
@@ -35,7 +35,7 @@ motor_elf = executable(
     'motor.elf',
     servo_src,
     include_directories: servo_inc,
-    dependencies: common_deps,
+    dependencies: app_deps,
     link_depends: app_linker_script,
     link_args: ['-T@0@'.format(app_linker_script.full_path())],
     c_args: ['-DMOTOR'],

@@ -15,7 +15,7 @@ brake_elf = executable(
     'brake.elf',
     brake_src,
     include_directories: brake_inc,
-    dependencies: common_deps,
+    dependencies: app_deps,
     link_depends: app_linker_script,
     link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )

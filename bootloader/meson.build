@@ -1,6 +1,10 @@
 bootloader_inc = include_directories('include')
 
-bootloader_src = files('src' / 'ck-data.c', 'src' / 'main.c')
+bootloader_src = files(
+    'src' / 'ck-data.c',
+    'src' / 'main.c',
+    'src' / 'postmaster.c',
+)
 
 app_linker_script = fs.copyfile(files('src' / 'app.ld'))
 

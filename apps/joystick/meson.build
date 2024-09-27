@@ -11,7 +11,7 @@ joystick_elf = executable(
     'joystick.elf',
     joystick_src,
     include_directories: joystick_inc,
-    dependencies: common_deps,
+    dependencies: app_deps,
     link_depends: app_linker_script,
     link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )
