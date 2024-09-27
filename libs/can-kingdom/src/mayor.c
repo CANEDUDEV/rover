@@ -460,12 +460,6 @@ ck_err_t ck_correct_letter_received(void) {
     return CK_ERR_NOT_INITIALIZED;
   }
 
-  if (mayor.startup_finished) {
-    return CK_OK;
-  }
-
-  mayor.correct_letter_received = true;
-
   if (!mayor.bit_timing_saved) {
     // If a letter was correctly received, we should save the bit timing
     // settings to persistent storage.
@@ -475,6 +469,12 @@ ck_err_t ck_correct_letter_received(void) {
     }
     mayor.bit_timing_saved = true;
   }
+
+  if (mayor.startup_finished) {
+    return CK_OK;
+  }
+
+  mayor.correct_letter_received = true;
 
   // The base number check should only be performed if default letter reception
   // has timed out.
