@@ -17,18 +17,18 @@
     },
     "wheel-front-left": {
         "id": 5,
-        "binary": "wheel.bin"
+        "binary": "brake.bin"
     },
     "wheel-front-right": {
         "id": 6,
-        "binary": "wheel.bin"
+        "binary": "brake.bin"
     },
     "wheel-rear-left": {
         "id": 7,
-        "binary": "wheel.bin"
+        "binary": "brake.bin"
     },
     "wheel-rear-right": {
         "id": 8,
-        "binary": "wheel.bin"
+        "binary": "brake.bin"
     }
 }

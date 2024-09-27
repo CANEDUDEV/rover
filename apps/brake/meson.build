@@ -1,6 +1,6 @@
-wheel_inc = include_directories('include')
+brake_inc = include_directories('include')
 
-wheel_src = files(
+brake_src = files(
     'src' / 'ck.c',
     'src' / 'ck-data.c',
     'src' / 'interrupts.c',
@@ -11,21 +11,21 @@ wheel_src = files(
     'src' / 'wheel-speed.c',
 )
 
-wheel_elf = executable(
-    'wheel.elf',
-    wheel_src,
-    include_directories: wheel_inc,
+brake_elf = executable(
+    'brake.elf',
+    brake_src,
+    include_directories: brake_inc,
     dependencies: common_deps,
     link_depends: app_linker_script,
     link_args: ['-T@0@'.format(app_linker_script.full_path())],
 )
 
-wheel_bin = custom_target(
-    output: 'wheel.bin',
-    input: wheel_elf,
+brake_bin = custom_target(
+    output: 'brake.bin',
+    input: brake_elf,
     command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],
-    depends: wheel_elf,
+    depends: brake_elf,
     build_by_default: true,
 )
 
-wheel_tidy_files = wheel_src
+brake_tidy_files = brake_src
