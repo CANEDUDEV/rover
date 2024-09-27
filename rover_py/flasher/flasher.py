@@ -43,6 +43,7 @@ class Flasher:
         self.config = config
         self.online_node_ids = set()
         self.default_timeout_ms = 100
+        self.ch.setBusOutputControl(canlib.Driver.NORMAL)
         self.ch.busOn()
 
     def run(self):
@@ -101,7 +102,7 @@ class Flasher:
 
         print(f"{prefix}: Exiting bootloader...")
         self.__exit_bootloader()
-        time.sleep(0.1)
+        time.sleep(0.5)
         self.__restart_all()
 
     def enter_recovery_mode(self, binary_file, config_file):
@@ -163,7 +164,7 @@ class Flasher:
         time.sleep(0.25)
 
         # The power board powers the other boards, so need to sleep longer to compensate for that case.
-        if id is rover.City.BATTERY_MONITOR:
+        if id == rover.City.BATTERY_MONITOR:
             time.sleep(1)
 
         self.ch.busOn()
@@ -231,9 +232,7 @@ class Flasher:
             raise RuntimeError("Got wrong bundle request, wanted 0x0000")
 
     def __detect_online_nodes(self):
-        self.ch.writeWait(
-            rover.set_action_mode(mode=rover.ActionMode.FREEZE), self.default_timeout_ms
-        )
+        self.ch.write(rover.set_action_mode(mode=rover.ActionMode.FREEZE))
 
         self.ch.iocontrol.flush_rx_buffer()
         self.ch.writeWait(
