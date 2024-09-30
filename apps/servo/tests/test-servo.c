@@ -48,7 +48,7 @@ void test_update_voltage_controller_increase_voltage(void);
 void test_update_voltage_controller_decrease_voltage(void);
 
 // Helpers
-bool float_equal(float a, float b);  // NOLINT(readability-identifier-length)
+bool float_equal(float a, float b);
 int read_servo_potentiometer_returns_almost_max(uint8_t* pot_value);
 int read_servo_potentiometer_returns_max(uint8_t* pot_value);
 int read_servo_potentiometer_returns_almost_min(uint8_t* pot_value);
@@ -232,7 +232,7 @@ void test_update_voltage_controller_decrease_voltage(void) {
          write_servo_potentiometer_fake.arg0_val);
 }
 
-bool float_equal(float a, float b) {  // NOLINT
+bool float_equal(float a, float b) {
   const float err = 0.01F;
   return a < b + err && a > b - err;
 }

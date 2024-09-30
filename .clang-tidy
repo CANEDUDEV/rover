@@ -5,6 +5,7 @@ Checks: |
   cppcoreguidelines-*,
   misc-*,
   readability-*,
+  -readability-identifier-length,
   -cppcoreguidelines-avoid-non-const-global-variables,
   -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
 WarningsAsErrors: '*'

@@ -90,7 +90,7 @@ static int send_bundle_request_page(uint8_t folder_no,
 static void send_ack(const ck_letter_t *letter);
 static void send_nack(const ck_letter_t *letter);
 
-// NOLINTNEXTLINE(readability*,bugprone*)
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 static void start_app(uint32_t pc, uint32_t sp);
 
 int main(void) {
@@ -659,7 +659,7 @@ static void send_nack(const ck_letter_t *letter) {
 // Loads sp into Main Stack Pointer (MSP) register and pc into PC register,
 // causing the application to jump to PC.
 //
-// NOLINTNEXTLINE(readability*,bugprone*)
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 static void start_app(uint32_t pc, uint32_t sp) {
   __asm(
       "msr msp, %[sp] /* load sp into MSP register */\n"

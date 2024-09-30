@@ -90,7 +90,7 @@ void measure_wheel_speed(void* unused) {
   peripherals_t* peripherals = get_peripherals();
   HAL_TIM_IC_Start_IT(&peripherals->htim2, TIM_CHANNEL_1);
 
-  const float pi = 3.14159F;  // NOLINT(readability-identifier-length)
+  const float pi = 3.14159F;
   const float mps_to_kph = 3.6F;
 
   ck_data_t* ck_data = get_ck_data();
