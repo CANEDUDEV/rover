@@ -2,7 +2,7 @@
 
 #include "postmaster.h"
 
-static inline int min(int a, int b) {  // NOLINT
+static inline int min(int a, int b) {
   if (a < b) {
     return a;
   }
@@ -68,6 +68,17 @@ ck_err_t ck_check_can_bit_timing(const ck_can_bit_timing_t *bit_timing) {
     return CK_ERR_INVALID_CAN_BIT_TIMING;
   }
   // NOLINTEND(*-magic-numbers)
+  return CK_OK;
+}
+
+ck_err_t ck_check_ck_id(const ck_id_t *id) {
+  if (id->city_address == 0 ||
+      (!id->base_no_has_extended_id &&
+       id->base_no + id->city_address > CK_CAN_MAX_STD_ID) ||
+      (id->base_no_has_extended_id &&
+       id->base_no + id->city_address > CK_CAN_MAX_EXT_ID)) {
+    return CK_ERR_INVALID_CK_ID;
+  }
   return CK_OK;
 }
 

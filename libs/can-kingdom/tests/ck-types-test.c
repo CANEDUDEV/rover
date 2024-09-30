@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "ck-test.h"
 #include "test.h"
 
 void test_check_action_mode(void);
@@ -9,6 +10,7 @@ void test_check_comm_mode(void);
 void test_check_list_type(void);
 void test_check_can_bit_timing(void);
 void test_default_letter(void);
+void test_check_ck_id(void);
 
 int main(void) {
   test_check_action_mode();
@@ -16,6 +18,7 @@ int main(void) {
   test_check_list_type();
   test_check_can_bit_timing();
   test_default_letter();
+  test_check_ck_id();
 }
 
 void test_check_action_mode(void) {
@@ -91,4 +94,20 @@ void test_default_letter(void) {
 
     ASSERT(false, "");
   }
+}
+
+void test_check_ck_id(void) {
+  ck_id_t invalid_city_address = {
+      .city_address = 0,
+  };
+  ASSERT(ck_check_ck_id(&invalid_city_address) != CK_OK, "");
+  ck_id_t invalid_base_no = {
+      .base_no = illegal_can_std_id,
+  };
+  ASSERT(ck_check_ck_id(&invalid_base_no) != CK_OK, "");
+  ck_id_t invalid_base_no_ext = {
+      .base_no = illegal_can_ext_id,
+      .base_no_has_extended_id = true,
+  };
+  ASSERT(ck_check_ck_id(&invalid_base_no_ext) != CK_OK, "");
 }

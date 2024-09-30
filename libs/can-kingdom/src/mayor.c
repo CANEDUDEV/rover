@@ -83,9 +83,8 @@ static ck_err_t change_bit_timing(void);
 ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
   // Check for unset parameters.
   if (mayor_->ean_no == 0 || mayor_->serial_no == 0 ||
-      mayor_->ck_id.city_address == 0 || !mayor_->set_action_mode ||
-      !mayor_->set_city_mode || !mayor_->start_200ms_timer ||
-      !mayor_->folders) {
+      !mayor_->set_action_mode || !mayor_->set_city_mode ||
+      !mayor_->start_200ms_timer || !mayor_->folders) {
     return CK_ERR_MISSING_PARAMETER;
   }
 
@@ -94,16 +93,8 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
     return CK_ERR_INVALID_PARAMETER;
   }
 
-  // Base number bounds check
-  if (mayor_->ck_id.base_no_is_known) {
-    if ((!mayor_->ck_id.base_no_has_extended_id &&
-         mayor_->ck_id.base_no + mayor_->ck_id.city_address >
-             CK_CAN_MAX_STD_ID) ||
-        (mayor_->ck_id.base_no_has_extended_id &&
-         mayor_->ck_id.base_no + mayor_->ck_id.city_address >
-             CK_CAN_MAX_EXT_ID)) {
-      return CK_ERR_INVALID_PARAMETER;
-    }
+  if (ck_check_ck_id(&mayor_->ck_id) != CK_OK) {
+    return CK_ERR_INVALID_PARAMETER;
   }
 
   // Need at least 2 folders and 2 lists.

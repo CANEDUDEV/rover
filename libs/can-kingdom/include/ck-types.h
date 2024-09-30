@@ -138,6 +138,8 @@ typedef enum {
   CK_ERR_INVALID_CAN_DLC,
   /// Invalid ck_can_bit_timing_t.
   CK_ERR_INVALID_CAN_BIT_TIMING,
+  // Invalid ck_id_t
+  CK_ERR_INVALID_CK_ID,
   /// Invalid King's letter.
   CK_ERR_INVALID_KINGS_LETTER,
   /// Unsupported King's page.
@@ -480,6 +482,16 @@ ck_err_t ck_check_list_type(ck_list_type_t type);
  * @return #CK_OK on success.
  ******************************************************************************/
 ck_err_t ck_check_can_bit_timing(const ck_can_bit_timing_t *bit_timing);
+
+/*******************************************************************************
+ * Check if the given ck_id_t is valid.
+ *
+ * @param id pointer to parameters to check.
+ *
+ * @return #CK_ERR_INVALID_CK_ID if id is invalid.
+ * @return #CK_OK on success.
+ ******************************************************************************/
+ck_err_t ck_check_ck_id(const ck_id_t *id);
 
 /*******************************************************************************
  * Returns a CAN Kingdom default letter.
