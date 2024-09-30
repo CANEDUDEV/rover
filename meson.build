@@ -39,7 +39,6 @@ fs = import('fs')
 subdir('libs')
 subdir('bootloader')
 subdir('apps')
-subdir('system')
 subdir('docs')
 
 tidy_files = [apps_tidy_files, bootloader_tidy_files, common_libs_tidy_files]
@@ -68,6 +67,28 @@ run_target(
     ],
 )
 
+generate_system_conf_script = files('rover_py' / 'generate-system-conf.py')
+
+config_dir = custom_target(
+    'config',
+    output: 'config',
+    command: [
+        python,
+        generate_system_conf_script,
+        '--force',
+        '--battery-monitor-bin',
+        battery_monitor_bin,
+        '--brake-bin',
+        brake_bin,
+        '--sbus-receiver-bin',
+        sbus_receiver_bin,
+        '--servo-bin',
+        servo_bin,
+        '-o',
+        '@OUTPUT@',
+    ],
+)
+
 release_files += fs.copyfile('rover.dbc')
 release_script = fs.copyfile('scripts' / 'create-release.sh')
 flasher_path = meson.project_source_root() / 'rover_py'
@@ -80,6 +101,8 @@ release_tgt = custom_target(
     command: [
         'bash',
         release_script,
+        '--config-dir',
+        config_dir,
         '--release-dir',
         release_dir,
         '--flasher-path',
@@ -88,6 +111,7 @@ release_tgt = custom_target(
     ],
     build_always_stale: true,
     build_by_default: true,
+    depends: config_dir,
 )
 
 run_target(
@@ -97,7 +121,7 @@ run_target(
         release_dir / 'fw_update.py',
         'system',
         '--config',
-        release_dir / 'system.json',
+        config_dir.full_path() / 'system.json',
         '--binary-dir',
         release_dir / 'binaries',
     ],

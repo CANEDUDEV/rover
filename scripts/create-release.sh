@@ -9,11 +9,16 @@ echo "Creating release ${TAG}..."
 
 BINARIES=()
 OTHER_FILES=()
+CONFIG_DIR=""
 FLASHER_PATH=""
 RELEASE_DIR=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+    --config-dir)
+        CONFIG_DIR="$2"
+        shift 2
+        ;;
     --flasher-path)
         FLASHER_PATH="$2"
         shift 2
@@ -36,6 +41,11 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+if [[ -z ${CONFIG_DIR} ]]; then
+    echo "Error: --flasher-path is required."
+    exit 1
+fi
+
 if [[ -z ${FLASHER_PATH} ]]; then
     echo "Error: --flasher-path is required."
     exit 1
@@ -57,6 +67,7 @@ rm -f "rover-release"*
 mkdir release
 cp "${OTHER_FILES[@]}" "${RELEASE_DIR}"
 cp "${FLASHER_PATH}/fw_update.py" "${RELEASE_DIR}"
+cp -r "${CONFIG_DIR}" "${RELEASE_DIR}"
 
 mkdir "${RELEASE_DIR}"/binaries
 cp "${BINARIES[@]}" "${RELEASE_DIR}"/binaries

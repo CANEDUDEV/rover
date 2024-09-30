@@ -19,7 +19,6 @@ main() {
     echo "Formatting..."
     shfmt -w -s -i 4 .
     .bin/yamlfmt -quiet -formatter type=basic,retain_line_breaks=true . .clang-tidy .clang-format
-    find system -type f -iname "*.json" -exec python -m json.tool {} {} \;
     isort --quiet --gitignore --profile black .
     black --quiet .
     meson fmt -i -r .

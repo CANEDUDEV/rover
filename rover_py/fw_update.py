@@ -7,7 +7,7 @@ from flasher import flasher
 
 from rover import rover
 
-default_config = "system.json"
+default_config = "config/system.json"
 default_bindir = "binaries"
 
 
