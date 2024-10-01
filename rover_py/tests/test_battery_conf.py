@@ -26,10 +26,10 @@ with canlib.openChannel(
     t_before = time.time()
 
     ch.iocontrol.flush_rx_buffer()  # pyright: ignore [reportCallIssue]
-    ch.readSyncSpecific(rover.Envelope.BATTERY_BATTERY_OUTPUT_ENVELOPE, timeout=2000)
+    ch.readSyncSpecific(rover.Envelope.BATTERY_OUTPUT, timeout=2000)
 
     ch.iocontrol.flush_rx_buffer()  # pyright: ignore [reportCallIssue]
-    ch.readSyncSpecific(rover.Envelope.BATTERY_BATTERY_OUTPUT_ENVELOPE, timeout=2000)
+    ch.readSyncSpecific(rover.Envelope.BATTERY_OUTPUT, timeout=2000)
 
     t_after = time.time()
 

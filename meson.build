@@ -87,6 +87,7 @@ config_dir = custom_target(
         '-o',
         '@OUTPUT@',
     ],
+    build_always_stale: true,
 )
 
 release_files += fs.copyfile('rover.dbc')
