@@ -101,13 +101,13 @@ def gen_node_config(system):
         node["config"] = {
             "ck_id": {
                 "city_address": node["id"],
-                "base_no": rover.ROVER_BASE_NUMBER,
+                "base_no": rover.BASE_NUMBER,
                 "base_no_has_extended_id": False,
                 "base_no_is_known": True,
             },
             "assignments": [],
         }
-    for assignment in rover.KINGDOM_ASSIGNMENTS:
+    for assignment in rover.APP_ASSIGNMENTS:
         assignment_to_config(system, *assignment)
 
 

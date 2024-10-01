@@ -6,36 +6,6 @@ from canlib import Frame, canlib
 
 from rover import rover
 
-COMMAND_ACK_ID = 0x700
-ENTER_BOOTLOADER_ID = 0x701
-EXIT_BOOTLOADER_ID = 0x702
-FLASH_ERASE_ID = 0x703
-FORMAT_FS_ID = 0x704
-FLASH_PROGRAM_ID = 0x705
-FLASH_CONFIG_ID = 0x706
-
-COMMAND_ACK_FOLDER = 2
-FLASH_PROGRAM_TX_FOLDER = 3
-FLASH_CONFIG_TX_FOLDER = 4
-ENTER_BOOTLOADER_FOLDER = 5
-EXIT_BOOTLOADER_FOLDER = 6
-FLASH_ERASE_FOLDER = 7
-FORMAT_FS_FOLDER = 8
-FLASH_PROGRAM_RX_FOLDER = 9
-FLASH_CONFIG_RX_FOLDER = 10
-
-assignments = [
-    (COMMAND_ACK_ID, COMMAND_ACK_FOLDER),
-    (ENTER_BOOTLOADER_ID, ENTER_BOOTLOADER_FOLDER),
-    (EXIT_BOOTLOADER_ID, EXIT_BOOTLOADER_FOLDER),
-    (FLASH_ERASE_ID, FLASH_ERASE_FOLDER),
-    (FORMAT_FS_ID, FORMAT_FS_FOLDER),
-    (FLASH_PROGRAM_ID, FLASH_PROGRAM_TX_FOLDER),
-    (FLASH_PROGRAM_ID, FLASH_PROGRAM_RX_FOLDER),
-    (FLASH_CONFIG_ID, FLASH_CONFIG_TX_FOLDER),
-    (FLASH_CONFIG_ID, FLASH_CONFIG_RX_FOLDER),
-]
-
 
 class Flasher:
     def __init__(self, ch, config=None):
@@ -245,7 +215,7 @@ class Flasher:
             try:
                 frame = self.ch.read(timeout=10)
                 if frame:
-                    self.online_node_ids.add(frame.id - rover.ROVER_BASE_NUMBER)
+                    self.online_node_ids.add(frame.id - rover.BASE_NUMBER)
 
             except (canlib.exceptions.CanTimeout, canlib.exceptions.CanNoMsg):
                 break
@@ -271,14 +241,14 @@ class Flasher:
                 self.default_timeout_ms,
             )
 
-            f = Frame(id_=ENTER_BOOTLOADER_ID, dlc=0, data=[])
+            f = Frame(id_=rover.Envelope.BOOTLOADER_ENTER, dlc=0, data=[])
 
             self.__send_bootloader_command(f)
         except (Exception, canlib.exceptions.CanlibException) as e:
             raise RuntimeError(f"entering bootloader failed: {e}") from e
 
     def __exit_bootloader(self):
-        f = Frame(id_=EXIT_BOOTLOADER_ID, dlc=0, data=[])
+        f = Frame(id_=rover.Envelope.BOOTLOADER_EXIT, dlc=0, data=[])
         try:
             self.__send_bootloader_command(f)
         except (Exception, canlib.exceptions.CanlibException) as e:
@@ -286,7 +256,7 @@ class Flasher:
 
     def __flash_erase(self, bytes_to_erase):
         f = Frame(
-            id_=FLASH_ERASE_ID,
+            id_=rover.Envelope.BOOTLOADER_FLASH_ERASE,
             dlc=4,
             data=list(bytes_to_erase.to_bytes(4, "little")),
         )
@@ -297,14 +267,14 @@ class Flasher:
 
     def __flash_program(self, binary_data):
         try:
-            self.__block_transfer(FLASH_PROGRAM_ID, binary_data)
+            self.__block_transfer(rover.Envelope.BOOTLOADER_FLASH_PROGRAM, binary_data)
         except RuntimeError as e:
             raise RuntimeError(f"flashing binary failed: {e}") from e
         except (Exception, canlib.exceptions.CanlibException):
             raise
 
     def __format_fs(self):
-        f = Frame(id_=FORMAT_FS_ID, dlc=0, data=[])
+        f = Frame(id_=rover.Envelope.BOOTLOADER_FORMAT_FS, dlc=0, data=[])
         try:
             self.__send_bootloader_command(f, timeout=10_000)
         except (Exception, canlib.exceptions.CanlibException) as e:
@@ -313,7 +283,7 @@ class Flasher:
     def __write_config(self, config):
         try:
             binary = json.dumps(config, separators=(",", ":")).encode(encoding="ascii")
-            self.__block_transfer(FLASH_CONFIG_ID, binary)
+            self.__block_transfer(rover.Envelope.BOOTLOADER_FLASH_CONFIG, binary)
         except RuntimeError as e:
             raise RuntimeError(f"writing config failed: {e}") from e
         except (Exception, canlib.exceptions.CanlibException):
@@ -336,7 +306,7 @@ class Flasher:
         )
 
     def __assign_bootloader_envelopes(self, node_id):
-        for assignment in assignments:
+        for assignment in rover.BOOTLOADER_ASSIGNMENTS:
             envelope = assignment[0]
             folder = assignment[1]
             self.ch.writeWait(
@@ -352,8 +322,10 @@ class Flasher:
         self.ch.write(frame)
 
         try:
-            self.ch.readSyncSpecific(COMMAND_ACK_ID, timeout=timeout)
-            received = self.ch.readSpecificSkip(COMMAND_ACK_ID)
+            self.ch.readSyncSpecific(
+                rover.Envelope.BOOTLOADER_COMMAND_ACK, timeout=timeout
+            )
+            received = self.ch.readSpecificSkip(rover.Envelope.BOOTLOADER_COMMAND_ACK)
 
         except (canlib.exceptions.CanNoMsg, canlib.exceptions.CanTimeout):
             raise RuntimeError("No ACK received. Exiting.")

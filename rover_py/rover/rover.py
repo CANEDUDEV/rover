@@ -1,11 +1,14 @@
-from enum import IntEnum
+import enum
 from time import sleep
 
 from canlib import Frame
 
+BASE_NUMBER = 0x400
+
 
 # City addresses
-class City(IntEnum):
+@enum.verify(enum.UNIQUE)
+class City(enum.IntEnum):
     ALL_CITIES = 0
     BATTERY_MONITOR = 1
     SERVO = 2
@@ -17,38 +20,20 @@ class City(IntEnum):
     WHEEL_REAR_RIGHT = 8
 
 
-class CommMode(IntEnum):
-    KEEP_CURRENT = 0
-    SILENT = 1
-    LISTEN_ONLY = 2
-    COMMUNICATE = 3
-
-
-class ActionMode(IntEnum):
-    KEEP_CURRENT = 0
-    RUN = 1
-    FREEZE = 2
-    RESET = 3
-
-
-ROVER_BASE_NUMBER = 0x400
-
-
 # CAN Message IDs
-class Envelope(IntEnum):
+@enum.verify(enum.UNIQUE)
+class Envelope(enum.IntEnum):
     # Control messages
     STEERING = 0x100
     THROTTLE = 0x101
 
     # Report messages
     BATTERY_CELL_VOLTAGES = 0x200
-    BATTERY_REGULATED_OUTPUT_ENVELOPE = 0x201
-    BATTERY_BATTERY_OUTPUT_ENVELOPE = 0x202
+    BATTERY_REGULATED_OUTPUT = 0x201
+    BATTERY_OUTPUT = 0x202
     SERVO_VOLTAGE = 0x203
     SERVO_CURRENT = 0x204
-    BATTERY_VOLTAGE = 0x205  # This is temporary until power board is on Rover.
     SERVO_POSITION = 0x206
-
     WHEEL_FRONT_LEFT_SPEED = 0x210
     WHEEL_FRONT_RIGHT_SPEED = 0x211
     WHEEL_REAR_LEFT_SPEED = 0x212
@@ -68,8 +53,8 @@ class Envelope(IntEnum):
     MOTOR_REVERSE_DIRECTION = 0x30A
     SERVO_FAILSAFE = 0x30B
     MOTOR_FAILSAFE = 0x30C
-    SERVO_SET_SUBTRIM_ENVELOPE = 0x30D
-    MOTOR_SET_SUBTRIM_ENVELOPE = 0x30E
+    STEERING_SUBTRIM = 0x30D
+    THROTTLE_SUBTRIM = 0x30E
     BATTERY_VBAT_OUT_OVERCURRENT_THRESHOLD = 0x30F
     BATTERY_REG_OUT_OVERCURRENT_THRESHOLD = 0x310
 
@@ -85,53 +70,308 @@ class Envelope(IntEnum):
     WHEEL_REAR_RIGHT_WHEEL_PARAMETERS = 0x317
     WHEEL_REAR_RIGHT_REPORT_FREQUENCY = 0x318
 
+    # Bootloader specific envelopes
+    BOOTLOADER_COMMAND_ACK = 0x700
+    BOOTLOADER_ENTER = 0x701
+    BOOTLOADER_EXIT = 0x702
+    BOOTLOADER_FLASH_ERASE = 0x703
+    BOOTLOADER_FORMAT_FS = 0x704
+    BOOTLOADER_FLASH_PROGRAM = 0x705
+    BOOTLOADER_FLASH_CONFIG = 0x706
+
+
+@enum.verify(enum.UNIQUE)
+class BootloaderFolder(enum.IntEnum):
+    COMMAND_ACK = 2
+    FLASH_PROGRAM_TX = 3
+    FLASH_CONFIG_TX = 4
+    ENTER = 5
+    EXIT = 6
+    FLASH_ERASE = 7
+    FORMAT_FS = 8
+    FLASH_PROGRAM_RX = 9
+    FLASH_CONFIG_RX = 10
+
+
+@enum.verify(enum.UNIQUE)
+class ServoFolder(enum.IntEnum):
+    POSITION = 2
+    CURRENT = 3
+    BATTERY_VOLTAGE = 4
+    VOLTAGE = 5
+    H_BRIDGE_CURRENT = 6
+    SET_VOLTAGE = 7
+    PWM_CONFIG = 8
+    CONTROL = 9
+    SET_SUBTRIM = 10
+    REPORT_FREQUENCY = 11
+    REVERSE_DIRECTION = 12
+    FAILSAFE = 13
+
+
+@enum.verify(enum.UNIQUE)
+class SbusReceiverFolder(enum.IntEnum):
+    STEERING = 2
+    THROTTLE = 3
+    STEERING_SUBTRIM = 4
+    THROTTLE_SUBTRIM = 5
+
+
+@enum.verify(enum.UNIQUE)
+class BatteryMonitorFolder(enum.IntEnum):
+    CELL_VOLTAGES = 2
+    REGULATED_OUTPUT = 3
+    BATTERY_OUTPUT = 4
+    JUMPER_CONFIG = 5
+    REG_OUT_VOLTAGE = 6
+    OUTPUT_ON_OFF = 7
+    REPORT_FREQUENCY = 8
+    LOW_VOLTAGE_CUTOFF = 9
+    VBAT_OUT_OVERCURRENT_THRESHOLD = 10
+    REG_OUT_OVERCURRENT_THRESHOLD = 11
+
+
+@enum.verify(enum.UNIQUE)
+class BrakeFolder(enum.IntEnum):
+    WHEEL_SPEED = 2
+    WHEEL_PARAMETERS = 3
+    REPORT_FREQUENCY = 4
+
 
 # List of assignments in the form (city, envelope, folder)
-KINGDOM_ASSIGNMENTS = [
+APP_ASSIGNMENTS = [
     # Control messages
-    (City.SERVO, Envelope.STEERING, 9),
-    (City.MOTOR, Envelope.THROTTLE, 9),
-    (City.SBUS_RECEIVER, Envelope.STEERING, 2),
-    (City.SBUS_RECEIVER, Envelope.THROTTLE, 3),
+    (
+        City.SERVO,
+        Envelope.STEERING,
+        ServoFolder.CONTROL,
+    ),
+    (
+        City.MOTOR,
+        Envelope.THROTTLE,
+        ServoFolder.CONTROL,
+    ),
+    (
+        City.SBUS_RECEIVER,
+        Envelope.STEERING,
+        SbusReceiverFolder.STEERING,
+    ),
+    (
+        City.SBUS_RECEIVER,
+        Envelope.THROTTLE,
+        SbusReceiverFolder.THROTTLE,
+    ),
     # Report messages
-    (City.BATTERY_MONITOR, Envelope.BATTERY_CELL_VOLTAGES, 2),
-    (City.BATTERY_MONITOR, Envelope.BATTERY_REGULATED_OUTPUT_ENVELOPE, 3),
-    (City.BATTERY_MONITOR, Envelope.BATTERY_BATTERY_OUTPUT_ENVELOPE, 4),
-    (City.SERVO, Envelope.SERVO_VOLTAGE, 5),
-    (City.SERVO, Envelope.SERVO_CURRENT, 3),
-    # Don't enable this by default
-    # (City.SERVO, Envelope.SERVO_POSITION, 2),
-    (City.WHEEL_FRONT_LEFT, Envelope.WHEEL_FRONT_LEFT_SPEED, 2),
-    (City.WHEEL_FRONT_RIGHT, Envelope.WHEEL_FRONT_RIGHT_SPEED, 2),
-    (City.WHEEL_REAR_LEFT, Envelope.WHEEL_REAR_LEFT_SPEED, 2),
-    (City.WHEEL_REAR_RIGHT, Envelope.WHEEL_REAR_RIGHT_SPEED, 2),
+    (
+        City.BATTERY_MONITOR,
+        Envelope.BATTERY_CELL_VOLTAGES,
+        BatteryMonitorFolder.CELL_VOLTAGES,
+    ),
+    (
+        City.BATTERY_MONITOR,
+        Envelope.BATTERY_REGULATED_OUTPUT,
+        BatteryMonitorFolder.REGULATED_OUTPUT,
+    ),
+    (
+        City.BATTERY_MONITOR,
+        Envelope.BATTERY_OUTPUT,
+        BatteryMonitorFolder.BATTERY_OUTPUT,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_VOLTAGE,
+        ServoFolder.VOLTAGE,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_CURRENT,
+        ServoFolder.CURRENT,
+    ),
+    (
+        City.WHEEL_FRONT_LEFT,
+        Envelope.WHEEL_FRONT_LEFT_SPEED,
+        BrakeFolder.WHEEL_SPEED,
+    ),
+    (
+        City.WHEEL_FRONT_RIGHT,
+        Envelope.WHEEL_FRONT_RIGHT_SPEED,
+        BrakeFolder.WHEEL_SPEED,
+    ),
+    (
+        City.WHEEL_REAR_LEFT,
+        Envelope.WHEEL_REAR_LEFT_SPEED,
+        BrakeFolder.WHEEL_SPEED,
+    ),
+    (
+        City.WHEEL_REAR_RIGHT,
+        Envelope.WHEEL_REAR_RIGHT_SPEED,
+        BrakeFolder.WHEEL_SPEED,
+    ),
     # Settings messages
-    (City.BATTERY_MONITOR, Envelope.BATTERY_JUMPER_CONFIG, 5),
-    (City.BATTERY_MONITOR, Envelope.BATTERY_REG_OUT_VOLTAGE, 6),
-    (City.BATTERY_MONITOR, Envelope.BATTERY_OUTPUT_ON_OFF, 7),
-    (City.BATTERY_MONITOR, Envelope.BATTERY_REPORT_FREQUENCY, 8),
-    (City.BATTERY_MONITOR, Envelope.BATTERY_LOW_VOLTAGE_CUTOFF, 9),
-    (City.BATTERY_MONITOR, Envelope.BATTERY_VBAT_OUT_OVERCURRENT_THRESHOLD, 10),
-    (City.BATTERY_MONITOR, Envelope.BATTERY_REG_OUT_OVERCURRENT_THRESHOLD, 11),
-    (City.SERVO, Envelope.SERVO_SET_VOLTAGE, 7),
-    (City.SERVO, Envelope.SERVO_PWM_CONFIG, 8),
-    (City.SERVO, Envelope.SERVO_REPORT_FREQUENCY, 11),
-    (City.MOTOR, Envelope.MOTOR_PWM_CONFIG, 8),
-    (City.SERVO, Envelope.SERVO_REVERSE_DIRECTION, 12),
-    (City.MOTOR, Envelope.MOTOR_REVERSE_DIRECTION, 12),
-    (City.SERVO, Envelope.SERVO_FAILSAFE, 13),
-    (City.MOTOR, Envelope.MOTOR_FAILSAFE, 13),
-    (City.SERVO, Envelope.SERVO_SET_SUBTRIM_ENVELOPE, 10),
-    (City.MOTOR, Envelope.MOTOR_SET_SUBTRIM_ENVELOPE, 10),
-    (City.WHEEL_FRONT_LEFT, Envelope.WHEEL_FRONT_LEFT_WHEEL_PARAMETERS, 3),
-    (City.WHEEL_FRONT_LEFT, Envelope.WHEEL_FRONT_LEFT_REPORT_FREQUENCY, 4),
-    (City.WHEEL_FRONT_RIGHT, Envelope.WHEEL_FRONT_RIGHT_WHEEL_PARAMETERS, 3),
-    (City.WHEEL_FRONT_RIGHT, Envelope.WHEEL_FRONT_RIGHT_REPORT_FREQUENCY, 4),
-    (City.WHEEL_REAR_LEFT, Envelope.WHEEL_REAR_LEFT_WHEEL_PARAMETERS, 3),
-    (City.WHEEL_REAR_LEFT, Envelope.WHEEL_REAR_LEFT_REPORT_FREQUENCY, 4),
-    (City.WHEEL_REAR_RIGHT, Envelope.WHEEL_REAR_RIGHT_WHEEL_PARAMETERS, 3),
-    (City.WHEEL_REAR_RIGHT, Envelope.WHEEL_REAR_RIGHT_REPORT_FREQUENCY, 4),
+    (
+        City.BATTERY_MONITOR,
+        Envelope.BATTERY_JUMPER_CONFIG,
+        BatteryMonitorFolder.JUMPER_CONFIG,
+    ),
+    (
+        City.BATTERY_MONITOR,
+        Envelope.BATTERY_REG_OUT_VOLTAGE,
+        BatteryMonitorFolder.REG_OUT_VOLTAGE,
+    ),
+    (
+        City.BATTERY_MONITOR,
+        Envelope.BATTERY_OUTPUT_ON_OFF,
+        BatteryMonitorFolder.OUTPUT_ON_OFF,
+    ),
+    (
+        City.BATTERY_MONITOR,
+        Envelope.BATTERY_REPORT_FREQUENCY,
+        BatteryMonitorFolder.REPORT_FREQUENCY,
+    ),
+    (
+        City.BATTERY_MONITOR,
+        Envelope.BATTERY_LOW_VOLTAGE_CUTOFF,
+        BatteryMonitorFolder.LOW_VOLTAGE_CUTOFF,
+    ),
+    (
+        City.BATTERY_MONITOR,
+        Envelope.BATTERY_VBAT_OUT_OVERCURRENT_THRESHOLD,
+        BatteryMonitorFolder.VBAT_OUT_OVERCURRENT_THRESHOLD,
+    ),
+    (
+        City.BATTERY_MONITOR,
+        Envelope.BATTERY_REG_OUT_OVERCURRENT_THRESHOLD,
+        BatteryMonitorFolder.REG_OUT_OVERCURRENT_THRESHOLD,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_SET_VOLTAGE,
+        ServoFolder.SET_VOLTAGE,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_PWM_CONFIG,
+        ServoFolder.PWM_CONFIG,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_REPORT_FREQUENCY,
+        ServoFolder.REPORT_FREQUENCY,
+    ),
+    (
+        City.MOTOR,
+        Envelope.MOTOR_PWM_CONFIG,
+        ServoFolder.PWM_CONFIG,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_REVERSE_DIRECTION,
+        ServoFolder.REVERSE_DIRECTION,
+    ),
+    (
+        City.MOTOR,
+        Envelope.MOTOR_REVERSE_DIRECTION,
+        ServoFolder.REVERSE_DIRECTION,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_FAILSAFE,
+        ServoFolder.FAILSAFE,
+    ),
+    (
+        City.MOTOR,
+        Envelope.MOTOR_FAILSAFE,
+        ServoFolder.FAILSAFE,
+    ),
+    (
+        City.SERVO,
+        Envelope.STEERING_SUBTRIM,
+        ServoFolder.SET_SUBTRIM,
+    ),
+    (
+        City.MOTOR,
+        Envelope.THROTTLE_SUBTRIM,
+        ServoFolder.SET_SUBTRIM,
+    ),
+    (
+        City.SBUS_RECEIVER,
+        Envelope.STEERING_SUBTRIM,
+        SbusReceiverFolder.STEERING_SUBTRIM,
+    ),
+    (
+        City.SBUS_RECEIVER,
+        Envelope.THROTTLE_SUBTRIM,
+        SbusReceiverFolder.THROTTLE_SUBTRIM,
+    ),
+    (
+        City.WHEEL_FRONT_LEFT,
+        Envelope.WHEEL_FRONT_LEFT_WHEEL_PARAMETERS,
+        BrakeFolder.WHEEL_PARAMETERS,
+    ),
+    (
+        City.WHEEL_FRONT_LEFT,
+        Envelope.WHEEL_FRONT_LEFT_REPORT_FREQUENCY,
+        BrakeFolder.REPORT_FREQUENCY,
+    ),
+    (
+        City.WHEEL_FRONT_RIGHT,
+        Envelope.WHEEL_FRONT_RIGHT_WHEEL_PARAMETERS,
+        BrakeFolder.WHEEL_PARAMETERS,
+    ),
+    (
+        City.WHEEL_FRONT_RIGHT,
+        Envelope.WHEEL_FRONT_RIGHT_REPORT_FREQUENCY,
+        BrakeFolder.REPORT_FREQUENCY,
+    ),
+    (
+        City.WHEEL_REAR_LEFT,
+        Envelope.WHEEL_REAR_LEFT_WHEEL_PARAMETERS,
+        BrakeFolder.WHEEL_PARAMETERS,
+    ),
+    (
+        City.WHEEL_REAR_LEFT,
+        Envelope.WHEEL_REAR_LEFT_REPORT_FREQUENCY,
+        BrakeFolder.REPORT_FREQUENCY,
+    ),
+    (
+        City.WHEEL_REAR_RIGHT,
+        Envelope.WHEEL_REAR_RIGHT_WHEEL_PARAMETERS,
+        BrakeFolder.WHEEL_PARAMETERS,
+    ),
+    (
+        City.WHEEL_REAR_RIGHT,
+        Envelope.WHEEL_REAR_RIGHT_REPORT_FREQUENCY,
+        BrakeFolder.REPORT_FREQUENCY,
+    ),
 ]
+
+BOOTLOADER_ASSIGNMENTS = [
+    (Envelope.BOOTLOADER_COMMAND_ACK, BootloaderFolder.COMMAND_ACK),
+    (Envelope.BOOTLOADER_ENTER, BootloaderFolder.ENTER),
+    (Envelope.BOOTLOADER_EXIT, BootloaderFolder.EXIT),
+    (Envelope.BOOTLOADER_FLASH_ERASE, BootloaderFolder.FLASH_ERASE),
+    (Envelope.BOOTLOADER_FORMAT_FS, BootloaderFolder.FORMAT_FS),
+    (Envelope.BOOTLOADER_FLASH_PROGRAM, BootloaderFolder.FLASH_PROGRAM_TX),
+    (Envelope.BOOTLOADER_FLASH_PROGRAM, BootloaderFolder.FLASH_PROGRAM_RX),
+    (Envelope.BOOTLOADER_FLASH_CONFIG, BootloaderFolder.FLASH_CONFIG_TX),
+    (Envelope.BOOTLOADER_FLASH_CONFIG, BootloaderFolder.FLASH_CONFIG_RX),
+]
+
+
+@enum.verify(enum.UNIQUE)
+class CommMode(enum.IntEnum):
+    KEEP_CURRENT = 0
+    SILENT = 1
+    LISTEN_ONLY = 2
+    COMMUNICATE = 3
+
+
+@enum.verify(enum.UNIQUE)
+class ActionMode(enum.IntEnum):
+    KEEP_CURRENT = 0
+    RUN = 1
+    FREEZE = 2
+    RESET = 3
 
 
 def default_letter():
@@ -149,7 +389,7 @@ def set_action_mode(city=City.ALL_CITIES, mode=ActionMode.KEEP_CURRENT):
 # Give base number and ask for response page
 # Response pages are 0 for EAN and 1 for serial number.
 # Besides these two, applications can define their own response pages.
-def give_base_number(city=City.ALL_CITIES, base_no=ROVER_BASE_NUMBER, response_page=0):
+def give_base_number(city=City.ALL_CITIES, base_no=BASE_NUMBER, response_page=0):
     base_no_data = list(base_no.to_bytes(4, "little"))
     data = [city, 1, response_page, 0] + base_no_data
     return Frame(id_=0, dlc=8, data=data)
@@ -213,7 +453,7 @@ def start(channel):
     sleep(0.1)  # Allow time to respond
 
     # Assign envelopes
-    for assignment in KINGDOM_ASSIGNMENTS:
+    for assignment in APP_ASSIGNMENTS:
         channel.writeWait(assign_envelope(*assignment), -1)
 
     channel.writeWait(set_comm_mode(mode=CommMode.COMMUNICATE), -1)
