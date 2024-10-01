@@ -11,6 +11,7 @@ def main():
     args = parse_args()
     system = gen_system_base(args)
     gen_node_config(system)
+    set_default_settings(system)
     write_files(system, args.output_dir)
 
 
@@ -116,6 +117,12 @@ def assignment_to_config(system, city, envelope, folder):
         if node["id"] == city:
             node["config"]["assignments"] += [{"folder": folder, "envelope": envelope}]
             return
+
+
+def set_default_settings(system):
+    system["servo"]["config"]["settings"] = {
+        "reverse": True,
+    }
 
 
 def write_files(system, output_dir):
