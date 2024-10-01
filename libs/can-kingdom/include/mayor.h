@@ -41,6 +41,9 @@ typedef struct {
   /// User-provided city, group and kingdom identification.
   ck_id_t ck_id;
 
+  /// Skips the startup sequence.
+  bool skip_startup;
+
   /// Function for setting the action mode.
   /// Should return CK_OK on success.
   ck_err_t (*set_action_mode)(ck_action_mode_t);
@@ -51,7 +54,7 @@ typedef struct {
 
   /// Function for starting a 200ms one-shot timer. When the timer finishes,
   /// ck_default_letter_timeout() should be called. This should be handled by
-  /// the user application.
+  /// the user application. Can remain unset only if #skip_startup is true.
   void (*start_200ms_timer)(void);
 
   /// Number of folders the mayor has. Must be at least 2 for the king's and

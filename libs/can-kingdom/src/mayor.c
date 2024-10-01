@@ -65,8 +65,6 @@ static bool in_group(uint8_t group_no);
 
 // These return the item index if found, -1 otherwise.
 static int find_folder(uint8_t folder_no);
-static int find_envelope(const ck_folder_t *folder,
-                         const ck_envelope_t *envelope);
 static ck_err_t is_envelope_in_folder(const ck_envelope_t *envelope,
                                       uint8_t folder_no);
 
@@ -83,8 +81,7 @@ static ck_err_t change_bit_timing(void);
 ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
   // Check for unset parameters.
   if (mayor_->ean_no == 0 || mayor_->serial_no == 0 ||
-      !mayor_->set_action_mode || !mayor_->set_city_mode ||
-      !mayor_->start_200ms_timer || !mayor_->folders) {
+      !mayor_->set_action_mode || !mayor_->set_city_mode || !mayor_->folders) {
     return CK_ERR_MISSING_PARAMETER;
   }
 
@@ -102,18 +99,16 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
     return CK_ERR_INVALID_PARAMETER;
   }
 
+  // Timer is required if not skipping startup.
+  if (!mayor_->skip_startup && !mayor_->start_200ms_timer) {
+    return CK_ERR_INVALID_PARAMETER;
+  }
+
   // Copy user data to internal state.
   // Needs to be done before setting up the internal state.
   memcpy(&mayor.user_data, mayor_, sizeof(ck_mayor_t));
 
   // Always start in silent mode
-  mayor.comm_mode = CK_COMM_MODE_SILENT;
-  mayor.comm_flags = CK_COMM_RESET;
-
-  mayor.default_letter_received = false;
-  mayor.default_letter_timeout = false;
-  mayor.correct_letter_received = false;
-  mayor.startup_finished = false;
 
   mayor.next_bit_timing = ck_default_bit_timing();
   ck_err_t ret = change_bit_timing();
@@ -130,14 +125,26 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
     return ret;
   }
 
-  // Go on bus in silent mode
-  ret = ck_set_comm_mode(CK_COMM_MODE_SILENT);
-  if (ret != CK_OK) {
-    return ret;
+  mayor.comm_mode = CK_COMM_MODE_SILENT;
+  mayor.comm_flags = CK_COMM_RESET;
+
+  mayor.default_letter_received = false;
+  mayor.default_letter_timeout = false;
+  mayor.correct_letter_received = false;
+  mayor.startup_finished = false;
+
+  if (mayor_->skip_startup) {
+    mayor.comm_mode = CK_COMM_MODE_COMMUNICATE;
+
+    mayor.default_letter_received = true;
+    mayor.correct_letter_received = true;
+    mayor.startup_finished = true;
+
+  } else {
+    mayor.user_data.start_200ms_timer();
   }
 
-  mayor.user_data.start_200ms_timer();
-  return CK_OK;
+  return ck_set_comm_mode(mayor.comm_mode);
 }
 
 ck_err_t ck_process_kings_letter(const ck_letter_t *letter) {
@@ -638,14 +645,6 @@ static ck_err_t process_kp1(const ck_page_t *page) {
   base_no &= CK_CAN_ID_MASK;
   bool extended_id = (page->lines[7] >> 7) & 0x01;  // NOLINT(*-magic-numbers)
 
-  // Bounds check
-  if ((!extended_id &&
-       base_no + mayor.user_data.ck_id.city_address > CK_CAN_MAX_STD_ID) ||
-      (extended_id &&
-       base_no + mayor.user_data.ck_id.city_address > CK_CAN_MAX_EXT_ID)) {
-    return CK_ERR_INVALID_CAN_ID;
-  }
-
   ck_envelope_t mayors_envelope = {
       .envelope_no = base_no + mayor.user_data.ck_id.city_address,
       .enable = true,
@@ -653,6 +652,11 @@ static ck_err_t process_kp1(const ck_page_t *page) {
       .is_compressed = false,
       .is_remote = false,
   };
+
+  ck_err_t err = ck_check_envelope(&mayors_envelope);
+  if (err != CK_OK) {
+    return err;
+  }
 
   mayor.user_data.folders[CK_MAYORS_FOLDER_NO].envelopes[0] = mayors_envelope;
   mayor.user_data.ck_id.base_no = base_no;
@@ -683,8 +687,9 @@ static ck_err_t process_kp2(const ck_page_t *page) {
   // NOLINTEND(*-magic-numbers)
 
   // Bounds check
-  if (!envelope.has_extended_id && envelope.envelope_no > CK_CAN_MAX_STD_ID) {
-    return CK_ERR_INVALID_CAN_ID;
+  ck_err_t err = ck_check_envelope(&envelope);
+  if (err != CK_OK) {
+    return err;
   }
 
   switch (envelope_action) {
@@ -949,29 +954,10 @@ static int find_folder(uint8_t folder_no) {
   return -1;
 }
 
-static bool is_envelope_equal(const ck_envelope_t *envelope1,
-                              const ck_envelope_t *envelope2) {
-  // Don't check the enable flag
-  return (envelope1->envelope_no == envelope2->envelope_no &&
-          envelope1->has_extended_id == envelope2->has_extended_id &&
-          envelope1->is_remote == envelope2->is_remote &&
-          envelope1->is_compressed == envelope2->is_compressed);
-}
-
-static int find_envelope(const ck_folder_t *folder,
-                         const ck_envelope_t *envelope) {
-  for (uint8_t i = 0; i < folder->envelope_count; i++) {
-    if (is_envelope_equal(&folder->envelopes[i], envelope)) {
-      return i;
-    }
-  }
-  return -1;
-}
-
 static ck_err_t is_envelope_in_folder(const ck_envelope_t *envelope,
                                       uint8_t folder_no) {
   ck_folder_t *folder = &mayor.user_data.folders[folder_no];
-  if (find_envelope(folder, envelope) < 0) {
+  if (ck_find_envelope(folder, envelope) < 0) {
     return CK_ERR_FALSE;
   }
 
@@ -981,7 +967,8 @@ static ck_err_t is_envelope_in_folder(const ck_envelope_t *envelope,
 static ck_err_t update_envelope(const ck_envelope_t *envelope) {
   // Loop through folders and update the envelope if found.
   for (uint8_t i = 0; i < mayor.user_data.folder_count; i++) {
-    int envelope_number = find_envelope(&mayor.user_data.folders[i], envelope);
+    int envelope_number =
+        ck_find_envelope(&mayor.user_data.folders[i], envelope);
     // If envelope is found, we update its enable state and return OK.
     if (envelope_number >= 0) {
       mayor.user_data.folders[i].envelopes[envelope_number].enable =
@@ -1005,7 +992,7 @@ static ck_err_t assign_envelope(uint8_t folder_no,
   }
 
   // Only add envelope if it's not assigned to this folder already
-  int envelope_index = find_envelope(folder, envelope);
+  int envelope_index = ck_find_envelope(folder, envelope);
   if (envelope_index < 0) {
     folder->envelopes[folder->envelope_count] = *envelope;
     folder->envelope_count++;
@@ -1018,7 +1005,7 @@ static ck_err_t assign_envelope(uint8_t folder_no,
 
 static ck_err_t remove_envelope_from_folder(ck_folder_t *folder,
                                             const ck_envelope_t *envelope) {
-  int envelope_index = find_envelope(folder, envelope);
+  int envelope_index = ck_find_envelope(folder, envelope);
   if (envelope_index < 0) {
     return -1;
   }
