@@ -1,29 +1,43 @@
 #include "ck-data.h"
 
+#include <stdio.h>
+#include <string.h>
+
+#include "error.h"
+#include "json.h"
+#include "jsondb.h"
+
 static ck_data_t ck_data;
 
-void page_init(void);
-void doc_init(void);
-void list_init(void);
-void folder_init(void);
+static void page_init(void);
+static void doc_init(void);
+static void list_init(void);
+static void folder_init(void);
+static void assign_stored(void);
+
+static int check_folder(json_object_t *folder);
+static int check_envelope(json_object_t *envelope);
+static void assign(json_object_t *folder, json_object_t *envelope);
 
 void ck_data_init(void) {
   page_init();
   doc_init();
   list_init();
   folder_init();
+
+  assign_stored();
 }
 
-ck_data_t* get_ck_data(void) {
+ck_data_t *get_ck_data(void) {
   return &ck_data;
 }
 
-void page_init(void) {
+static void page_init(void) {
   ck_data.wheel_speed_page = &ck_data.pages[0];
   ck_data.wheel_speed_page->line_count = 2 * sizeof(float);
 }
 
-void doc_init(void) {
+static void doc_init(void) {
   for (uint8_t i = 0; i < CK_DATA_TX_DOC_COUNT; i++) {
     ck_data.docs[i].direction = CK_DIRECTION_TRANSMIT;
     ck_data.docs[i].page_count = 1;
@@ -31,7 +45,7 @@ void doc_init(void) {
   }
 }
 
-void list_init(void) {
+static void list_init(void) {
   ck_data.tx_list = &ck_data.lists[0];
   ck_data.rx_list = &ck_data.lists[1];
 
@@ -53,7 +67,7 @@ void list_init(void) {
   }
 }
 
-void folder_init(void) {
+static void folder_init(void) {
   // Set up the transmit folders
   ck_data.wheel_speed_folder = &ck_data.folders[2];
 
@@ -81,4 +95,84 @@ void folder_init(void) {
 
   ck_data.set_wheel_parameters_folder->dlc = sizeof(uint32_t) + sizeof(float);
   ck_data.set_report_freq_folder->dlc = sizeof(uint16_t);
+}
+
+static void assign_stored(void) {
+  json_object_t *json = get_jsondb();
+  json_object_t *assignments = json_get_object("assignments", json);
+  if (!assignments || !assignments->child) {
+    printf("note: no assignments stored\r\n");
+    return;
+  }
+
+  json_object_t *assignment = assignments->child;
+
+  do {
+    json_object_t *folder = json_get_object("folder", assignment);
+    json_object_t *envelope = json_get_object("envelope", assignment);
+    assign(folder, envelope);
+    assignment = assignment->next;
+  } while (assignment != NULL);
+}
+
+static int check_folder(json_object_t *folder) {
+  if (folder->type != JSON_INT || folder->value->int_ < 2 ||
+      folder->value->int_ >= CK_DATA_FOLDER_COUNT) {
+    return APP_NOT_OK;
+  }
+  return APP_OK;
+}
+
+static int check_envelope(json_object_t *envelope) {
+  if (envelope->type != JSON_INT || envelope->value->int_ < 0) {
+    return APP_NOT_OK;
+  }
+
+  ck_envelope_t e = {
+      .envelope_no = envelope->value->int_,
+      .has_extended_id = false,
+  };
+
+  if (ck_check_envelope(&e) != CK_OK) {
+    return APP_NOT_OK;
+  }
+
+  return APP_OK;
+}
+
+static void assign(json_object_t *folder, json_object_t *envelope) {
+  static int i = 0;
+  char s[32];  // NOLINT(*-magic-numbers)
+  if (check_folder(folder) != APP_OK) {
+    json_sprint(s, folder);
+    printf("array element %d: couldn't parse folder: %s\r\n", i++, s);
+    return;
+  }
+  if (check_envelope(envelope) != APP_OK) {
+    json_sprint(s, envelope);
+    printf("array element %d: couldn't parse envelope: %s\r\n", i++, s);
+    return;
+  }
+
+  i++;
+
+  ck_folder_t *f = &ck_data.folders[folder->value->int_];
+  if (f->envelope_count >= CK_MAX_ENVELOPES_PER_FOLDER) {
+    return;
+  }
+
+  ck_envelope_t e = {
+      .envelope_no = envelope->value->int_,
+      .enable = true,
+      .is_compressed = false,
+      .is_remote = false,
+      .has_extended_id = false,
+  };
+
+  // Only add envelope if it's not assigned to this folder already
+  int envelope_index = ck_find_envelope(f, &e);
+  if (envelope_index < 0) {
+    f->envelopes[f->envelope_count] = e;
+    f->envelope_count++;
+  }
 }

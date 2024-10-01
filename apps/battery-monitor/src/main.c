@@ -17,13 +17,7 @@
 
 // FreeRTOS
 #include "FreeRTOS.h"
-#include "timers.h"
-
-// For the CK startup sequence timer
-StaticTimer_t default_letter_timer_buf;
-TimerHandle_t default_letter_timer;
-void default_letter_timer_callback(TimerHandle_t timer);
-void start_default_letter_timer(void);
+#include "task.h"
 
 void mayor_init(void);
 ck_err_t set_action_mode(ck_action_mode_t mode);
@@ -53,12 +47,6 @@ int main(void) {
 }
 
 void mayor_init(void) {
-  default_letter_timer = xTimerCreateStatic(
-      "default letter timer", pdMS_TO_TICKS(200),
-      pdFALSE,  // Don't auto reload timer
-      NULL,     // Timer ID, unused
-      default_letter_timer_callback, &default_letter_timer_buf);
-
   ck_data_init();
   ck_data_t *ck_data = get_ck_data();
 
@@ -86,29 +74,17 @@ void mayor_init(void) {
       .ck_id = ck_id,
       .set_action_mode = set_action_mode,
       .set_city_mode = set_city_mode,
-      .start_200ms_timer = start_default_letter_timer,
       .folder_count = CK_DATA_FOLDER_COUNT,
       .folders = ck_data->folders,
       .list_count = CK_DATA_LIST_COUNT,
       .lists = ck_data->lists,
+      .skip_startup = true,
   };
 
   if (ck_mayor_init(&mayor) != CK_OK) {
     printf("Error setting up mayor.\r\n");
     error();
   }
-}
-
-void default_letter_timer_callback(TimerHandle_t timer) {
-  (void)timer;
-
-  if (ck_default_letter_timeout() != CK_OK) {
-    printf("CAN Kingdom error in ck_default_letter_timeout().\r\n");
-  }
-}
-
-void start_default_letter_timer(void) {
-  xTimerStart(default_letter_timer, portMAX_DELAY);
 }
 
 ck_err_t set_action_mode(ck_action_mode_t mode) {
