@@ -107,3 +107,31 @@ ck_can_bit_timing_t ck_default_bit_timing(void) {
   };
   return bit_timing;
 }
+
+ck_err_t ck_check_envelope(ck_envelope_t *envelope) {
+  if (!envelope->has_extended_id && envelope->envelope_no > CK_CAN_MAX_STD_ID) {
+    return CK_ERR_INVALID_CAN_ID;
+  }
+  if (envelope->envelope_no > CK_CAN_MAX_EXT_ID) {
+    return CK_ERR_INVALID_CAN_ID;
+  }
+  return CK_OK;
+}
+
+bool ck_is_envelope_equal(const ck_envelope_t *envelope1,
+                          const ck_envelope_t *envelope2) {
+  // Don't check the enable flag
+  return (envelope1->envelope_no == envelope2->envelope_no &&
+          envelope1->has_extended_id == envelope2->has_extended_id &&
+          envelope1->is_remote == envelope2->is_remote &&
+          envelope1->is_compressed == envelope2->is_compressed);
+}
+
+int ck_find_envelope(const ck_folder_t *folder, const ck_envelope_t *envelope) {
+  for (uint8_t i = 0; i < folder->envelope_count; i++) {
+    if (ck_is_envelope_equal(&folder->envelopes[i], envelope)) {
+      return i;
+    }
+  }
+  return -1;
+}

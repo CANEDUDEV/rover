@@ -511,6 +511,11 @@ ck_letter_t ck_default_letter(void);
  ******************************************************************************/
 ck_can_bit_timing_t ck_default_bit_timing(void);
 
+ck_err_t ck_check_envelope(ck_envelope_t *envelope);
+bool ck_is_envelope_equal(const ck_envelope_t *envelope1,
+                          const ck_envelope_t *envelope2);
+int ck_find_envelope(const ck_folder_t *folder, const ck_envelope_t *envelope);
+
 #ifdef __cplusplus
 }
 #endif
