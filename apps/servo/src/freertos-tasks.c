@@ -87,7 +87,6 @@ void measure(void *unused) {
   uint16_t battery_voltage = 0;
   uint16_t h_bridge_current = 0;
 
-  servo_init();
   servo_state_t *servo = get_servo_state();
 
   for (;;) {

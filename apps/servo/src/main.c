@@ -5,6 +5,8 @@
 #include "peripherals.h"
 #include "pwm.h"
 #include "rover.h"
+#include "servo.h"
+#include "settings.h"
 
 // CK
 #include "mayor.h"
@@ -33,8 +35,10 @@ int main(void) {
   // Initialize all configured peripherals
   peripherals_init();
 
+  servo_init();
   task_init();
   jsondb_init();
+  settings_init();
   mayor_init();
 
   printf("Starting application...\r\n");
