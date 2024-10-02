@@ -25,8 +25,7 @@ void test_update_battery_leds_full_charge(void);
 void test_update_battery_leds_half_charge(void);
 void test_update_battery_leds_low_charge(void);
 void test_is_reg_out_voltage_stable(void);
-void test_is_low_voltage_fault_low_load(void);
-void test_is_low_voltage_fault_high_load(void);
+void test_is_low_voltage_fault(void);
 void test_get_lowest_cell_all_full(void);
 void test_get_lowest_cell_one_lowest(void);
 void test_get_lowest_cell_no_cells(void);
@@ -56,8 +55,7 @@ int main(void) {
   test_update_battery_leds_half_charge();
   test_update_battery_leds_low_charge();
   test_is_reg_out_voltage_stable();
-  test_is_low_voltage_fault_low_load();
-  test_is_low_voltage_fault_high_load();
+  test_is_low_voltage_fault();
   test_get_lowest_cell_all_full();
   test_get_lowest_cell_one_lowest();
   test_get_lowest_cell_no_cells();
@@ -312,27 +310,13 @@ void test_is_reg_out_voltage_stable(void) {
   ASSERT(is_reg_out_voltage_stable(), "");
 }
 
-void test_is_low_voltage_fault_low_load(void) {
+void test_is_low_voltage_fault(void) {
   setup_test();
 
   ASSERT(!is_low_voltage_fault(), "");
 
   battery_state_t* battery_state = get_battery_state();
   battery_state->vbat_out.current = 0;
-  battery_state->cells.voltage[1] = LIPO_UNDERVOLTAGE;
-
-  ASSERT(is_low_voltage_fault(), "");
-}
-
-void test_is_low_voltage_fault_high_load(void) {
-  setup_test();
-  battery_state_t* battery_state = get_battery_state();
-  const uint32_t acceptable_voltage = 3500;
-  battery_state->cells.voltage[1] = acceptable_voltage;
-  battery_state->vbat_out.current = DEFAULT_HIGH_LOAD_THRESHOLD_MA;
-
-  ASSERT(!is_low_voltage_fault(), "");
-
   battery_state->cells.voltage[1] = LIPO_UNDERVOLTAGE;
 
   ASSERT(is_low_voltage_fault(), "");

@@ -40,11 +40,7 @@ void battery_state_init(void) {
 
   battery_state.cells.min_voltage = LIPO_CELL_MIN_VOLTAGE_MV;
   battery_state.cells.max_voltage = LIPO_CELL_MAX_VOLTAGE_MV;
-  battery_state.cells.high_load_threshold = DEFAULT_HIGH_LOAD_THRESHOLD_MA;
-  battery_state.cells.low_voltage_cutoff_low =
-      DEFAULT_LOW_VOLTAGE_CUTOFF_LOW_MV;
-  battery_state.cells.low_voltage_cutoff_high =
-      DEFAULT_LOW_VOLTAGE_CUTOFF_HIGH_MV;
+  battery_state.cells.low_voltage_cutoff = DEFAULT_LOW_VOLTAGE_CUTOFF_MV;
 
   battery_state.charge = 0;
   battery_state.target_reg_out_voltage = 0;
@@ -121,7 +117,6 @@ void handle_faults(void) {
       battery_state.vbat_out.overcurrent_fault) {
     set_vbat_power_off();
     led_signal_fault();
-
   }
 
   else if (battery_state.reg_out.overcurrent_fault) {
@@ -179,15 +174,15 @@ void update_battery_charge(void) {
 }
 
 void update_battery_leds(void) {
-  const uint8_t charge_20_percent = 20;
-  const uint8_t charge_50_percent = 50;
+  const uint8_t warning_percentage = 25;
+  const uint8_t caution_percentage = 50;
 
-  if (battery_state.charge < charge_20_percent) {
+  if (battery_state.charge < warning_percentage) {
     set_led_color(LED6, RED);
     set_led_color(LED7, RED);
   }
 
-  else if (battery_state.charge < charge_50_percent) {
+  else if (battery_state.charge < caution_percentage) {
     set_led_color(LED6, ORANGE);
     set_led_color(LED7, ORANGE);
   }
@@ -255,12 +250,7 @@ bool is_low_voltage_fault(void) {
     return false;
   }
 
-  if (battery_state.vbat_out.current >=
-      battery_state.cells.high_load_threshold) {
-    return *lowest_cell <= battery_state.cells.low_voltage_cutoff_high;
-  }
-
-  return *lowest_cell <= battery_state.cells.low_voltage_cutoff_low;
+  return *lowest_cell <= battery_state.cells.low_voltage_cutoff;
 }
 
 uint16_t *get_lowest_cell(void) {

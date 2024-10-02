@@ -18,15 +18,13 @@ extern "C" {
 
 #define BATTERY_CHARGE_100_PERCENT 100
 
-#define LIPO_CELL_MIN_VOLTAGE_MV 3200
+#define LIPO_CELL_MIN_VOLTAGE_MV 3000
 #define LIPO_CELL_MAX_VOLTAGE_MV 4200
 
-#define DEFAULT_LOW_VOLTAGE_CUTOFF_LOW_MV 3700
-#define DEFAULT_LOW_VOLTAGE_CUTOFF_HIGH_MV 3200
-#define DEFAULT_HIGH_LOAD_THRESHOLD_MA 3000
+#define DEFAULT_LOW_VOLTAGE_CUTOFF_MV LIPO_CELL_MIN_VOLTAGE_MV
 
-#define DEFAULT_REG_OUT_VOLTAGE_LOW_MV 5000
-#define DEFAULT_REG_OUT_VOLTAGE_HIGH_MV 12000
+#define DEFAULT_REG_OUT_VOLTAGE_LOW_MV 5100
+#define DEFAULT_REG_OUT_VOLTAGE_HIGH_MV 12100
 
 #define DEFAULT_OVERCURRENT_THRESHOLD_MA (95 * 1000)
 #define DEFAULT_REG_OUT_OVERCURRENT_THRESHOLD_MA (8 * 1000)
@@ -46,11 +44,7 @@ typedef struct {
   uint16_t max_voltage;
   uint16_t voltage[BATTERY_CELLS_MAX];
 
-  // Two thresholds for low voltage cutoff, one for low load condition and one
-  // for high load condition.
-  uint32_t high_load_threshold;
-  uint16_t low_voltage_cutoff_low;
-  uint16_t low_voltage_cutoff_high;
+  uint16_t low_voltage_cutoff;
   bool low_voltage_fault;
 
 } battery_cells_t;

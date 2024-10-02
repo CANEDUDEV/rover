@@ -68,14 +68,9 @@ with canlib.openChannel(
 
     # This should cause power to turn off due to low-voltage cutoff
     # NOTE: cells must be connected for this to work.
-    ch.writeWait(battery.set_low_voltage_cutoff_frame(4200, 3200, 10000), -1)
-    time.sleep(2)
-
-    # This shouldn't trigger power off since load is low
-    ch.writeWait(battery.set_low_voltage_cutoff_frame(3700, 4200, 10000), -1)
-    ch.writeWait(battery.set_pwr_on_frame, -1)
+    ch.writeWait(battery.set_low_voltage_cutoff_frame(4200), -1)
     time.sleep(2)
 
     # Restore defaults
-    ch.writeWait(battery.set_low_voltage_cutoff_frame(3700, 3200, 10000), -1)
+    ch.writeWait(battery.set_low_voltage_cutoff_frame(3000), -1)
     ch.writeWait(battery.set_pwr_on_frame, -1)

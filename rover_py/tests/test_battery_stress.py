@@ -39,17 +39,11 @@ def main():
 def setup_test(ch):
     rover.start(ch)
 
-    # Turn off power
     ch.writeWait(battery.set_reg_pwr_off_frame, -1)
     ch.writeWait(battery.set_pwr_off_frame, -1)
 
-    # Set low voltage cutoff parameters
-    ch.writeWait(battery.set_low_voltage_cutoff_frame(3700, 3000, 10_000), -1)
-
-    # Set overcurrent protection to 100 A
+    ch.writeWait(battery.set_low_voltage_cutoff_frame(3000), -1)
     ch.writeWait(battery.set_vbat_out_overcurrent_threshold_frame(95_000), -1)
-
-    # Set jumper conf
     ch.writeWait(battery.set_jumper_conf_frame(battery.JumperConfig.X11_ON_X12_ON), -1)
 
     # Set report period to 10 ms
@@ -134,7 +128,7 @@ def write_csv(signal_value_map):
 
 def teardown_test(ch):
     # Restore defaults
-    ch.writeWait(battery.set_low_voltage_cutoff_frame(3700, 3200, 10_000), -1)
+    ch.writeWait(battery.set_low_voltage_cutoff_frame(3000), -1)
     ch.writeWait(battery.set_report_period_frame(200), -1)
 
 
