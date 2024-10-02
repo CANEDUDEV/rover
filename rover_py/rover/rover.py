@@ -19,6 +19,9 @@ class City(enum.IntEnum):
     WHEEL_REAR_LEFT = 7
     WHEEL_REAR_RIGHT = 8
 
+    # For AD systems
+    AD_BATTERY_MONITOR = 100
+
 
 # CAN Message IDs
 @enum.verify(enum.UNIQUE)
@@ -78,6 +81,18 @@ class Envelope(enum.IntEnum):
     BOOTLOADER_FORMAT_FS = 0x704
     BOOTLOADER_FLASH_PROGRAM = 0x705
     BOOTLOADER_FLASH_CONFIG = 0x706
+
+    # For AD systems
+    AD_BATTERY_CELL_VOLTAGES = 0x500
+    AD_BATTERY_REGULATED_OUTPUT = 0x501
+    AD_BATTERY_OUTPUT = 0x502
+    AD_BATTERY_JUMPER_CONFIG = 0x600
+    AD_BATTERY_REG_OUT_VOLTAGE = 0x601
+    AD_BATTERY_OUTPUT_ON_OFF = 0x602
+    AD_BATTERY_REPORT_FREQUENCY = 0x603
+    AD_BATTERY_LOW_VOLTAGE_CUTOFF = 0x604
+    AD_BATTERY_VBAT_OUT_OVERCURRENT_THRESHOLD = 0x60F
+    AD_BATTERY_REG_OUT_OVERCURRENT_THRESHOLD = 0x610
 
 
 @enum.verify(enum.UNIQUE)
@@ -342,6 +357,57 @@ APP_ASSIGNMENTS = [
         City.WHEEL_REAR_RIGHT,
         Envelope.WHEEL_REAR_RIGHT_REPORT_FREQUENCY,
         BrakeFolder.REPORT_FREQUENCY,
+    ),
+    # AD system
+    (
+        City.AD_BATTERY_MONITOR,
+        Envelope.AD_BATTERY_CELL_VOLTAGES,
+        BatteryMonitorFolder.CELL_VOLTAGES,
+    ),
+    (
+        City.AD_BATTERY_MONITOR,
+        Envelope.AD_BATTERY_REGULATED_OUTPUT,
+        BatteryMonitorFolder.REGULATED_OUTPUT,
+    ),
+    (
+        City.AD_BATTERY_MONITOR,
+        Envelope.AD_BATTERY_OUTPUT,
+        BatteryMonitorFolder.BATTERY_OUTPUT,
+    ),
+    (
+        City.AD_BATTERY_MONITOR,
+        Envelope.AD_BATTERY_JUMPER_CONFIG,
+        BatteryMonitorFolder.JUMPER_CONFIG,
+    ),
+    (
+        City.AD_BATTERY_MONITOR,
+        Envelope.AD_BATTERY_REG_OUT_VOLTAGE,
+        BatteryMonitorFolder.REG_OUT_VOLTAGE,
+    ),
+    (
+        City.AD_BATTERY_MONITOR,
+        Envelope.AD_BATTERY_OUTPUT_ON_OFF,
+        BatteryMonitorFolder.OUTPUT_ON_OFF,
+    ),
+    (
+        City.AD_BATTERY_MONITOR,
+        Envelope.AD_BATTERY_REPORT_FREQUENCY,
+        BatteryMonitorFolder.REPORT_FREQUENCY,
+    ),
+    (
+        City.AD_BATTERY_MONITOR,
+        Envelope.AD_BATTERY_LOW_VOLTAGE_CUTOFF,
+        BatteryMonitorFolder.LOW_VOLTAGE_CUTOFF,
+    ),
+    (
+        City.AD_BATTERY_MONITOR,
+        Envelope.AD_BATTERY_VBAT_OUT_OVERCURRENT_THRESHOLD,
+        BatteryMonitorFolder.VBAT_OUT_OVERCURRENT_THRESHOLD,
+    ),
+    (
+        City.AD_BATTERY_MONITOR,
+        Envelope.AD_BATTERY_REG_OUT_OVERCURRENT_THRESHOLD,
+        BatteryMonitorFolder.REG_OUT_OVERCURRENT_THRESHOLD,
     ),
 ]
 

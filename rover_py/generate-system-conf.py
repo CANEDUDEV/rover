@@ -94,6 +94,10 @@ def gen_system_base(args):
             "id": rover.City.WHEEL_REAR_RIGHT,
             "binary": brake.name,
         },
+        "ad-battery-monitor": {
+            "id": rover.City.AD_BATTERY_MONITOR,
+            "binary": battery_monitor.name,
+        },
     }
 
 
