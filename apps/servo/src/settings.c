@@ -19,6 +19,7 @@ void settings_init(void) {
 
   if (reverse->type != JSON_BOOL) {
     printf("note: invalid reverse setting, using default\r\n");
+    return;
   }
 
   servo_state_t *s = get_servo_state();
