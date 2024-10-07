@@ -97,6 +97,7 @@ void folder_init(void) {
   ck_data.low_voltage_cutoff_folder = &ck_data.folders[9];
   ck_data.vbat_out_overcurrent_threshold_folder = &ck_data.folders[10];
   ck_data.reg_out_overcurrent_threshold_folder = &ck_data.folders[11];
+  ck_data.cell_calibration_folder = &ck_data.folders[12];
   // NOLINTEND(*-magic-numbers)
 
   // Set up the transmit folders
@@ -131,6 +132,7 @@ void folder_init(void) {
   ck_data.low_voltage_cutoff_folder->dlc = sizeof(uint16_t);
   ck_data.vbat_out_overcurrent_threshold_folder->dlc = sizeof(uint32_t);
   ck_data.reg_out_overcurrent_threshold_folder->dlc = sizeof(uint32_t);
+  ck_data.cell_calibration_folder->dlc = sizeof(uint16_t);
 }
 
 static void assign_stored(void) {

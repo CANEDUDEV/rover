@@ -185,3 +185,15 @@ int process_reg_out_overcurrent_threshold_letter(const ck_letter_t *letter) {
 
   return APP_OK;
 }
+
+int process_cell_calibration_letter(const ck_letter_t *letter) {
+  ck_data_t *ck_data = get_ck_data();
+  if (letter->page.line_count != ck_data->cell_calibration_folder->dlc) {
+    return APP_NOT_OK;
+  }
+
+  battery_state_t *bs = get_battery_state();
+  memcpy(&bs->calibration_voltage, letter->page.lines,
+         sizeof(bs->calibration_voltage));
+  return APP_OK;
+}

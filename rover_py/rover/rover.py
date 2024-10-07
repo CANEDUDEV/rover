@@ -73,6 +73,8 @@ class Envelope(enum.IntEnum):
     WHEEL_REAR_RIGHT_WHEEL_PARAMETERS = 0x317
     WHEEL_REAR_RIGHT_REPORT_FREQUENCY = 0x318
 
+    BATTERY_CELL_CALIBRATION = 0x319
+
     # Bootloader specific envelopes
     BOOTLOADER_COMMAND_ACK = 0x700
     BOOTLOADER_ENTER = 0x701
@@ -93,6 +95,7 @@ class Envelope(enum.IntEnum):
     AD_BATTERY_LOW_VOLTAGE_CUTOFF = 0x604
     AD_BATTERY_VBAT_OUT_OVERCURRENT_THRESHOLD = 0x60F
     AD_BATTERY_REG_OUT_OVERCURRENT_THRESHOLD = 0x610
+    AD_BATTERY_CELL_CALIBRATION = 0x611
 
 
 @enum.verify(enum.UNIQUE)
@@ -144,6 +147,7 @@ class BatteryMonitorFolder(enum.IntEnum):
     LOW_VOLTAGE_CUTOFF = 9
     VBAT_OUT_OVERCURRENT_THRESHOLD = 10
     REG_OUT_OVERCURRENT_THRESHOLD = 11
+    CELL_CALIBRATION = 12
 
 
 @enum.verify(enum.UNIQUE)
@@ -358,6 +362,11 @@ APP_ASSIGNMENTS = [
         Envelope.WHEEL_REAR_RIGHT_REPORT_FREQUENCY,
         BrakeFolder.REPORT_FREQUENCY,
     ),
+    (
+        City.BATTERY_MONITOR,
+        Envelope.BATTERY_CELL_CALIBRATION,
+        BatteryMonitorFolder.CELL_CALIBRATION,
+    ),
     # AD system
     (
         City.AD_BATTERY_MONITOR,
@@ -408,6 +417,11 @@ APP_ASSIGNMENTS = [
         City.AD_BATTERY_MONITOR,
         Envelope.AD_BATTERY_REG_OUT_OVERCURRENT_THRESHOLD,
         BatteryMonitorFolder.REG_OUT_OVERCURRENT_THRESHOLD,
+    ),
+    (
+        City.AD_BATTERY_MONITOR,
+        Envelope.AD_BATTERY_CELL_CALIBRATION,
+        BatteryMonitorFolder.CELL_CALIBRATION,
     ),
 ]
 

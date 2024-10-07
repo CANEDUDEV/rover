@@ -1,22 +1,24 @@
 #include "battery.h"
 
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "adc.h"
-#include "error.h"
 #include "jumpers.h"
 #include "led.h"
 #include "potentiometer.h"
 #include "power.h"
 
-// Constants for array indices
-#define REG_OUT_CURRENT_INDEX 2
-#define REG_OUT_VOLTAGE_INDEX 3
-#define VBAT_OUT_VOLTAGE_INDEX 4
-#define VBAT_OUT_CURRENT_INDEX 5
+// STM32Common
+#include "error.h"
+#include "lfs-wrapper.h"
+
+// Libs
+#include "float.h"
 
 static battery_state_t battery_state;
+static const char *calibration_filename = "/calibration";
 
 void battery_cells_reset(void);
 
@@ -30,6 +32,11 @@ bool is_reg_out_voltage_stable(void);
 bool is_low_voltage_fault(void);
 uint16_t *get_lowest_cell(void);
 
+void calibrate_cells(const adc_reading_t *reading);
+void load_calibration(void);
+void save_calibration(void);
+void init_default_calibration(void);
+
 battery_state_t *get_battery_state(void) {
   return &battery_state;
 }
@@ -37,6 +44,7 @@ battery_state_t *get_battery_state(void) {
 void battery_state_init(void) {
   led_init();
   battery_state_reset();
+  load_calibration();
 
   battery_state.cells.min_voltage = LIPO_CELL_MIN_VOLTAGE_MV;
   battery_state.cells.max_voltage = LIPO_CELL_MAX_VOLTAGE_MV;
@@ -49,6 +57,8 @@ void battery_state_init(void) {
       DEFAULT_OVERCURRENT_THRESHOLD_MA;
   battery_state.reg_out.overcurrent_threshold =
       DEFAULT_REG_OUT_OVERCURRENT_THRESHOLD_MA;
+
+  battery_state.calibration_voltage = 0;
 
   set_reg_out_power_off();
   set_vbat_power_off();
@@ -74,24 +84,18 @@ void battery_cells_reset(void) {
 }
 
 void update_battery_state(const adc_reading_t *adc_reading) {
-  if (get_vbat_power_state() == POWER_OFF) {
-    return;  // Early return if power is not on
+  if (battery_state.calibration_voltage) {
+    printf("calibration initiated\r\n");
+    battery_cells_reset();
+    calibrate_cells(adc_reading);
+    save_calibration();
+    return;
   }
-
   handle_battery_state(adc_reading);
   handle_faults();
 }
 
 void handle_battery_state(const adc_reading_t *adc_reading) {
-  battery_state.reg_out.current =
-      adc_to_reg_out_current(adc_reading->adc2_buf[REG_OUT_CURRENT_INDEX]);
-  battery_state.reg_out.voltage =
-      adc_to_reg_out_voltage(adc_reading->adc2_buf[REG_OUT_VOLTAGE_INDEX]);
-  battery_state.vbat_out.voltage =
-      adc_to_vbat_out_voltage(adc_reading->adc2_buf[VBAT_OUT_VOLTAGE_INDEX]);
-  battery_state.vbat_out.current =
-      adc_to_vbat_out_current(adc_reading->adc2_buf[VBAT_OUT_CURRENT_INDEX]);
-
   update_battery_cells(adc_reading);
   update_battery_charge();
   update_voltage_regulator_jumper_state();
@@ -130,19 +134,17 @@ void handle_faults(void) {
 }
 
 void update_battery_cells(const adc_reading_t *adc_reading) {
-  // adc1 ch 0-3 and adc2 ch 0-1 are cell measure channels and packed in order
-  // in adc_reading_t, so it's possible to use pointer arithmetic.
-  const uint16_t *adc_channel = &adc_reading->adc1_buf[0];
   int32_t total_voltage = 0;
 
   for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
-    int32_t cell_voltage = adc_to_cell_voltage(*adc_channel) - total_voltage;
+    float calibrated_voltage = battery_state.cells.calibration_factor[i] *
+                               (float)adc_reading->cells[i];
+    int32_t cell_voltage = (int32_t)roundf(calibrated_voltage) - total_voltage;
     if (cell_voltage < BATTERY_CELL_DETECTION_THRESHOLD_MV) {
       cell_voltage = 0;
     }
     battery_state.cells.voltage[i] = cell_voltage;
     total_voltage += cell_voltage;
-    adc_channel++;
   }
 }
 
@@ -170,7 +172,13 @@ void update_battery_charge(void) {
     charge_percent = 0;
   }
 
-  battery_state.charge = (uint8_t)roundf(charge_percent);
+  // Avoid blinking the LEDS when the charge is at the limit between two states
+  uint8_t new_charge = (uint8_t)roundf(charge_percent);
+  const uint8_t charge_error = 5;
+  if (new_charge < battery_state.charge - charge_error ||
+      new_charge > battery_state.charge + charge_error) {
+    battery_state.charge = new_charge;
+  }
 }
 
 void update_battery_leds(void) {
@@ -268,4 +276,42 @@ uint16_t *get_lowest_cell(void) {
     }
   }
   return lowest_cell;
+}
+
+void calibrate_cells(const adc_reading_t *reading) {
+  for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
+    battery_state.cells.calibration_factor[i] =
+        (float)battery_state.calibration_voltage / (float)reading->cells[i];
+    printf("cell %d calibration factor: ", i);
+    float_print(battery_state.cells.calibration_factor[i]);
+    printf("\r\n");
+  }
+  battery_state.calibration_voltage = 0;
+}
+
+void load_calibration(void) {
+  file_t calibration_file = {
+      .name = calibration_filename,
+      .size = sizeof(battery_state.cells.calibration_factor),
+      .data = battery_state.cells.calibration_factor,
+  };
+  if (read_file(&calibration_file) != APP_OK) {
+    printf("note: couldn't read calibration file, using defaults.\r\n");
+    init_default_calibration();
+  }
+}
+
+void save_calibration(void) {
+  file_t calibration_file = {
+      .name = calibration_filename,
+      .size = sizeof(battery_state.cells.calibration_factor),
+      .data = battery_state.cells.calibration_factor,
+  };
+  write_file_async(&calibration_file);
+}
+
+void init_default_calibration(void) {
+  for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
+    battery_state.cells.calibration_factor[i] = 1.0F;
+  }
 }

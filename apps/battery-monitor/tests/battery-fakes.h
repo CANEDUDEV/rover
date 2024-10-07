@@ -9,6 +9,7 @@ extern "C" {
 #include <stdint.h>
 
 #include "led.h"
+#include "lfs-wrapper.h"
 #include "power.h"
 
 // Testing
@@ -26,6 +27,8 @@ DECLARE_FAKE_VALUE_FUNC(int, read_potentiometer_value, uint8_t *)
 DECLARE_FAKE_VALUE_FUNC(int, write_potentiometer_value, uint8_t)
 DECLARE_FAKE_VALUE_FUNC(power_state_t, get_vbat_power_state)
 DECLARE_FAKE_VALUE_FUNC(power_state_t, get_reg_out_power_state)
+DECLARE_FAKE_VALUE_FUNC(int, read_file, file_t *)
+DECLARE_FAKE_VALUE_FUNC(int, write_file_async, const file_t *)
 
 #define FFF_FAKES_LIST(FAKE)      \
   FAKE(set_vbat_power_on)         \
@@ -39,7 +42,9 @@ DECLARE_FAKE_VALUE_FUNC(power_state_t, get_reg_out_power_state)
   FAKE(read_potentiometer_value)  \
   FAKE(write_potentiometer_value) \
   FAKE(get_vbat_power_state)      \
-  FAKE(get_reg_out_power_state)
+  FAKE(get_reg_out_power_state)   \
+  FAKE(read_file)                 \
+  FAKE(write_file_async)
 
 void reset_fakes(void);
 

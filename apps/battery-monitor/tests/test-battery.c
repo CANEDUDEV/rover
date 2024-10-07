@@ -68,6 +68,7 @@ int main(void) {
 
 void setup_test(void) {
   battery_state_init();
+  init_default_calibration();
   battery_state_t* battery_state = get_battery_state();
   battery_state->cells.min_voltage = LIPO_CELL_MIN_VOLTAGE_MV;
   battery_state->cells.max_voltage = LIPO_CELL_MAX_VOLTAGE_MV;
@@ -138,19 +139,15 @@ void test_handle_faults_no_fault(void) {
 
 void test_update_battery_cells(void) {
   setup_test();
-  const uint16_t adc_value_4000mv = 544;
+  const uint16_t voltage_4000mv = 4000;
   uint16_t adc_value_total = 0;
   adc_reading_t adc_reading;
 
   // Set all 6 battery cells to 4000mv
-  for (int i = 0; i < 4; i++) {
-    adc_value_total += adc_value_4000mv;
-    adc_reading.adc1_buf[i] = adc_value_total;
+  for (int i = 0; i < BATTERY_CELLS_MAX; i++) {
+    adc_value_total += voltage_4000mv;
+    adc_reading.cells[i] = adc_value_total;
   }
-  adc_value_total += adc_value_4000mv;
-  adc_reading.adc2_buf[0] = adc_value_total;
-  adc_value_total += adc_value_4000mv;
-  adc_reading.adc2_buf[1] = adc_value_total;
 
   update_battery_cells(&adc_reading);
 

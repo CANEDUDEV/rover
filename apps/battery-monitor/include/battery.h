@@ -10,11 +10,10 @@ extern "C" {
 
 #include "adc.h"
 
-// Max number of battery cells supported
-#define BATTERY_CELLS_MAX 6
-// Cells that don't exist will report a value close to 0. We set a cell
-// detection threshold voltage at 100 mV.
-#define BATTERY_CELL_DETECTION_THRESHOLD_MV 100
+// Cells that don't exist (or that are completely broken) will report a value
+// close to 0. We set a cell detection threshold voltage to avoid false
+// positives.
+#define BATTERY_CELL_DETECTION_THRESHOLD_MV 200
 
 #define BATTERY_CHARGE_100_PERCENT 100
 
@@ -43,6 +42,7 @@ typedef struct {
   uint16_t min_voltage;
   uint16_t max_voltage;
   uint16_t voltage[BATTERY_CELLS_MAX];
+  float calibration_factor[BATTERY_CELLS_MAX];
 
   uint16_t low_voltage_cutoff;
   bool low_voltage_fault;
@@ -56,6 +56,8 @@ typedef struct {
 
   uint8_t charge;
   uint32_t target_reg_out_voltage;
+
+  uint16_t calibration_voltage;
 
 } battery_state_t;
 

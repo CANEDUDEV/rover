@@ -9,7 +9,7 @@ extern "C" {
 
 #define CK_DATA_TX_PAGE_COUNT 4
 #define CK_DATA_TX_DOC_COUNT 3
-#define CK_DATA_RX_DOC_COUNT 7
+#define CK_DATA_RX_DOC_COUNT 8
 #define CK_DATA_LIST_COUNT 2
 #define CK_DATA_TX_FOLDER_COUNT CK_DATA_TX_DOC_COUNT
 #define CK_DATA_RX_FOLDER_COUNT CK_DATA_RX_DOC_COUNT
@@ -49,6 +49,7 @@ typedef struct {
   ck_folder_t *output_on_off_folder;
   ck_folder_t *report_freq_folder;
   ck_folder_t *low_voltage_cutoff_folder;
+  ck_folder_t *cell_calibration_folder;
 
 } ck_data_t;
 

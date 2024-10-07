@@ -106,12 +106,12 @@ void battery_monitor(void *unused) {
 
   vTaskDelay(pdMS_TO_TICKS(20));  // Wait for power outputs to stabilize
 
-  volatile adc_samples_t adc_samples;
+  adc_samples_t adc_samples;
   adc_reading_t adc_average;
 
   for (;;) {
     sample_adc(&adc_samples);
-    adc_average_samples(&adc_average, &adc_samples);
+    adc_average_samples(&adc_samples, &adc_average);
 
     if (ck_get_action_mode() != CK_ACTION_MODE_FREEZE) {
       update_battery_state(&adc_average);
@@ -225,6 +225,9 @@ int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
   if (folder->folder_no ==
       ck_data->reg_out_overcurrent_threshold_folder->folder_no) {
     return process_reg_out_overcurrent_threshold_letter(letter);
+  }
+  if (folder->folder_no == ck_data->cell_calibration_folder->folder_no) {
+    return process_cell_calibration_letter(letter);
   }
 
   return APP_OK;

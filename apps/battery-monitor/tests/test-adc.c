@@ -1,9 +1,11 @@
+#include "adc-internal.h"
 #include "adc.h"
 #include "jumpers.h"
 
 // Testing
 #include "test.h"
 
+void setup_test(void);
 void test_adc_to_cell_voltage(void);
 void test_adc_to_reg_out_current(void);
 void test_adc_to_reg_out_voltage(void);
@@ -14,6 +16,7 @@ void test_adc_to_vbat_out_current_x11_off_x12_off(void);
 void test_adc_to_vbat_out_voltage(void);
 
 int main(void) {
+  setup_test();
   test_adc_to_cell_voltage();
   test_adc_to_reg_out_current();
   test_adc_to_reg_out_voltage();
@@ -150,4 +153,8 @@ void test_adc_to_vbat_out_voltage(void) {
 
   ASSERT(is_acceptable_measurement(&measurement), "expected: %.0f, got: %.0f",
          measurement.expected_value, measurement.actual_value);
+}
+
+void setup_test(void) {
+  adc_update_vdda(1, 1);  // Sets vdda to 3.3V
 }
