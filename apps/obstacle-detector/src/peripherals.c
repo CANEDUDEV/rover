@@ -1,5 +1,6 @@
 #include "peripherals.h"
 
+#include "adc.h"
 #include "error.h"
 #include "ports.h"
 
@@ -60,7 +61,7 @@ void adc1_init(void) {
   hadc1->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1->Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1->Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1->Init.NbrOfConversion = 4;
+  hadc1->Init.NbrOfConversion = ADC1_NUM_CHANNELS;
   hadc1->Init.DMAContinuousRequests = DISABLE;
   hadc1->Init.EOCSelection = ADC_EOC_SEQ_CONV;
   hadc1->Init.LowPowerAutoWait = DISABLE;
