@@ -1,5 +1,6 @@
 #include "peripherals.h"
 
+#include "adc.h"
 #include "error.h"
 #include "ports.h"
 
@@ -58,7 +59,7 @@ void adc1_init(void) {
   hadc1->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1->Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1->Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1->Init.NbrOfConversion = 3;
+  hadc1->Init.NbrOfConversion = ADC1_NUM_CHANNELS;
   hadc1->Init.DMAContinuousRequests = DISABLE;
   hadc1->Init.EOCSelection = ADC_EOC_SEQ_CONV;
   hadc1->Init.LowPowerAutoWait = DISABLE;
@@ -79,7 +80,7 @@ void adc1_init(void) {
   config.Channel = ADC_CHANNEL_1;
   config.Rank = ADC_REGULAR_RANK_1;
   config.SingleDiff = ADC_SINGLE_ENDED;
-  config.SamplingTime = ADC_SAMPLETIME_19CYCLES_5;
+  config.SamplingTime = ADC_SAMPLETIME_601CYCLES_5;
   config.OffsetNumber = ADC_OFFSET_NONE;
   config.Offset = 0;
   if (HAL_ADC_ConfigChannel(hadc1, &config) != HAL_OK) {
@@ -122,7 +123,7 @@ void adc2_init(void) {
   hadc2->Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc2->Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc2->Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc2->Init.NbrOfConversion = 2;
+  hadc2->Init.NbrOfConversion = ADC2_NUM_CHANNELS;
   hadc2->Init.DMAContinuousRequests = DISABLE;
   hadc2->Init.EOCSelection = ADC_EOC_SEQ_CONV;
   hadc2->Init.LowPowerAutoWait = DISABLE;
@@ -136,7 +137,7 @@ void adc2_init(void) {
   config.Channel = ADC_CHANNEL_1;
   config.Rank = ADC_REGULAR_RANK_1;
   config.SingleDiff = ADC_SINGLE_ENDED;
-  config.SamplingTime = ADC_SAMPLETIME_19CYCLES_5;
+  config.SamplingTime = ADC_SAMPLETIME_601CYCLES_5;
   config.OffsetNumber = ADC_OFFSET_NONE;
   config.Offset = 0;
   if (HAL_ADC_ConfigChannel(hadc2, &config) != HAL_OK) {

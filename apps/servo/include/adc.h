@@ -9,9 +9,7 @@ extern "C" {
 
 #define ADC1_NUM_CHANNELS 3
 #define ADC2_NUM_CHANNELS 2
-// For some reason the readings get lower and lower the more samples we take.
-// Set to one for now.
-#define ADC_NUM_SAMPLES 1
+#define ADC_NUM_SAMPLES 100
 
 typedef struct {
   uint16_t adc1_buf[ADC1_NUM_CHANNELS];

@@ -109,9 +109,6 @@ void measure(void *unused) {
     if (ck_get_action_mode() != CK_ACTION_MODE_FREEZE) {
       update_servo_state(&adc_average);
     }
-
-    // Delay since ADC_NUM_SAMPLES is only 1.
-    vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 
