@@ -18,7 +18,13 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    apps = ["battery-monitor", "brake", "sbus-receiver", "servo"]
+    apps = [
+        "battery-monitor",
+        "brake",
+        "obstacle-detector",
+        "sbus-receiver",
+        "servo",
+    ]
 
     for app in apps:
         parser.add_argument(
@@ -51,6 +57,7 @@ def gen_system_base(args):
 
     battery_monitor = Path(args.battery_monitor_bin)
     brake = Path(args.brake_bin)
+    obstacle_detector = Path(args.obstacle_detector_bin)
     sbus_receiver = Path(args.sbus_receiver_bin)
     servo = Path(args.servo_bin)
 
@@ -93,6 +100,14 @@ def gen_system_base(args):
         "wheel-rear-right": {
             "id": rover.City.WHEEL_REAR_RIGHT,
             "binary": brake.name,
+        },
+        "obstacle-detector-front": {
+            "id": rover.City.OBSTACLE_DETECTOR_FRONT,
+            "binary": obstacle_detector.name,
+        },
+        "obstacle-detector-rear": {
+            "id": rover.City.OBSTACLE_DETECTOR_REAR,
+            "binary": obstacle_detector.name,
         },
         "ad-battery-monitor": {
             "id": rover.City.AD_BATTERY_MONITOR,

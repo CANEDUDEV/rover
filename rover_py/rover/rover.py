@@ -7,7 +7,7 @@ BASE_NUMBER = 0x400
 
 
 # City addresses
-@enum.verify(enum.UNIQUE)
+@enum.unique
 class City(enum.IntEnum):
     ALL_CITIES = 0
     BATTERY_MONITOR = 1
@@ -18,13 +18,15 @@ class City(enum.IntEnum):
     WHEEL_FRONT_RIGHT = 6
     WHEEL_REAR_LEFT = 7
     WHEEL_REAR_RIGHT = 8
+    OBSTACLE_DETECTOR_FRONT = 9
+    OBSTACLE_DETECTOR_REAR = 10
 
     # For AD systems
     AD_BATTERY_MONITOR = 100
 
 
 # CAN Message IDs
-@enum.verify(enum.UNIQUE)
+@enum.unique
 class Envelope(enum.IntEnum):
     # Control messages
     STEERING = 0x100
@@ -41,6 +43,8 @@ class Envelope(enum.IntEnum):
     WHEEL_FRONT_RIGHT_SPEED = 0x211
     WHEEL_REAR_LEFT_SPEED = 0x212
     WHEEL_REAR_RIGHT_SPEED = 0x213
+    OBSTACLE_DETECTOR_FRONT_DISTANCE = 0x214
+    OBSTACLE_DETECTOR_REAR_DISTANCE = 0x215
 
     # Settings messages
     BATTERY_JUMPER_CONFIG = 0x300
@@ -75,6 +79,9 @@ class Envelope(enum.IntEnum):
 
     BATTERY_CELL_CALIBRATION = 0x319
 
+    OBSTACLE_DETECTOR_FRONT_REPORT_FREQUENCY = 0x31A
+    OBSTACLE_DETECTOR_REAR_REPORT_FREQUENCY = 0x31B
+
     # Bootloader specific envelopes
     BOOTLOADER_COMMAND_ACK = 0x700
     BOOTLOADER_ENTER = 0x701
@@ -98,7 +105,7 @@ class Envelope(enum.IntEnum):
     AD_BATTERY_CELL_CALIBRATION = 0x611
 
 
-@enum.verify(enum.UNIQUE)
+@enum.unique
 class BootloaderFolder(enum.IntEnum):
     COMMAND_ACK = 2
     FLASH_PROGRAM_TX = 3
@@ -111,7 +118,7 @@ class BootloaderFolder(enum.IntEnum):
     FLASH_CONFIG_RX = 10
 
 
-@enum.verify(enum.UNIQUE)
+@enum.unique
 class ServoFolder(enum.IntEnum):
     POSITION = 2
     CURRENT = 3
@@ -127,7 +134,7 @@ class ServoFolder(enum.IntEnum):
     FAILSAFE = 13
 
 
-@enum.verify(enum.UNIQUE)
+@enum.unique
 class SbusReceiverFolder(enum.IntEnum):
     STEERING = 2
     THROTTLE = 3
@@ -135,7 +142,7 @@ class SbusReceiverFolder(enum.IntEnum):
     THROTTLE_SUBTRIM = 5
 
 
-@enum.verify(enum.UNIQUE)
+@enum.unique
 class BatteryMonitorFolder(enum.IntEnum):
     CELL_VOLTAGES = 2
     REGULATED_OUTPUT = 3
@@ -150,26 +157,96 @@ class BatteryMonitorFolder(enum.IntEnum):
     CELL_CALIBRATION = 12
 
 
-@enum.verify(enum.UNIQUE)
+@enum.unique
 class BrakeFolder(enum.IntEnum):
     WHEEL_SPEED = 2
     WHEEL_PARAMETERS = 3
     REPORT_FREQUENCY = 4
 
 
-# List of assignments in the form (city, envelope, folder)
-APP_ASSIGNMENTS = [
-    # Control messages
+@enum.unique
+class ObstacleDetectorFolder(enum.IntEnum):
+    OBJECT_DISTANCE = 2
+    REPORT_FREQUENCY = 3
+
+
+SERVO_ASSIGNMENTS = [
     (
         City.SERVO,
         Envelope.STEERING,
         ServoFolder.CONTROL,
     ),
     (
+        City.SERVO,
+        Envelope.SERVO_VOLTAGE,
+        ServoFolder.VOLTAGE,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_CURRENT,
+        ServoFolder.CURRENT,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_SET_VOLTAGE,
+        ServoFolder.SET_VOLTAGE,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_PWM_CONFIG,
+        ServoFolder.PWM_CONFIG,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_REPORT_FREQUENCY,
+        ServoFolder.REPORT_FREQUENCY,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_REVERSE_DIRECTION,
+        ServoFolder.REVERSE_DIRECTION,
+    ),
+    (
+        City.SERVO,
+        Envelope.SERVO_FAILSAFE,
+        ServoFolder.FAILSAFE,
+    ),
+    (
+        City.SERVO,
+        Envelope.STEERING_SUBTRIM,
+        ServoFolder.SET_SUBTRIM,
+    ),
+]
+
+MOTOR_ASSIGMENTS = [
+    (
         City.MOTOR,
         Envelope.THROTTLE,
         ServoFolder.CONTROL,
     ),
+    (
+        City.MOTOR,
+        Envelope.MOTOR_PWM_CONFIG,
+        ServoFolder.PWM_CONFIG,
+    ),
+    (
+        City.MOTOR,
+        Envelope.MOTOR_REVERSE_DIRECTION,
+        ServoFolder.REVERSE_DIRECTION,
+    ),
+    (
+        City.MOTOR,
+        Envelope.MOTOR_FAILSAFE,
+        ServoFolder.FAILSAFE,
+    ),
+    (
+        City.MOTOR,
+        Envelope.THROTTLE_SUBTRIM,
+        ServoFolder.SET_SUBTRIM,
+    ),
+]
+
+SBUS_RECEIVER_ASSIGNMENTS = [
     (
         City.SBUS_RECEIVER,
         Envelope.STEERING,
@@ -180,7 +257,19 @@ APP_ASSIGNMENTS = [
         Envelope.THROTTLE,
         SbusReceiverFolder.THROTTLE,
     ),
-    # Report messages
+    (
+        City.SBUS_RECEIVER,
+        Envelope.STEERING_SUBTRIM,
+        SbusReceiverFolder.STEERING_SUBTRIM,
+    ),
+    (
+        City.SBUS_RECEIVER,
+        Envelope.THROTTLE_SUBTRIM,
+        SbusReceiverFolder.THROTTLE_SUBTRIM,
+    ),
+]
+
+BATTERY_MONITOR_ASSIGNMENTS = [
     (
         City.BATTERY_MONITOR,
         Envelope.BATTERY_CELL_VOLTAGES,
@@ -196,37 +285,6 @@ APP_ASSIGNMENTS = [
         Envelope.BATTERY_OUTPUT,
         BatteryMonitorFolder.BATTERY_OUTPUT,
     ),
-    (
-        City.SERVO,
-        Envelope.SERVO_VOLTAGE,
-        ServoFolder.VOLTAGE,
-    ),
-    (
-        City.SERVO,
-        Envelope.SERVO_CURRENT,
-        ServoFolder.CURRENT,
-    ),
-    (
-        City.WHEEL_FRONT_LEFT,
-        Envelope.WHEEL_FRONT_LEFT_SPEED,
-        BrakeFolder.WHEEL_SPEED,
-    ),
-    (
-        City.WHEEL_FRONT_RIGHT,
-        Envelope.WHEEL_FRONT_RIGHT_SPEED,
-        BrakeFolder.WHEEL_SPEED,
-    ),
-    (
-        City.WHEEL_REAR_LEFT,
-        Envelope.WHEEL_REAR_LEFT_SPEED,
-        BrakeFolder.WHEEL_SPEED,
-    ),
-    (
-        City.WHEEL_REAR_RIGHT,
-        Envelope.WHEEL_REAR_RIGHT_SPEED,
-        BrakeFolder.WHEEL_SPEED,
-    ),
-    # Settings messages
     (
         City.BATTERY_MONITOR,
         Envelope.BATTERY_JUMPER_CONFIG,
@@ -263,64 +321,17 @@ APP_ASSIGNMENTS = [
         BatteryMonitorFolder.REG_OUT_OVERCURRENT_THRESHOLD,
     ),
     (
-        City.SERVO,
-        Envelope.SERVO_SET_VOLTAGE,
-        ServoFolder.SET_VOLTAGE,
+        City.BATTERY_MONITOR,
+        Envelope.BATTERY_CELL_CALIBRATION,
+        BatteryMonitorFolder.CELL_CALIBRATION,
     ),
+]
+
+WHEEL_FRONT_LEFT_ASSIGNMENTS = [
     (
-        City.SERVO,
-        Envelope.SERVO_PWM_CONFIG,
-        ServoFolder.PWM_CONFIG,
-    ),
-    (
-        City.SERVO,
-        Envelope.SERVO_REPORT_FREQUENCY,
-        ServoFolder.REPORT_FREQUENCY,
-    ),
-    (
-        City.MOTOR,
-        Envelope.MOTOR_PWM_CONFIG,
-        ServoFolder.PWM_CONFIG,
-    ),
-    (
-        City.SERVO,
-        Envelope.SERVO_REVERSE_DIRECTION,
-        ServoFolder.REVERSE_DIRECTION,
-    ),
-    (
-        City.MOTOR,
-        Envelope.MOTOR_REVERSE_DIRECTION,
-        ServoFolder.REVERSE_DIRECTION,
-    ),
-    (
-        City.SERVO,
-        Envelope.SERVO_FAILSAFE,
-        ServoFolder.FAILSAFE,
-    ),
-    (
-        City.MOTOR,
-        Envelope.MOTOR_FAILSAFE,
-        ServoFolder.FAILSAFE,
-    ),
-    (
-        City.SERVO,
-        Envelope.STEERING_SUBTRIM,
-        ServoFolder.SET_SUBTRIM,
-    ),
-    (
-        City.MOTOR,
-        Envelope.THROTTLE_SUBTRIM,
-        ServoFolder.SET_SUBTRIM,
-    ),
-    (
-        City.SBUS_RECEIVER,
-        Envelope.STEERING_SUBTRIM,
-        SbusReceiverFolder.STEERING_SUBTRIM,
-    ),
-    (
-        City.SBUS_RECEIVER,
-        Envelope.THROTTLE_SUBTRIM,
-        SbusReceiverFolder.THROTTLE_SUBTRIM,
+        City.WHEEL_FRONT_LEFT,
+        Envelope.WHEEL_FRONT_LEFT_SPEED,
+        BrakeFolder.WHEEL_SPEED,
     ),
     (
         City.WHEEL_FRONT_LEFT,
@@ -332,6 +343,14 @@ APP_ASSIGNMENTS = [
         Envelope.WHEEL_FRONT_LEFT_REPORT_FREQUENCY,
         BrakeFolder.REPORT_FREQUENCY,
     ),
+]
+
+WHEEL_FRONT_RIGHT_ASSIGNMENTS = [
+    (
+        City.WHEEL_FRONT_RIGHT,
+        Envelope.WHEEL_FRONT_RIGHT_SPEED,
+        BrakeFolder.WHEEL_SPEED,
+    ),
     (
         City.WHEEL_FRONT_RIGHT,
         Envelope.WHEEL_FRONT_RIGHT_WHEEL_PARAMETERS,
@@ -341,6 +360,14 @@ APP_ASSIGNMENTS = [
         City.WHEEL_FRONT_RIGHT,
         Envelope.WHEEL_FRONT_RIGHT_REPORT_FREQUENCY,
         BrakeFolder.REPORT_FREQUENCY,
+    ),
+]
+
+WHEEL_REAR_LEFT_ASSIGNMENTS = [
+    (
+        City.WHEEL_REAR_LEFT,
+        Envelope.WHEEL_REAR_LEFT_SPEED,
+        BrakeFolder.WHEEL_SPEED,
     ),
     (
         City.WHEEL_REAR_LEFT,
@@ -352,6 +379,14 @@ APP_ASSIGNMENTS = [
         Envelope.WHEEL_REAR_LEFT_REPORT_FREQUENCY,
         BrakeFolder.REPORT_FREQUENCY,
     ),
+]
+
+WHEEL_REAR_RIGHT_ASSIGNMENTS = [
+    (
+        City.WHEEL_REAR_RIGHT,
+        Envelope.WHEEL_REAR_RIGHT_SPEED,
+        BrakeFolder.WHEEL_SPEED,
+    ),
     (
         City.WHEEL_REAR_RIGHT,
         Envelope.WHEEL_REAR_RIGHT_WHEEL_PARAMETERS,
@@ -362,12 +397,9 @@ APP_ASSIGNMENTS = [
         Envelope.WHEEL_REAR_RIGHT_REPORT_FREQUENCY,
         BrakeFolder.REPORT_FREQUENCY,
     ),
-    (
-        City.BATTERY_MONITOR,
-        Envelope.BATTERY_CELL_CALIBRATION,
-        BatteryMonitorFolder.CELL_CALIBRATION,
-    ),
-    # AD system
+]
+
+AD_BATTERY_MONITOR_ASSIGNMENTS = [
     (
         City.AD_BATTERY_MONITOR,
         Envelope.AD_BATTERY_CELL_VOLTAGES,
@@ -425,6 +457,47 @@ APP_ASSIGNMENTS = [
     ),
 ]
 
+OBSTACLE_DETECTOR_FRONT_ASSIGNMENTS = [
+    (
+        City.OBSTACLE_DETECTOR_FRONT,
+        Envelope.OBSTACLE_DETECTOR_FRONT_DISTANCE,
+        ObstacleDetectorFolder.OBJECT_DISTANCE,
+    ),
+    (
+        City.OBSTACLE_DETECTOR_FRONT,
+        Envelope.OBSTACLE_DETECTOR_FRONT_REPORT_FREQUENCY,
+        ObstacleDetectorFolder.REPORT_FREQUENCY,
+    ),
+]
+
+OBSTACLE_DETECTOR_REAR_ASSIGNMENTS = [
+    (
+        City.OBSTACLE_DETECTOR_REAR,
+        Envelope.OBSTACLE_DETECTOR_REAR_DISTANCE,
+        ObstacleDetectorFolder.OBJECT_DISTANCE,
+    ),
+    (
+        City.OBSTACLE_DETECTOR_REAR,
+        Envelope.OBSTACLE_DETECTOR_REAR_REPORT_FREQUENCY,
+        ObstacleDetectorFolder.REPORT_FREQUENCY,
+    ),
+]
+
+# List of assignments in the form (city, envelope, folder)
+APP_ASSIGNMENTS = (
+    SERVO_ASSIGNMENTS
+    + MOTOR_ASSIGMENTS
+    + SBUS_RECEIVER_ASSIGNMENTS
+    + BATTERY_MONITOR_ASSIGNMENTS
+    + WHEEL_FRONT_LEFT_ASSIGNMENTS
+    + WHEEL_FRONT_RIGHT_ASSIGNMENTS
+    + WHEEL_REAR_LEFT_ASSIGNMENTS
+    + WHEEL_REAR_RIGHT_ASSIGNMENTS
+    + OBSTACLE_DETECTOR_FRONT_ASSIGNMENTS
+    + OBSTACLE_DETECTOR_REAR_ASSIGNMENTS
+    + AD_BATTERY_MONITOR_ASSIGNMENTS
+)
+
 BOOTLOADER_ASSIGNMENTS = [
     (Envelope.BOOTLOADER_COMMAND_ACK, BootloaderFolder.COMMAND_ACK),
     (Envelope.BOOTLOADER_ENTER, BootloaderFolder.ENTER),
@@ -438,7 +511,7 @@ BOOTLOADER_ASSIGNMENTS = [
 ]
 
 
-@enum.verify(enum.UNIQUE)
+@enum.unique
 class CommMode(enum.IntEnum):
     KEEP_CURRENT = 0
     SILENT = 1
@@ -446,7 +519,7 @@ class CommMode(enum.IntEnum):
     COMMUNICATE = 3
 
 
-@enum.verify(enum.UNIQUE)
+@enum.unique
 class ActionMode(enum.IntEnum):
     KEEP_CURRENT = 0
     RUN = 1
