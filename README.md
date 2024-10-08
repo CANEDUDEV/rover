@@ -8,7 +8,7 @@ Board applications utilize [FreeRTOS](https://www.freertos.org/).
 
 This project is built using [Meson](https://mesonbuild.com/) with the Ninja backend.
 
-Supported OS: Ubuntu 22.04. If you're using Windows, you can utilize the Ubuntu 22.04 [WSL](https://learn.microsoft.com/en-us/windows/wsl/) distribution.
+Supported OS: Ubuntu 24.04. If you're using Windows, you can utilize the Ubuntu 24.04 [WSL](https://learn.microsoft.com/en-us/windows/wsl/) distribution.
 
 ### Build Steps
 

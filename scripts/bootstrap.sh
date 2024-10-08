@@ -14,6 +14,7 @@ sudo apt-get -qq install --no-upgrade -y \
     gcc-arm-none-eabi \
     libc6-dev-armhf-cross \
     python3-pip \
+    python3-venv \
     zip
 
 echo "Downloading yamlfmt..."

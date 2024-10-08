@@ -23,9 +23,9 @@ DEFINE_FAKE_VALUE_FUNC(power_state_t, get_vbat_power_state)
 DEFINE_FAKE_VALUE_FUNC(power_state_t, get_reg_out_power_state)
 DEFINE_FAKE_VALUE_FUNC(int, read_file, file_t *)
 DEFINE_FAKE_VALUE_FUNC(int, write_file_async, const file_t *)
-// NOLINTEND
 
 void reset_fakes(void) {
   FFF_FAKES_LIST(RESET_FAKE);
   FFF_RESET_HISTORY();
 }
+// NOLINTEND

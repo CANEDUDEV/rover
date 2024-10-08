@@ -21,7 +21,6 @@ FAKE_VOID_FUNC(init_potentiometers)
 FAKE_VALUE_FUNC(int, read_servo_potentiometer, uint8_t*)
 FAKE_VALUE_FUNC(int, write_servo_potentiometer, uint8_t)
 FAKE_VALUE_FUNC(int, write_sensor_potentiometer, uint8_t)
-// NOLINTEND
 
 #define FFF_FAKES_LIST(FAKE)      \
   FAKE(failsafe_init)             \
@@ -38,6 +37,7 @@ void reset_fakes(void) {
   FFF_FAKES_LIST(RESET_FAKE);
   FFF_RESET_HISTORY();
 }
+// NOLINTEND
 
 void test_update_servo_pulse(void);
 void test_update_servo_pulse_reverse(void);

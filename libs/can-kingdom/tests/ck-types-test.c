@@ -28,6 +28,7 @@ void test_check_action_mode(void) {
   ASSERT(ck_check_action_mode(CK_ACTION_MODE_RESET) == CK_OK, "");
 
   const int invalid_mode = 8;
+  // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
   ASSERT(ck_check_action_mode(invalid_mode) != CK_OK, "");
 }
 
@@ -38,6 +39,7 @@ void test_check_comm_mode(void) {
   ASSERT(ck_check_comm_mode(CK_COMM_MODE_COMMUNICATE) == CK_OK, "");
 
   const int invalid_mode = 8;
+  // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
   ASSERT(ck_check_comm_mode(invalid_mode) != CK_OK, "");
 }
 
@@ -48,6 +50,7 @@ void test_check_list_type(void) {
   ASSERT(ck_check_list_type(CK_LIST_DOCUMENT) == CK_OK, "");
 
   const int invalid_type = 8;
+  // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
   ASSERT(ck_check_list_type(invalid_type) != CK_OK, "");
 }
 

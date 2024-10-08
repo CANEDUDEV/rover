@@ -31,7 +31,7 @@ static void start_array(json_parser_t *parser);
 static int parse_object_name(json_parser_t *parser);
 static int parse_value(json_parser_t *parser);
 static char *parse_string(json_parser_t *parser);
-static int json_strlen(const char *str);
+static size_t json_strlen(const char *str);
 static json_object_t *get_parent(json_object_t *object);
 static bool is_empty(json_object_t *object);
 static void new_child_object(json_parser_t *parser);
@@ -326,7 +326,7 @@ static char *parse_string(json_parser_t *parser) {
   return str;
 }
 
-static int json_strlen(const char *str) {
+static size_t json_strlen(const char *str) {
   const char *ptr = str;
 
   ptr++;  // Skip first quote
@@ -341,7 +341,7 @@ static int json_strlen(const char *str) {
     }
   }
 
-  return (int)(ptr - str - 1);
+  return ptr - str - 1;
 }
 
 static float parse_float(json_parser_t *parser, int significand) {

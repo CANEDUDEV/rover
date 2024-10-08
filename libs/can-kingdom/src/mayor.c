@@ -1007,7 +1007,7 @@ static ck_err_t remove_envelope_from_folder(ck_folder_t *folder,
                                             const ck_envelope_t *envelope) {
   int envelope_index = ck_find_envelope(folder, envelope);
   if (envelope_index < 0) {
-    return -1;
+    return CK_ERR_ITEM_NOT_FOUND;
   }
 
   // We need to shift all envelopes one step to the left in the array to keep

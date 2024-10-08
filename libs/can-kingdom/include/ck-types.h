@@ -193,40 +193,40 @@ typedef enum {
 /// Action mode as defined by the CAN Kingdom specification.
 typedef enum {
   /// Keep the current mode.
-  CK_ACTION_MODE_KEEP_CURRENT = 0x0,
+  CK_ACTION_MODE_KEEP_CURRENT = 0,
   /// Start the city.
-  CK_ACTION_MODE_RUN = 0x1,
+  CK_ACTION_MODE_RUN = 1,
   /// Stop the city.
-  CK_ACTION_MODE_FREEZE = 0x2,
+  CK_ACTION_MODE_FREEZE = 2,
   /// Reset the city.
-  CK_ACTION_MODE_RESET = 0x3,
+  CK_ACTION_MODE_RESET = 3,
 } ck_action_mode_t;
 
 /// Communication mode as defined by the CAN Kingdom specification.
 typedef enum {
   /// Keep the current mode.
-  CK_COMM_MODE_KEEP_CURRENT = 0x0,
+  CK_COMM_MODE_KEEP_CURRENT = 0,
   /// Set the CAN controller in silent mode.
-  CK_COMM_MODE_SILENT = 0x1,
+  CK_COMM_MODE_SILENT = 1,
   /// Set the CAN controller in listen-only mode.
-  CK_COMM_MODE_LISTEN_ONLY = 0x2,
+  CK_COMM_MODE_LISTEN_ONLY = 2,
   /// Enable CAN communication.
-  CK_COMM_MODE_COMMUNICATE = 0x3,
+  CK_COMM_MODE_COMMUNICATE = 3,
 } ck_comm_mode_t;
 
 /// Communication mode flags, used in KP0.
 typedef enum {
   /// Reset communication by going through the startup sequence with new bit
   /// timing settings.
-  CK_COMM_RESET = 0x4,
+  CK_COMM_RESET = 1 << 2,
   /// Skip listening for a good message during startup sequence.
-  CK_COMM_SKIP_LISTEN = 0x8,
+  CK_COMM_SKIP_LISTEN = 1 << 3,
   /// Don't skip listening for a good message during startup sequence.
-  CK_COMM_DONT_SKIP_LISTEN = 0x10,
+  CK_COMM_DONT_SKIP_LISTEN = 1 << 4,
   /// Skip 200ms wait for default letter during startup sequence.
-  CK_COMM_SKIP_WAIT = 0x20,
+  CK_COMM_SKIP_WAIT = 1 << 5,
   /// Don't 200ms wait for default letter during startup sequence.
-  CK_COMM_DONT_SKIP_WAIT = 0x40,
+  CK_COMM_DONT_SKIP_WAIT = 1 << 6,
 } ck_comm_flags_t;
 
 /// Only #CK_CITY_MODE_KEEP_CURRENT is defined, the rest is defined by the user.

@@ -94,7 +94,7 @@ uint16_t adc_to_h_bridge_current(uint16_t adc_value) {
   if (current > max_current) {
     current = max_current;
   }
-  return (uint16_t)current;
+  return current;
 }
 
 // Returns voltage in mV.
