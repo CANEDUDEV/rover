@@ -1,0 +1,10 @@
+{
+    "venv": ".venv",
+    "exclude": [
+        "subprojects",
+        "**/__pycache__",
+        "**/node_modules",
+        "**/.*"
+    ],
+    "reportUnnecessaryTypeIgnoreComment": true
+}

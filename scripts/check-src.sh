@@ -23,11 +23,12 @@ main() {
     black --quiet .
     meson fmt -i -r .
     ninja --quiet -C "${BUILD_DIR}" clang-format
+    pip freeze --exclude-editable >requirements.txt
 
     # Check
     echo "Linting..."
     shfmt -f . | grep -v ^subprojects | xargs shellcheck -o all
-    pyright rover_py
+    pyright .
     ninja --quiet -C "${BUILD_DIR}" clang-tidy
     check_git_index
 

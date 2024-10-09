@@ -127,11 +127,23 @@ def send_can_messages():
         ch.setBusOutputControl(canlib.Driver.NORMAL)
         ch.busOn()
 
-        rover.start(ch)
+        ch.write(servo.set_failsafe(servo.FAILSAFE_OFF, city=rover.City.SERVO))
+        ch.write(servo.set_failsafe(servo.FAILSAFE_OFF, city=rover.City.MOTOR))
+        ch.write(
+            rover.set_action_mode(
+                city=rover.City.SBUS_RECEIVER, mode=rover.ActionMode.FREEZE
+            )
+        )
 
         while True:
             if restart_rover:
-                rover.start(ch)
+                ch.write(servo.set_failsafe(servo.FAILSAFE_OFF, city=rover.City.SERVO))
+                ch.write(servo.set_failsafe(servo.FAILSAFE_OFF, city=rover.City.MOTOR))
+                ch.write(
+                    rover.set_action_mode(
+                        city=rover.City.SBUS_RECEIVER, mode=rover.ActionMode.FREEZE
+                    )
+                )
                 restart_rover = False
 
             if keyboard.is_pressed("up"):
@@ -150,8 +162,8 @@ def send_can_messages():
                 if steering < steering_max:
                     steering += step
 
-            ch.writeWait(servo.set_throttle_pulse_frame(throttle), -1)
-            ch.writeWait(servo.set_steering_pulse_frame(steering), -1)
+            ch.write(servo.set_throttle_pulse_frame(throttle))
+            ch.write(servo.set_steering_pulse_frame(steering))
             time.sleep(0.01)
 
 
@@ -191,7 +203,7 @@ def parse_frame(db, frame):
 
 
 def animate(_):
-    ax1, ax2, ax3 = fig.get_axes()  # pyright: ignore [reportAttributeAccessIssue]
+    ax1, ax2, ax3 = fig.get_axes()
 
     # Clear current data
     ax1.cla()
@@ -291,7 +303,13 @@ fig = plt.figure()
 subplots = fig.subplots(1, 3)
 fig.subplots_adjust(left=0.05, right=0.95, wspace=0.2)
 
-ani = FuncAnimation(fig, animate, interval=100, blit=False, save_count=3000)
+ani = FuncAnimation(
+    fig,
+    animate,  # pyright: ignore [reportArgumentType]
+    interval=100,
+    blit=False,
+    save_count=3000,
+)
 
 canvas = FigureCanvasTkAgg(fig, master=root)
 canvas.get_tk_widget().pack(

@@ -37,7 +37,7 @@ if [[ -z ${VIRTUAL_ENV} ]]; then
 fi
 
 echo "Populating virtualenv..."
-pip3 install -q -r requirements.txt
+pip install -q -r requirements.txt -e rover_py
 
 echo "Setting up build dir..."
 meson setup --cross-file stm32f302ret6.ini --wipe build
