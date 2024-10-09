@@ -2,7 +2,7 @@
 
 #include "ck-data.h"
 #include "freertos-tasks.h"
-#include "rover.h"
+#include "rover-defs.h"
 
 // CK
 #include "mayor.h"
@@ -50,7 +50,7 @@ void mayor_init(void) {
   ck_data_init();
   ck_data_t *ck_data = get_ck_data();
 
-  uint32_t city_address = ROVER_SBUS_RECEIVER_ID;
+  uint32_t city_address = ROVER_CITY_SBUS_RECEIVER;
 
   ck_id_t ck_id;
 

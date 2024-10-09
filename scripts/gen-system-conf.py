@@ -128,13 +128,15 @@ def gen_node_config(system):
             "assignments": [],
         }
     for assignment in rover.APP_ASSIGNMENTS:
-        assignment_to_config(system, *assignment)
+        assignment_to_config(system, assignment)
 
 
-def assignment_to_config(system, city, envelope, folder):
+def assignment_to_config(system, assignment):
     for _, node in system.items():
-        if node["id"] == city:
-            node["config"]["assignments"] += [{"folder": folder, "envelope": envelope}]
+        if node["id"] == assignment.city:
+            node["config"]["assignments"] += [
+                {"folder": assignment.folder, "envelope": assignment.envelope}
+            ]
             return
 
 

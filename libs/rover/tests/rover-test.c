@@ -1,6 +1,5 @@
-#include "rover.h"
-
 #include "mayor.h"
+#include "rover-defs.h"
 #include "rover-helpers.h"
 #include "test.h"
 

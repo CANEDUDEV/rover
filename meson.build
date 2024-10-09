@@ -21,8 +21,7 @@ math_dep = cc_native.find_library('m')
 objcopy = find_program('objcopy')
 clang_tidy = find_program('clang-tidy')
 cat = find_program('cat')
-# Try to find python3.exe first, in case we're running in WSL.
-python = find_program('python3.exe', 'python3', required: false)
+python = find_program('python3', required: true)
 
 stm32f3_hal_dep = dependency('stm32f3-hal')
 freertos_dep = dependency('freertos')
@@ -57,24 +56,26 @@ run_target(
     ],
 )
 
+check_src_script = files('scripts' / 'check-src.sh')
+
 run_target(
     'check',
     command: [
         'bash',
-        meson.project_source_root() / 'scripts' / 'check-src.sh',
+        check_src_script,
         meson.project_source_root(),
         meson.project_build_root(),
     ],
 )
 
-generate_system_conf_script = files('rover_py' / 'generate-system-conf.py')
+gen_system_conf_script = files('scripts' / 'gen-system-conf.py')
 
 config_dir = custom_target(
     'config',
     output: 'config',
     command: [
         python,
-        generate_system_conf_script,
+        gen_system_conf_script,
         '--force',
         '--battery-monitor-bin',
         battery_monitor_bin,
@@ -92,8 +93,8 @@ config_dir = custom_target(
     build_always_stale: true,
 )
 
+release_script = files('scripts' / 'create-release.sh')
 release_files += fs.copyfile('rover.dbc')
-release_script = fs.copyfile('scripts' / 'create-release.sh')
 flasher_path = meson.project_source_root() / 'rover_py'
 release_dir = 'release'
 
@@ -117,10 +118,13 @@ release_tgt = custom_target(
     depends: config_dir,
 )
 
+# Try to find python3.exe first, in case we're running in WSL.
+python_flash = find_program('python3.exe', 'python3', required: false)
+
 run_target(
     'flash',
     command: [
-        python,
+        python_flash,
         release_dir / 'fw_update.py',
         'system',
         '--config',

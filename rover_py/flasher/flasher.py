@@ -306,11 +306,10 @@ class Flasher:
         )
 
     def __assign_bootloader_envelopes(self, node_id):
-        for assignment in rover.BOOTLOADER_ASSIGNMENTS:
-            envelope = assignment[0]
-            folder = assignment[1]
+        bootloader_assignments = rover.generate_bootloader_assignments(node_id)
+        for assignment in bootloader_assignments:
             self.ch.writeWait(
-                rover.assign_envelope(node_id, envelope, folder),
+                rover.assign_envelope(node_id, assignment.envelope, assignment.folder),
                 self.default_timeout_ms,
             )
 

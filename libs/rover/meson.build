@@ -1,6 +1,24 @@
 rover_inc = include_directories('include')
 
-rover_helpers_src = files('src' / 'rover-helpers.c')
+rover_assignments_c = custom_target(
+    'rover-assignments.c',
+    input: files('src' / 'gen-rover-sources.py'),
+    output: 'rover-assignments.c',
+    command: [python, '@INPUT@', '--source', '@OUTPUT@'],
+)
+
+rover_defs_h = custom_target(
+    'rover-defs.h',
+    input: files('src' / 'gen-rover-sources.py'),
+    output: 'rover-defs.h',
+    command: [python, '@INPUT@', '--header', '@OUTPUT@'],
+)
+
+rover_helpers_src = [
+    files('src' / 'rover-helpers.c'),
+    rover_assignments_c,
+    rover_defs_h,
+]
 
 rover_src = [files('src' / 'rover.c'), rover_helpers_src]
 

@@ -5,7 +5,7 @@
 #include "wheel-speed.h"
 
 // Libs
-#include "rover.h"
+#include "rover-defs.h"
 
 // STM32Common
 #include "device-id.h"
@@ -43,7 +43,7 @@ void mayor_init(void) {
   ck_data_init();
   ck_data_t *ck_data = get_ck_data();
 
-  uint32_t city_address = ROVER_WHEEL_FRONT_LEFT_ID;
+  uint32_t city_address = ROVER_CITY_WHEEL_FRONT_LEFT;
 
   ck_id_t ck_id;
 

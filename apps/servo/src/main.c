@@ -4,7 +4,7 @@
 #include "freertos-tasks.h"
 #include "peripherals.h"
 #include "pwm.h"
-#include "rover.h"
+#include "rover-defs.h"
 #include "servo.h"
 #include "settings.h"
 
@@ -55,10 +55,10 @@ void mayor_init(void) {
   ck_data_init();
   ck_data_t *ck_data = get_ck_data();
 
-  uint32_t city_address = ROVER_SERVO_ID;
+  uint32_t city_address = ROVER_CITY_SERVO;
 
 #ifdef MOTOR
-  city_address = ROVER_MOTOR_ID;
+  city_address = ROVER_CITY_MOTOR;
 #endif
 
   ck_id_t ck_id;

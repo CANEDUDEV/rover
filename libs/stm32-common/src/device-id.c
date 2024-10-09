@@ -7,7 +7,7 @@
 #include "error.h"
 #include "json.h"
 #include "jsondb.h"
-#include "rover.h"
+#include "rover-defs.h"
 #include "stm32f3xx_ll_utils.h"
 
 // FreeRTOS
