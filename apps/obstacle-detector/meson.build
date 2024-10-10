@@ -2,9 +2,13 @@ obstacle_detector_inc = include_directories('include')
 
 obstacle_detector_src = files(
     'src' / 'adc.c',
+    'src' / 'ck.c',
+    'src' / 'ck-data.c',
     'src' / 'interrupts.c',
     'src' / 'main.c',
+    'src' / 'obstacle-detector.c',
     'src' / 'peripherals.c',
+    'src' / 'report.c',
 )
 
 obstacle_detector_elf = executable(

@@ -10,8 +10,8 @@ void adc_average_samples(adc_reading_t *average,
     sum_adc1[i % ADC1_NUM_CHANNELS] += samples->adc1_buf[i];
   }
 
-  for (uint8_t j = 0; j < ADC1_NUM_CHANNELS; j++) {
-    average->adc1_buf[j] = sum_adc1[j] / ADC_NUM_SAMPLES;
+  for (uint32_t i = 0; i < ADC1_NUM_CHANNELS; i++) {
+    average->adc1_buf[i] = sum_adc1[i] / ADC_NUM_SAMPLES;
   }
 }
 
