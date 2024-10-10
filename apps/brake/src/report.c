@@ -70,6 +70,10 @@ void report(void *unused) {
     xTimerChangePeriod(timer, report_period_ms, portMAX_DELAY);
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
+    if (ck_get_action_mode() == CK_ACTION_MODE_FREEZE) {
+      continue;
+    }
+
     if (ck_send_document(ck_data->wheel_speed_folder->folder_no) != CK_OK) {
       printf("failed to send doc.\r\n");
     }
