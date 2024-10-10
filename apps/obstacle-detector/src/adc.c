@@ -21,7 +21,7 @@ float adc_value_to_distance(uint16_t adc_value) {
   const float scale_factor = 6 / 4.0F;
   const float offset = -300.0F;
 
-  float distance = scale_factor * (float)adc_value + offset;
+  float distance = (scale_factor * (float)adc_value) + offset;
 
   return distance;
 }

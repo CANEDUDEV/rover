@@ -82,7 +82,7 @@ void adc1_init(void) {
   config.Channel = ADC_CHANNEL_1;
   config.Rank = ADC_REGULAR_RANK_1;
   config.SingleDiff = ADC_SINGLE_ENDED;
-  config.SamplingTime = ADC_SAMPLETIME_19CYCLES_5;
+  config.SamplingTime = ADC_SAMPLETIME_601CYCLES_5;
   config.OffsetNumber = ADC_OFFSET_NONE;
   config.Offset = 0;
   if (HAL_ADC_ConfigChannel(hadc1, &config) != HAL_OK) {
