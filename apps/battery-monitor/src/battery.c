@@ -91,11 +91,11 @@ void update_battery_state(const adc_reading_t *adc_reading) {
     save_calibration();
     return;
   }
-  handle_battery_state(adc_reading);
-  handle_faults();
-}
 
-void handle_battery_state(const adc_reading_t *adc_reading) {
+  battery_state.reg_out.voltage = adc_reading->reg_out_voltage;
+  battery_state.reg_out.current = adc_reading->reg_out_current;
+  battery_state.vbat_out.voltage = adc_reading->vbat_out_voltage;
+  battery_state.vbat_out.current = adc_reading->vbat_out_current;
   update_battery_cells(adc_reading);
   update_battery_charge();
   update_voltage_regulator_jumper_state();
@@ -114,6 +114,8 @@ void handle_battery_state(const adc_reading_t *adc_reading) {
       battery_state.reg_out.overcurrent_threshold) {
     battery_state.reg_out.overcurrent_fault = true;
   }
+
+  handle_faults();
 }
 
 void handle_faults(void) {
