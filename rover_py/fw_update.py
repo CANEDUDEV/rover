@@ -32,7 +32,10 @@ def parse_args():
         "--bitrate",
         default="125k",
         choices=["125k", "250k", "500k", "1m"],
-        help="Use this option if you have changed the default bitrate",
+        help="use this option if you have changed the default bitrate",
+    )
+    parser.add_argument(
+        "-l", "--list-online", action="store_true", help="list online nodes"
     )
 
     subparsers = parser.add_subparsers(required=False, dest="subcommand")
@@ -115,7 +118,16 @@ def run_flasher(args):
         try:
             print("Running flasher...")
 
-            if args.subcommand == "single":
+            if args.list_online:
+                f = flasher.Flasher(ch)
+                node_ids = f.detect_online_nodes()
+                print("Found nodes:")
+                for id in node_ids:
+                    print(f"  {id}: {rover.City(id).name}")
+
+                sys.exit(0)
+
+            elif args.subcommand == "single":
                 run_single(ch, args)
 
             elif args.subcommand == "recover":

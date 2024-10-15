@@ -16,11 +16,32 @@ class Flasher:
         self.ch.setBusOutputControl(canlib.Driver.NORMAL)
         self.ch.busOn()
 
+    def detect_online_nodes(self):
+        self.ch.write(rover.set_action_mode(mode=rover.ActionMode.FREEZE))
+
+        self.ch.iocontrol.flush_rx_buffer()
+        self.ch.writeWait(
+            rover.give_base_number(response_page=1), self.default_timeout_ms
+        )
+        time.sleep(0.1)  # Allow time to respond
+
+        # Check responses
+        while True:
+            try:
+                frame = self.ch.read(timeout=10)
+                if frame:
+                    self.online_node_ids.add(frame.id - rover.BASE_NUMBER)
+
+            except (canlib.exceptions.CanTimeout, canlib.exceptions.CanNoMsg):
+                break
+
+        return self.online_node_ids
+
     def run(self):
         if not self.config:
             raise ValueError(f"run method requires config parameter")
 
-        self.__detect_online_nodes()
+        self.detect_online_nodes()
 
         # Flash all online nodes
         for node in self.config.get_nodes():
@@ -33,7 +54,7 @@ class Flasher:
         self.__restart_all()
 
     def run_single(self, id, binary_file=None, config_file=None):
-        self.__detect_online_nodes()
+        self.detect_online_nodes()
 
         if id not in self.online_node_ids:
             raise ValueError(
@@ -54,7 +75,7 @@ class Flasher:
 
     def format_fs(self, id):
         prefix = f"node {id}"
-        self.__detect_online_nodes()
+        self.detect_online_nodes()
 
         if id not in self.online_node_ids:
             raise ValueError(
@@ -79,7 +100,7 @@ class Flasher:
         # Send default letter. Send should succeed only if node is on the bus again.
         self.ch.writeWait(rover.default_letter(), 30_000)  # 30 second delay
         self.__enter_bootloader(0)
-        self.__detect_online_nodes()
+        self.detect_online_nodes()
         id = self.online_node_ids.pop()
         binary = _read_binary(binary_file)
         config = _read_json(config_file)
@@ -169,6 +190,7 @@ class Flasher:
         chunks[-1] += [0] * (chunk_size - last_chunk_length)
 
         current_page_number = 3
+
         batch_size = 128  # Set to avoid TX buffer overflow
 
         try:
@@ -200,25 +222,6 @@ class Flasher:
 
         if int.from_bytes(received.data[1:3], byteorder="little") != 0x0000:
             raise RuntimeError("Got wrong bundle request, wanted 0x0000")
-
-    def __detect_online_nodes(self):
-        self.ch.write(rover.set_action_mode(mode=rover.ActionMode.FREEZE))
-
-        self.ch.iocontrol.flush_rx_buffer()
-        self.ch.writeWait(
-            rover.give_base_number(response_page=1), self.default_timeout_ms
-        )
-        time.sleep(0.1)  # Allow time to respond
-
-        # Check responses
-        while True:
-            try:
-                frame = self.ch.read(timeout=10)
-                if frame:
-                    self.online_node_ids.add(frame.id - rover.BASE_NUMBER)
-
-            except (canlib.exceptions.CanTimeout, canlib.exceptions.CanNoMsg):
-                break
 
     def __enter_bootloader(self, id):
         try:
