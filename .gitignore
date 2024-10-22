@@ -1,6 +1,7 @@
 *.csv
 *.mp4
 *.zip
+*.log
 *Zone.Identifier
 .bin/
 .cache/
