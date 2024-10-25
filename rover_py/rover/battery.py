@@ -4,7 +4,7 @@ from enum import IntEnum
 
 from canlib import Frame
 
-from .rover import Envelope
+from . import Envelope
 
 
 class JumperConfig(IntEnum):

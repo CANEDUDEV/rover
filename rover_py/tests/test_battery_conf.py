@@ -2,7 +2,7 @@ import time
 
 from canlib import canlib
 
-from ..rover import battery, rover
+from ..rover import Envelope, battery, rover
 
 with canlib.openChannel(
     channel=0,
@@ -26,10 +26,10 @@ with canlib.openChannel(
     t_before = time.time()
 
     ch.iocontrol.flush_rx_buffer()  # pyright: ignore [reportCallIssue]
-    ch.readSyncSpecific(rover.Envelope.BATTERY_OUTPUT, timeout=2000)
+    ch.readSyncSpecific(Envelope.BATTERY_OUTPUT, timeout=2000)
 
     ch.iocontrol.flush_rx_buffer()  # pyright: ignore [reportCallIssue]
-    ch.readSyncSpecific(rover.Envelope.BATTERY_OUTPUT, timeout=2000)
+    ch.readSyncSpecific(Envelope.BATTERY_OUTPUT, timeout=2000)
 
     t_after = time.time()
 

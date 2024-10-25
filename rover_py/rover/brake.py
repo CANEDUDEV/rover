@@ -2,7 +2,7 @@ import struct
 
 from canlib import Frame
 
-from .rover import City, Envelope
+from . import City, Envelope
 
 
 def set_wheel_parameters_frame(

@@ -2,7 +2,7 @@ import sys
 
 from canlib import canlib
 
-from rover import battery, rover
+from rover import Envelope, battery
 
 
 def main():
@@ -57,12 +57,12 @@ Continue? [y/N] >
 def read_cell0_voltage(ch):
     # Cell message is sent in two frames.
     # We want the first frame, where byte 0 == 0.
-    ch.readSyncSpecific(rover.Envelope.BATTERY_CELL_VOLTAGES, timeout=1000)
-    received = ch.readSpecificSkip(rover.Envelope.BATTERY_CELL_VOLTAGES)
+    ch.readSyncSpecific(Envelope.BATTERY_CELL_VOLTAGES, timeout=1000)
+    received = ch.readSpecificSkip(Envelope.BATTERY_CELL_VOLTAGES)
 
     if received.data[0] == 1:
-        ch.readSyncSpecific(rover.Envelope.BATTERY_CELL_VOLTAGES, timeout=1000)
-        received = ch.readSpecificSkip(rover.Envelope.BATTERY_CELL_VOLTAGES)
+        ch.readSyncSpecific(Envelope.BATTERY_CELL_VOLTAGES, timeout=1000)
+        received = ch.readSpecificSkip(Envelope.BATTERY_CELL_VOLTAGES)
 
     return int.from_bytes(received.data[1:3], byteorder="little")
 

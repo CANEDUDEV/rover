@@ -4,7 +4,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from rover import rover
+import rover
 
 
 def main():

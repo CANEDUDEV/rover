@@ -3,7 +3,7 @@ import time
 import keyboard
 from canlib import canlib
 
-from ..rover import rover, servo
+from ..rover import Envelope, rover, servo
 
 with canlib.openChannel(
     channel=0,
@@ -11,7 +11,7 @@ with canlib.openChannel(
     bitrate=canlib.Bitrate.BITRATE_125K,
 ) as ch:
     ch.setBusOutputControl(canlib.Driver.NORMAL)
-    ch.canSetAcceptanceFilter(rover.Envelope.STEERING, rover.Envelope.STEERING)
+    ch.canSetAcceptanceFilter(Envelope.STEERING, Envelope.STEERING)
     ch.busOn()
 
     rover.start(ch)

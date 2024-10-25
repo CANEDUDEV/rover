@@ -2,7 +2,7 @@ import time
 
 from canlib import canlib
 
-from ..rover import brake, rover
+from ..rover import Envelope, brake, rover
 
 with canlib.openChannel(
     channel=0,
@@ -22,10 +22,10 @@ with canlib.openChannel(
     t_before = time.time()
 
     ch.iocontrol.flush_rx_buffer()  # pyright: ignore [reportCallIssue]
-    ch.readSyncSpecific(rover.Envelope.WHEEL_FRONT_LEFT_SPEED, timeout=2000)
+    ch.readSyncSpecific(Envelope.WHEEL_FRONT_LEFT_SPEED, timeout=2000)
 
     ch.iocontrol.flush_rx_buffer()  # pyright: ignore [reportCallIssue]
-    ch.readSyncSpecific(rover.Envelope.WHEEL_FRONT_LEFT_SPEED, timeout=2000)
+    ch.readSyncSpecific(Envelope.WHEEL_FRONT_LEFT_SPEED, timeout=2000)
 
     t_after = time.time()
 

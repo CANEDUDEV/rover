@@ -2,7 +2,7 @@ import time
 
 from canlib import canlib
 
-from ..rover import rover, servo
+from ..rover import Envelope, rover, servo
 
 with canlib.openChannel(
     channel=0,
@@ -27,11 +27,11 @@ with canlib.openChannel(
 
     ch.iocontrol.flush_rx_buffer()  # pyright: ignore [reportCallIssue]
 
-    ch.readSyncSpecific(rover.Envelope.SERVO_VOLTAGE, timeout=2000)
+    ch.readSyncSpecific(Envelope.SERVO_VOLTAGE, timeout=2000)
 
     ch.iocontrol.flush_rx_buffer()  # pyright: ignore [reportCallIssue]
 
-    ch.readSyncSpecific(rover.Envelope.SERVO_VOLTAGE, timeout=2000)
+    ch.readSyncSpecific(Envelope.SERVO_VOLTAGE, timeout=2000)
 
     t_after = time.time()
 

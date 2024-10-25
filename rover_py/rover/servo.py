@@ -3,7 +3,7 @@ import struct
 
 from canlib import Frame
 
-from .rover import City, Envelope
+from . import City, Envelope
 
 FAILSAFE_OFF = 0
 FAILSAFE_ON = 1

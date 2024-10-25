@@ -2,7 +2,7 @@ import csv  # Import the CSV module
 
 from canlib import canlib
 
-from ..rover import rover, servo
+from rover import Envelope, servo
 
 # Set up data storage for steering signal and servo current signals.
 steering_timestamps = []
@@ -41,13 +41,13 @@ with canlib.openChannel(
             timestamp = frame.timestamp / 1000
 
             # Process the first CAN signal (Steering signal)
-            if frame.id == rover.Envelope.STEERING:
+            if frame.id == Envelope.STEERING:
                 can_value = int.from_bytes(bytes(frame.data[1:]), byteorder="little")
                 steering_timestamps.append(timestamp)
                 steering_data.append(can_value)
 
             # Process the second CAN signal (Servo current)
-            elif frame.id == rover.Envelope.SERVO_CURRENT:
+            elif frame.id == Envelope.SERVO_CURRENT:
                 can_value = int.from_bytes(bytes(frame.data[0:]), byteorder="little")
                 current_timestamps.append(timestamp)
                 current_data.append(can_value)

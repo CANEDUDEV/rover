@@ -2,7 +2,7 @@ import argparse
 import io
 from pathlib import Path
 
-from rover import rover
+import rover
 
 source_file_template = """#include "rover-assignments.h"
 #include "rover-defs.h"

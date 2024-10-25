@@ -4,7 +4,7 @@ from pathlib import Path
 
 from canlib import Frame, canlib
 
-from rover import rover
+from rover import Envelope, bootloader, rover
 
 
 class Flasher:
@@ -250,14 +250,14 @@ class Flasher:
                 self.default_timeout_ms,
             )
 
-            f = Frame(id_=rover.Envelope.BOOTLOADER_ENTER, dlc=0, data=[])
+            f = Frame(id_=Envelope.BOOTLOADER_ENTER, dlc=0, data=[])
 
             self.__send_bootloader_command(f)
         except (Exception, canlib.exceptions.CanlibException) as e:
             raise RuntimeError(f"entering bootloader failed: {e}") from e
 
     def __exit_bootloader(self):
-        f = Frame(id_=rover.Envelope.BOOTLOADER_EXIT, dlc=0, data=[])
+        f = Frame(id_=Envelope.BOOTLOADER_EXIT, dlc=0, data=[])
         try:
             self.__send_bootloader_command(f)
         except (Exception, canlib.exceptions.CanlibException) as e:
@@ -265,7 +265,7 @@ class Flasher:
 
     def __flash_erase(self, bytes_to_erase):
         f = Frame(
-            id_=rover.Envelope.BOOTLOADER_FLASH_ERASE,
+            id_=Envelope.BOOTLOADER_FLASH_ERASE,
             dlc=4,
             data=list(bytes_to_erase.to_bytes(4, "little")),
         )
@@ -276,14 +276,14 @@ class Flasher:
 
     def __flash_program(self, binary_data):
         try:
-            self.__block_transfer(rover.Envelope.BOOTLOADER_FLASH_PROGRAM, binary_data)
+            self.__block_transfer(Envelope.BOOTLOADER_FLASH_PROGRAM, binary_data)
         except RuntimeError as e:
             raise RuntimeError(f"flashing binary failed: {e}") from e
         except (Exception, canlib.exceptions.CanlibException):
             raise
 
     def __format_fs(self):
-        f = Frame(id_=rover.Envelope.BOOTLOADER_FORMAT_FS, dlc=0, data=[])
+        f = Frame(id_=Envelope.BOOTLOADER_FORMAT_FS, dlc=0, data=[])
         try:
             self.__send_bootloader_command(f, timeout=10_000)
         except (Exception, canlib.exceptions.CanlibException) as e:
@@ -292,7 +292,7 @@ class Flasher:
     def __write_config(self, config):
         try:
             binary = json.dumps(config, separators=(",", ":")).encode(encoding="ascii")
-            self.__block_transfer(rover.Envelope.BOOTLOADER_FLASH_CONFIG, binary)
+            self.__block_transfer(Envelope.BOOTLOADER_FLASH_CONFIG, binary)
         except RuntimeError as e:
             raise RuntimeError(f"writing config failed: {e}") from e
         except (Exception, canlib.exceptions.CanlibException):
@@ -315,7 +315,7 @@ class Flasher:
         )
 
     def __assign_bootloader_envelopes(self, node_id):
-        bootloader_assignments = rover.generate_bootloader_assignments(node_id)
+        bootloader_assignments = bootloader.generate_assignments(node_id)
         for assignment in bootloader_assignments:
             self.ch.writeWait(
                 rover.assign_envelope(node_id, assignment.envelope, assignment.folder),
@@ -330,10 +330,8 @@ class Flasher:
         self.ch.write(frame)
 
         try:
-            self.ch.readSyncSpecific(
-                rover.Envelope.BOOTLOADER_COMMAND_ACK, timeout=timeout
-            )
-            received = self.ch.readSpecificSkip(rover.Envelope.BOOTLOADER_COMMAND_ACK)
+            self.ch.readSyncSpecific(Envelope.BOOTLOADER_COMMAND_ACK, timeout=timeout)
+            received = self.ch.readSpecificSkip(Envelope.BOOTLOADER_COMMAND_ACK)
 
         except (canlib.exceptions.CanNoMsg, canlib.exceptions.CanTimeout):
             raise RuntimeError("No ACK received. Exiting.")

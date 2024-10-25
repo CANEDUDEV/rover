@@ -12,7 +12,7 @@ from canlib import canlib, kvadblib
 from matplotlib.animation import FuncAnimation
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from rover import rover, servo
+from rover import ActionMode, City, Envelope, rover, servo
 
 sent_messages = {}
 received_messages = {}
@@ -55,21 +55,21 @@ def receive_can_messages():
                     continue
 
                 with lock:
-                    if frame.id == rover.Envelope.THROTTLE:
+                    if frame.id == Envelope.THROTTLE:
                         sent_messages[str(frame.id)] = parse_frame(db, frame)
                         throttle_timestamps.append(frame.timestamp)
                         throttle_values.append(
                             int.from_bytes(frame.data[1:], byteorder="little")
                         )
 
-                    elif frame.id == rover.Envelope.STEERING:
+                    elif frame.id == Envelope.STEERING:
                         sent_messages[str(frame.id)] = parse_frame(db, frame)
                         steering_timestamps.append(frame.timestamp)
                         steering_values.append(
                             int.from_bytes(frame.data[1:], byteorder="little")
                         )
 
-                    elif frame.id == rover.Envelope.SERVO_CURRENT:
+                    elif frame.id == Envelope.SERVO_CURRENT:
                         received_messages[str(frame.id)] = parse_frame(db, frame)
                         servo_current_timestamps.append(frame.timestamp)
                         servo_current_values.append(
@@ -127,21 +127,17 @@ def send_can_messages():
         ch.setBusOutputControl(canlib.Driver.NORMAL)
         ch.busOn()
 
-        ch.write(servo.set_failsafe(servo.FAILSAFE_OFF, city=rover.City.SERVO))
-        ch.write(servo.set_failsafe(servo.FAILSAFE_OFF, city=rover.City.MOTOR))
-        ch.write(
-            rover.set_action_mode(
-                city=rover.City.SBUS_RECEIVER, mode=rover.ActionMode.FREEZE
-            )
-        )
+        ch.write(servo.set_failsafe(servo.FAILSAFE_OFF, city=City.SERVO))
+        ch.write(servo.set_failsafe(servo.FAILSAFE_OFF, city=City.MOTOR))
+        ch.write(rover.set_action_mode(city=City.SBUS_RECEIVER, mode=ActionMode.FREEZE))
 
         while True:
             if restart_rover:
-                ch.write(servo.set_failsafe(servo.FAILSAFE_OFF, city=rover.City.SERVO))
-                ch.write(servo.set_failsafe(servo.FAILSAFE_OFF, city=rover.City.MOTOR))
+                ch.write(servo.set_failsafe(servo.FAILSAFE_OFF, city=City.SERVO))
+                ch.write(servo.set_failsafe(servo.FAILSAFE_OFF, city=City.MOTOR))
                 ch.write(
                     rover.set_action_mode(
-                        city=rover.City.SBUS_RECEIVER, mode=rover.ActionMode.FREEZE
+                        city=City.SBUS_RECEIVER, mode=ActionMode.FREEZE
                     )
                 )
                 restart_rover = False

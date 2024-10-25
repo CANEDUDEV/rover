@@ -2,7 +2,7 @@ import csv
 
 from canlib import canlib
 
-from rover import rover
+from rover import Envelope
 
 # Initialize CANlib for both signals
 with canlib.openChannel(
@@ -26,7 +26,7 @@ with canlib.openChannel(
                 if frame is None:
                     continue
 
-                if frame.id == rover.Envelope.AD_BATTERY_CELL_VOLTAGES:
+                if frame.id == Envelope.AD_BATTERY_CELL_VOLTAGES:
                     if frame.data[0] == 0:
                         cell1 = int.from_bytes(
                             bytes(frame.data[1:3]), byteorder="little"

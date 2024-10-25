@@ -2,7 +2,7 @@ from time import sleep
 
 from canlib import canlib
 
-from ..rover import rover, servo
+from ..rover import City, rover, servo
 
 with canlib.openChannel(
     channel=0,
@@ -16,13 +16,13 @@ with canlib.openChannel(
 
     # Disable SBUS receiver city's communication
     ch.writeWait(
-        rover.set_comm_mode(city=rover.City.SBUS_RECEIVER, mode=rover.CommMode.SILENT),
+        rover.set_comm_mode(city=City.SBUS_RECEIVER, mode=rover.CommMode.SILENT),
         -1,
     )
     sleep(3)
 
     # Disable failsafe
-    ch.writeWait(servo.set_failsafe(servo.FAILSAFE_OFF, city=rover.City.MOTOR), -1)
+    ch.writeWait(servo.set_failsafe(servo.FAILSAFE_OFF, city=City.MOTOR), -1)
 
     # Accelerate
     ch.writeWait(servo.set_throttle_pulse_frame(1600), -1)
@@ -44,6 +44,6 @@ with canlib.openChannel(
     ch.writeWait(servo.set_throttle_pulse_frame(1500), -1)
 
     # Re-enable failsafe
-    ch.writeWait(servo.set_failsafe(servo.FAILSAFE_ON, city=rover.City.MOTOR), -1)
+    ch.writeWait(servo.set_failsafe(servo.FAILSAFE_ON, city=City.MOTOR), -1)
 
     ch.busOff()
