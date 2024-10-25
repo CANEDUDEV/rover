@@ -1,6 +1,7 @@
 {
     "venv": ".venv",
     "exclude": [
+        "build",
         "subprojects",
         "**/__pycache__",
         "**/node_modules",

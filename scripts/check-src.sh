@@ -17,7 +17,7 @@ main() {
     pushd "${SRC_DIR}" >/dev/null
 
     echo "Formatting..."
-    shfmt -w -s -i 4 .
+    find_shell_files | xargs shfmt -w -s -i 4
     .bin/yamlfmt -quiet -formatter type=basic,retain_line_breaks=true . .clang-tidy .clang-format
     isort --quiet --gitignore --profile black .
     black --quiet .
@@ -27,12 +27,16 @@ main() {
 
     # Check
     echo "Linting..."
-    shfmt -f . | grep -v ^subprojects | xargs shellcheck -o all
+    find_shell_files | xargs shellcheck -o all
     pyright .
     ninja --quiet -C "${BUILD_DIR}" clang-tidy
     check_git_index
 
     popd >/dev/null
+}
+
+find_shell_files() {
+    git ls-files | xargs file -i | grep text/x-shellscript | cut -d ":" -f 1
 }
 
 # Check for untracked/modified git files
