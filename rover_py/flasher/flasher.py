@@ -21,8 +21,11 @@ class Flasher:
 
         self.ch.iocontrol.flush_rx_buffer()
         self.ch.writeWait(
-            rover.give_base_number(response_page=1), self.default_timeout_ms
+            rover.set_action_mode(mode=rover.ActionMode.FREEZE), self.default_timeout_ms
         )
+        self.ch.iocontrol.flush_rx_buffer()
+
+        self.ch.write(rover.give_base_number(response_page=1))
         time.sleep(0.1)  # Allow time to respond
 
         # Check responses
