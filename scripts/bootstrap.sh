@@ -32,10 +32,6 @@ fi
 # shellcheck disable=SC1091,SC2312
 source .venv/bin/activate
 
-if [[ -z ${VIRTUAL_ENV} ]]; then
-    exit 1
-fi
-
 echo "Populating virtualenv..."
 pip install -q -r requirements.txt -e rover_py
 
