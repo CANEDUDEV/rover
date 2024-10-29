@@ -61,7 +61,6 @@ check_src_script = files('scripts' / 'check-src.sh')
 run_target(
     'check',
     command: [
-        'bash',
         check_src_script,
         meson.project_source_root(),
         meson.project_build_root(),
@@ -103,7 +102,6 @@ release_tgt = custom_target(
     input: release_files,
     output: release_dir,
     command: [
-        'bash',
         release_script,
         '--config-dir',
         config_dir,
