@@ -16,10 +16,7 @@ class Flasher:
         self.ch.setBusOutputControl(canlib.Driver.NORMAL)
         self.ch.busOn()
 
-    def detect_online_nodes(self):
-        self.ch.write(rover.set_action_mode(mode=rover.ActionMode.FREEZE))
-
-        self.ch.iocontrol.flush_rx_buffer()
+    def detect_online_nodes(self, restore_comm=True):
         self.ch.writeWait(
             rover.set_action_mode(mode=rover.ActionMode.FREEZE), self.default_timeout_ms
         )
@@ -38,13 +35,19 @@ class Flasher:
             except (canlib.exceptions.CanTimeout, canlib.exceptions.CanNoMsg):
                 break
 
+        if restore_comm:
+            self.ch.writeWait(
+                rover.set_action_mode(mode=rover.ActionMode.RUN),
+                self.default_timeout_ms,
+            )
+
         return self.online_node_ids
 
     def run(self):
         if not self.config:
             raise ValueError(f"run method requires config parameter")
 
-        self.detect_online_nodes()
+        self.detect_online_nodes(restore_comm=False)
 
         # Flash all online nodes
         for node in self.config.get_nodes():
@@ -57,7 +60,7 @@ class Flasher:
         self.__restart_all()
 
     def run_single(self, id, binary_file=None, config_file=None):
-        self.detect_online_nodes()
+        self.detect_online_nodes(restore_comm=False)
 
         if id not in self.online_node_ids:
             raise ValueError(
@@ -78,7 +81,7 @@ class Flasher:
 
     def format_fs(self, id):
         prefix = f"node {id}"
-        self.detect_online_nodes()
+        self.detect_online_nodes(restore_comm=False)
 
         if id not in self.online_node_ids:
             raise ValueError(
@@ -103,7 +106,7 @@ class Flasher:
         # Send default letter. Send should succeed only if node is on the bus again.
         self.ch.writeWait(rover.default_letter(), 30_000)  # 30 second delay
         self.__enter_bootloader(0)
-        self.detect_online_nodes()
+        self.detect_online_nodes(restore_comm=False)
         id = self.online_node_ids.pop()
         binary = _read_binary(binary_file)
         config = _read_json(config_file)
