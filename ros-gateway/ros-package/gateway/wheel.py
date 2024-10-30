@@ -5,6 +5,8 @@ import std_msgs.msg as msgtype  # pyright: ignore
 from rclpy.node import Node  # pyright: ignore
 from rclpy.qos import ReliabilityPolicy  # pyright: ignore
 
+import rover
+
 from .topic import rover_topic
 
 
@@ -16,8 +18,12 @@ class Wheel(enum.IntEnum):
     WHEEL_REAR_RIGHT = 3
 
 
-class WheelSpeedPublisher(Node):
+class Publisher(Node):
     def __init__(self, wheel):
+        if wheel not in Wheel:
+            raise ValueError()
+
+        self.wheel = wheel
         self.name = wheel.name.lower()
         super().__init__(self.name)
 
@@ -46,5 +52,26 @@ class WheelSpeedPublisher(Node):
         self.speed_publisher.publish(speed_msg)
 
     def publish(self, msg):
-        self.__publish_rpm(msg)
-        self.__publish_speed(msg)
+        id = msg.arbitration_id
+
+        if (
+            (
+                self.wheel == Wheel.WHEEL_FRONT_LEFT
+                and id == rover.Envelope.WHEEL_FRONT_LEFT_SPEED
+            )
+            or (
+                self.wheel == Wheel.WHEEL_FRONT_RIGHT
+                and id == rover.Envelope.WHEEL_FRONT_RIGHT_SPEED
+            )
+            or (
+                self.wheel == Wheel.WHEEL_REAR_LEFT
+                and id == rover.Envelope.WHEEL_REAR_LEFT_SPEED
+            )
+            or (
+                self.wheel == Wheel.WHEEL_REAR_RIGHT
+                and id == rover.Envelope.WHEEL_REAR_RIGHT_SPEED
+            )
+        ):
+
+            self.__publish_rpm(msg)
+            self.__publish_speed(msg)
