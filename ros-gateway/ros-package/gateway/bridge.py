@@ -57,9 +57,10 @@ class RosBridge(can.Listener):
             self.can_bus.shutdown()
 
     def on_message_received(self, msg):
-        timestamp = time.time()
-        if timestamp - self.last_control_override_message_timestamp > 0.1:
-            self.controller.clear_override()
+        if self.last_control_override_message_timestamp != 0:
+            timestamp = time.time()
+            if timestamp - self.last_control_override_message_timestamp > 0.1:
+                self.controller.clear_override()
 
         if (
             msg.arbitration_id == rover.Envelope.STEERING

@@ -23,6 +23,9 @@ COPY --from=base /app .
 COPY ros-gateway/entrypoint.sh .
 RUN chmod a+x entrypoint.sh
 
+# Create user if it doesn't exist
+RUN bash -c 'id -u 1000 &>/dev/null || useradd -m -s /bin/bash ubuntu'
+
 RUN chown -R 1000:1000 /app
 
 USER 1000:1000
