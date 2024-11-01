@@ -13,7 +13,8 @@ and usable without sudo.
     --help                show this help
     --rover-root DIR      path to rover repository (default: .)
     --dockerfile FILE     path to ros-gateway dockerfile (default: ros-gateway/Dockerfile)
-    --push DEST           push container to DEST
+    --version-tag         version to tag with (default: latest)
+    --push                push containers
 
 EOF
 
@@ -26,6 +27,7 @@ fi
 
 ROVER_ROOT=.
 DOCKERFILE=ros-gateway/Dockerfile
+VERSION=latest
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -45,9 +47,14 @@ while [[ $# -gt 0 ]]; do
         shift 2
         ;;
 
-    --push)
-        PUSH="--push --tag $2"
+    --version-tag)
+        VERSION="$2"
         shift 2
+        ;;
+
+    --push)
+        PUSH="--push"
+        shift 1
         ;;
 
     *)
@@ -73,9 +80,16 @@ if ! docker buildx ls | grep "${ROVER_BUILDER}" >/dev/null; then
         --bootstrap
 fi
 
-# PUSH shouldn't be double quoted
-# shellcheck disable=SC2086
 docker buildx --builder "${ROVER_BUILDER}" build \
     -f "${DOCKERFILE}" \
     --platform linux/amd64,linux/arm64 \
-    ${PUSH} "${ROVER_ROOT}"
+    --build-arg ROS_DISTRO=jazzy \
+    --tag ghcr.io/canedudev/rover/ros-gateway-jazzy:"${VERSION}" \
+    "${PUSH}" "${ROVER_ROOT}"
+
+docker buildx --builder "${ROVER_BUILDER}" build \
+    -f "${DOCKERFILE}" \
+    --platform linux/amd64,linux/arm64 \
+    --build-arg ROS_DISTRO=humble \
+    --tag ghcr.io/canedudev/rover/ros-gateway-humble:"${VERSION}" \
+    "${PUSH}" "${ROVER_ROOT}"
