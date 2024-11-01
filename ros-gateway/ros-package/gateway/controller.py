@@ -21,14 +21,14 @@ class RosController(Node):
             msgtype.Float32,
             rover_topic("throttle"),
             self.throttle_callback,
-            ReliabilityPolicy.BEST_EFFORT,
+            ReliabilityPolicy.RELIABLE,
         )
 
         self.steering_sub = self.create_subscription(
             msgtype.Float32,
             rover_topic("steering"),
             self.steering_callback,
-            ReliabilityPolicy.BEST_EFFORT,
+            ReliabilityPolicy.RELIABLE,
         )
 
         self.can_bus = None
