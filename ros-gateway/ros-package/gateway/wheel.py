@@ -27,6 +27,8 @@ class Publisher(Node):
         self.name = wheel.name.lower()
         super().__init__(self.name)
 
+        self.get_logger().info(f"initializing {self.name}")
+
         self.rpm_topic = f"{self.name}/rpm"
         self.speed_topic = f"{self.name}/speed_kph"
 
@@ -39,16 +41,18 @@ class Publisher(Node):
             ReliabilityPolicy.BEST_EFFORT,
         )
 
+        self.get_logger().info("finished initialization")
+
     def __publish_rpm(self, msg):
         rpm_msg = msgtype.Float32()
         rpm_msg.data = struct.unpack("f", msg.data[0:4])[0]
         self.rpm_publisher.publish(rpm_msg)
-        self.get_logger().info(f'Publishing {self.rpm_topic}: "{rpm_msg.data}"')
+        self.get_logger().debug(f'Publishing {self.rpm_topic}: "{rpm_msg.data}"')
 
     def __publish_speed(self, msg):
         speed_msg = msgtype.Float32()
         speed_msg.data = struct.unpack("f", msg.data[4:8])[0]
-        self.get_logger().info(f'Publishing {self.speed_topic}: "{speed_msg.data}"')
+        self.get_logger().debug(f'Publishing {self.speed_topic}: "{speed_msg.data}"')
         self.speed_publisher.publish(speed_msg)
 
     def publish(self, msg):

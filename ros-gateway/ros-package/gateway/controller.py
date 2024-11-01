@@ -14,6 +14,9 @@ from .topic import rover_topic
 class RosController(Node):
     def __init__(self):
         super().__init__("ad_controller")
+
+        self.get_logger().info("initializing ad_controller")
+
         self.throttle_sub = self.create_subscription(
             msgtype.Float32,
             rover_topic("throttle"),
@@ -37,6 +40,7 @@ class RosController(Node):
         self.control_timer = self.create_timer(
             1 / self.control_freq_hz, self.send_control_command
         )
+        self.get_logger().info("finished initialization")
 
     def stop_timer(self):
         self.control_timer.destroy()
@@ -85,11 +89,10 @@ class RosController(Node):
             try:
                 self.can_bus.send(self.throttle_message())
                 self.can_bus.send(self.steering_message())
-                self.get_logger().info(
+                self.get_logger().debug(
                     f"sent CAN control command (throttle: {self.throttle}, steering: {self.steering})"
                 )
             except can.exceptions.CanOperationError:
-                # Buffer overflow, error frame, less than 2 nodes on bus, or invalid bitrate setting
                 self.get_logger().error(
                     f"""CAN error: steering command not sent. Retrying in 1 s.
     Potential causes: Buffer overflow, error frame, less than 2 nodes on bus, or invalid bitrate setting"""
@@ -111,7 +114,7 @@ class RosController(Node):
     def throttle_callback(self, msg):
         # Negative values are reverse, positive are forward
         throttle = msg.data
-        self.get_logger().info(f"Received throttle: {throttle}")
+        self.get_logger().debug(f"Received throttle: {throttle}")
 
         switch_reverse = False
         switch_forward = False
@@ -135,7 +138,7 @@ class RosController(Node):
 
         # Reversing directions needs special treatment
         if switch_reverse or switch_forward:
-            self.get_logger().info(f"Reversing")
+            self.get_logger().debug(f"Reversing")
 
             self.stop_timer()
 
@@ -155,7 +158,7 @@ class RosController(Node):
 
     def steering_callback(self, msg):
         steering = msg.data
-        self.get_logger().info(f"Received steering: {steering}")
+        self.get_logger().debug(f"Received steering: {steering}")
 
         if steering > 45:
             self.get_logger().warn(

@@ -25,6 +25,8 @@ class Publisher(Node):
         self.name = battery_monitor.name.lower()
         super().__init__(self.name)
 
+        self.get_logger().info(f"initializing {self.name}")
+
         self.cell_voltages_topic = f"{self.name}/cell_voltage_mV"
         self.cell_voltages_publisher = self.create_publisher(
             msgtype.UInt16MultiArray,
@@ -59,6 +61,8 @@ class Publisher(Node):
             ReliabilityPolicy.BEST_EFFORT,
         )
 
+        self.get_logger().info("finished intialization")
+
     def __publish_cell_voltages(self, msg):
         # If first message received is for the last 3 cells, skip it
         # If something went wrong with the reception order, we also skip it
@@ -76,7 +80,7 @@ class Publisher(Node):
             cell_voltage_msg = msgtype.UInt16MultiArray()
             cell_voltage_msg.data = self.cell_voltages
             self.publisher.publish(cell_voltage_msg)
-            self.get_logger().info(
+            self.get_logger().debug(
                 f'Publishing {self.topic}: "{cell_voltage_msg.data}"'
             )
 
@@ -91,8 +95,12 @@ class Publisher(Node):
 
         self.voltage_publisher.publish(voltage_msg)
         self.current_publisher.publish(current_msg)
-        self.get_logger().info(f'Publishing {self.voltage_topic}: "{voltage_msg.data}"')
-        self.get_logger().info(f'Publishing {self.current_topic}: "{current_msg.data}"')
+        self.get_logger().debug(
+            f'Publishing {self.voltage_topic}: "{voltage_msg.data}"'
+        )
+        self.get_logger().debug(
+            f'Publishing {self.current_topic}: "{current_msg.data}"'
+        )
 
     def __publish_reg_output(self, msg):
         voltage_msg = msgtype.UInt32()
@@ -103,10 +111,10 @@ class Publisher(Node):
 
         self.reg_output_voltage_publisher.publish(voltage_msg)
         self.reg_output_current_publisher.publish(current_msg)
-        self.get_logger().info(
+        self.get_logger().debug(
             f'Publishing {self.reg_output_voltage_topic}: "{voltage_msg.data}"'
         )
-        self.get_logger().info(
+        self.get_logger().debug(
             f'Publishing {self.reg_output_current_topic}: "{current_msg.data}"'
         )
 

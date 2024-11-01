@@ -17,7 +17,7 @@ def main():
         "--log-level",
         help="set logging level (default: info)",
         default="info",
-        choices=["error", "warn", "info"],
+        choices=["error", "warn", "info", "debug"],
     )
     args = parser.parse_args()
 

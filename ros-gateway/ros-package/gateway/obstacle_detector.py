@@ -25,12 +25,16 @@ class Publisher(Node):
         self.name = obstacle_detector.name.lower()
         super().__init__(self.name)
 
+        self.get_logger().info(f"initializing {self.name}")
+
         self.topic = f"{self.name}/distance_mm"
         self.publisher = self.create_publisher(
             msgtype.UInt16MultiArray,
             rover_topic(self.topic),
             ReliabilityPolicy.BEST_EFFORT,
         )
+
+        self.get_logger().info(f"finished initialization")
 
     def publish(self, msg):
         id = msg.arbitration_id
@@ -50,4 +54,4 @@ class Publisher(Node):
                 struct.unpack("H", msg.data[6:8])[0],
             ]
             self.publisher.publish(distance_msg)
-            self.get_logger().info(f'Publishing {self.topic}: "{distance_msg.data}"')
+            self.get_logger().debug(f'Publishing {self.topic}: "{distance_msg.data}"')

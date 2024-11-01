@@ -20,7 +20,7 @@ class RosBridge(can.Listener):
         )
         self.logger = rclpy.logging.get_logger("rover")
 
-        self.logger.info("Initializing ROS2 bridge")
+        self.logger.info("initializing ROS2 bridge")
 
         self.can_bus = None
         self.can_notifier = None
@@ -42,6 +42,8 @@ class RosBridge(can.Listener):
             obstacle_detector.Publisher(ObstacleDetector.OBSTACLE_DETECTOR_REAR),
         ]
 
+        self.logger.info("finished initialization")
+
     def __del__(self):
         self.logger.info("ROS2 bridge stopped, cleaning up")
 
@@ -55,6 +57,8 @@ class RosBridge(can.Listener):
 
         if self.can_bus is not None:
             self.can_bus.shutdown()
+
+        self.logger.info("finished cleanup")
 
     def on_message_received(self, msg):
         if self.last_control_override_message_timestamp != 0:
