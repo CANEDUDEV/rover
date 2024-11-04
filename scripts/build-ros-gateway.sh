@@ -10,12 +10,18 @@ $(basename "$0") [--help] [--rover-root DIR] [--dockerfile FILE] [--push DEST]
 Build the ros-gateway docker image. Requires docker to be installed
 and usable without sudo.
 
+args:
     --help                show this help
-    --rover-root DIR      path to rover repository (default: .)
-    --dockerfile FILE     path to ros-gateway dockerfile (default: ros-gateway/Dockerfile)
-    --version-tag         version to tag with (default: latest)
     --push                push containers
 
+default env vars:
+    ROS_DISTRO=jazzy
+    PLATFORMS=linux/amd64,linux/arm64
+    PACKAGE_BASENAME=ghcr.io/canedudev/rover/ros-gateway
+    BUILDER=ced-rover-builder
+    BUILD_CONTEXT=.
+    DOCKERFILE=./ros-gateway/Dockerfile
+    VERSION_TAG=latest
 EOF
 
 }
@@ -25,10 +31,6 @@ if ! command -v docker >/dev/null; then
     exit 1
 fi
 
-ROVER_ROOT=.
-DOCKERFILE=ros-gateway/Dockerfile
-VERSION=latest
-
 while [[ $# -gt 0 ]]; do
     case "$1" in
     -h) ;&
@@ -37,26 +39,10 @@ while [[ $# -gt 0 ]]; do
         exit 0
         ;;
 
-    --rover-root)
-        ROVER_ROOT="$2"
-        shift 2
-        ;;
-
-    --dockerfile)
-        DOCKERFILE="$2"
-        shift 2
-        ;;
-
-    --version-tag)
-        VERSION="$2"
-        shift 2
-        ;;
-
     --push)
-        PUSH="--push"
+        PUSH="true"
         shift 1
         ;;
-
     *)
         usage
         exit 1
@@ -65,31 +51,41 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ -z ${ROVER_ROOT} || -z ${DOCKERFILE} ]]; then
-    usage
-    exit 1
+PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
+PACKAGE_BASENAME="${PACKAGE_BASENAME:-ghcr.io/canedudev/rover/ros-gateway}"
+ROS_DISTRO="${ROS_DISTRO:-jazzy}"
+BUILDER="${BUILDER:-ced-rover-builder}"
+BUILD_CONTEXT="${BUILD_CONTEXT:-.}"
+DOCKERFILE="${DOCKERFILE:-ros-gateway/Dockerfile}"
+VERSION_TAG="${VERSION_TAG:-latest}"
+
+PACKAGE="${PACKAGE_BASENAME}-${ROS_DISTRO}"
+TAG="${PACKAGE}:${VERSION_TAG}"
+
+CI_ARGS=()
+if [[ -n ${CI} ]]; then
+    CI_ARGS=(
+        "--cache-from" "type=registry,ref=${PACKAGE}:buildcache"
+        "--cache-to" "type=registry,ref=${PACKAGE}:buildcache,mode=max"
+    )
 fi
 
-ROVER_BUILDER=ced-rover-builder
+OUTPUT_ARGS=("--output" "type=cacheonly")
+if [[ -n ${PUSH} ]]; then
+    OUTPUT_ARGS=("--output" "type=registry")
+fi
 
-if ! docker buildx ls | grep "${ROVER_BUILDER}" >/dev/null; then
+if ! docker buildx ls | grep "${BUILDER}" >/dev/null; then
     docker buildx create \
-        --name "${ROVER_BUILDER}" \
-        --platform linux/amd64,linux/arm64 \
+        --name "${BUILDER}" \
+        --platform "${PLATFORMS}" \
         --driver docker-container \
         --bootstrap
 fi
 
-docker buildx --builder "${ROVER_BUILDER}" build \
+docker buildx --builder "${BUILDER}" build \
     -f "${DOCKERFILE}" \
-    --platform linux/amd64,linux/arm64 \
-    --build-arg ROS_DISTRO=jazzy \
-    --tag ghcr.io/canedudev/rover/ros-gateway-jazzy:"${VERSION}" \
-    "${PUSH}" "${ROVER_ROOT}"
-
-docker buildx --builder "${ROVER_BUILDER}" build \
-    -f "${DOCKERFILE}" \
-    --platform linux/amd64,linux/arm64 \
-    --build-arg ROS_DISTRO=humble \
-    --tag ghcr.io/canedudev/rover/ros-gateway-humble:"${VERSION}" \
-    "${PUSH}" "${ROVER_ROOT}"
+    --platform "${PLATFORMS}" \
+    --build-arg ROS_DISTRO="${ROS_DISTRO}" \
+    --tag "${TAG}" \
+    "${OUTPUT_ARGS[@]}" "${CI_ARGS[@]}" "${BUILD_CONTEXT}"

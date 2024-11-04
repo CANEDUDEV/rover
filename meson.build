@@ -1,7 +1,7 @@
 project(
     'Rover',
     'c',
-    meson_version: '>=1.2.0',
+    meson_version: '>=1.5.2',
     version: '0.1',
     default_options: [
         'optimization=2',
@@ -121,12 +121,10 @@ ros_gateway_dockerfile = files('ros-gateway' / 'Dockerfile')
 
 run_target(
     'ros-gateway',
-    command: [
-        ros_gateway_build_script,
-        '--rover-root',
-        meson.project_source_root(),
-        '--dockerfile',
-        ros_gateway_dockerfile,
+    command: [ros_gateway_build_script],
+    env: [
+        'BUILD_CONTEXT=' + meson.project_source_root(),
+        'DOCKERFILE=' + ros_gateway_dockerfile[0].full_path(),
     ],
 )
 

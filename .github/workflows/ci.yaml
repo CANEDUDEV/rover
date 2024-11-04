@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  build-firmware:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -44,3 +44,38 @@ jobs:
 
       - name: Build documentation
         run: meson compile -C build docs
+
+  build-gateway:
+    strategy:
+      matrix:
+        ros_distro: [humble, jazzy]
+
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Set up builder outside of script to use this action's built-in caching
+      - uses: docker/setup-buildx-action@v3
+        id: builder
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build docker image
+        run: ./scripts/build-ros-gateway.sh
+        env:
+          ROS_DISTRO: ${{ matrix.ROS_DISTRO }}
+          PLATFORMS: ${{ steps.builder.outputs.platforms }}
+          DOCKER_BUILDER: ${{ steps.builder.outputs.name }}
