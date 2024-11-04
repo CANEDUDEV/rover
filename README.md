@@ -16,6 +16,12 @@ Supported OS: Ubuntu 24.04. If you're using Windows, you can utilize the Ubuntu 
 2. Execute `meson compile -C build` to initiate the build process.
 3. The build output can be found in the `build` folder.
 
+## ROS2 gateway
+
+There is a ROS gateway available which exposes the Rover's CAN messages as ROS topics, and allows the user to control the Rover via ROS. The gateway is deployed as a docker container and available as part of this repository's Github packages.
+
+The gateway can be built locally using `meson compile -C build ros-gateway`.
+
 ## Building the Documentation
 
 To build the documentation, run `meson compile -C build docs`. The HTML output is located in the `build/docs/html` folder.
