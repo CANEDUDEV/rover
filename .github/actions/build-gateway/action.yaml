@@ -1,0 +1,45 @@
+name: Build ROS gateway
+description: Build the Rover's ROS gateway
+
+inputs:
+  push:
+    description: push the docker container to GHCR
+    required: false
+
+  ros_distro:
+    description: target ROS distro name
+    required: false
+    default: ''
+
+  tags:
+    description: docker container tags, space separated
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ env.GITHUB_TOKEN }}
+
+    # Set up builder outside of script to use this action's built-in caching
+    - uses: docker/setup-buildx-action@v3
+      id: builder
+      with:
+        platforms: linux/amd64,linux/arm64
+
+    - run: |
+        echo "PUSH=${{ inputs.push }}" >> "$GITHUB_ENV"
+      shell: bash
+      if: ${{ inputs.push }}
+
+    - name: Build docker image
+      run: ./scripts/build-ros-gateway.sh
+      shell: bash
+      env:
+        ROS_DISTRO: ${{ inputs.ros_distro }}
+        PLATFORMS: ${{ steps.builder.outputs.platforms }}
+        DOCKER_BUILDER: ${{ steps.builder.outputs.name }}
+        VERSION_TAGS: ${{ inputs.tags }}

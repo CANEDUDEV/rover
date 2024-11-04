@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
+
+permissions:
+  contents: write
+
+jobs:
+  firmware:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build firmware
+        id: build
+        uses: ./.github/actions/build-firmware
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.build.outputs.release }}
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+
+  ros-gateway:
+    strategy:
+      matrix:
+        ros_distro: [humble, jazzy]
+
+    runs-on: ubuntu-24.04
+
+    permissions:
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ROS gateway
+        uses: ./.github/actions/build-gateway
+        with:
+          push: true
+          ros_distro: ${{ matrix.ros_distro }}
+          tags: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

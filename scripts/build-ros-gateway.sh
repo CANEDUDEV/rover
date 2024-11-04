@@ -15,13 +15,13 @@ args:
     --push                push containers
 
 default env vars:
-    ROS_DISTRO=jazzy
-    PLATFORMS=linux/amd64,linux/arm64
-    PACKAGE_BASENAME=ghcr.io/canedudev/rover/ros-gateway
-    BUILDER=ced-rover-builder
-    BUILD_CONTEXT=.
-    DOCKERFILE=./ros-gateway/Dockerfile
-    VERSION_TAG=latest
+    ROS_DISTRO=jazzy                                        ROS distro codename to build
+    PLATFORMS=linux/amd64,linux/arm64                       Target platforms
+    PACKAGE_BASENAME=ghcr.io/canedudev/rover/ros-gateway    Docker container base name
+    BUILDER=ced-rover-builder                               Docker buildx builder
+    BUILD_CONTEXT=.                                         Docker build context
+    DOCKERFILE=./ros-gateway/Dockerfile                     Path to dockerfile
+    VERSION_TAGS=                                           Space separated tags
 EOF
 
 }
@@ -57,10 +57,15 @@ ROS_DISTRO="${ROS_DISTRO:-jazzy}"
 BUILDER="${BUILDER:-ced-rover-builder}"
 BUILD_CONTEXT="${BUILD_CONTEXT:-.}"
 DOCKERFILE="${DOCKERFILE:-ros-gateway/Dockerfile}"
-VERSION_TAG="${VERSION_TAG:-latest}"
-
 PACKAGE="${PACKAGE_BASENAME}-${ROS_DISTRO}"
-TAG="${PACKAGE}:${VERSION_TAG}"
+VERSION_TAGS="${VERSION_TAGS:-}"
+
+if [[ -n ${VERSION_TAGS} ]]; then
+    TAG_ARGS=("--tag" "${PACKAGE}:latest")
+    for tag in ${VERSION_TAGS}; do
+        TAG_ARGS+=("--tag" "${PACKAGE}:${tag}")
+    done
+fi
 
 CI_ARGS=()
 if [[ -n ${CI} ]]; then
@@ -87,5 +92,5 @@ docker buildx --builder "${BUILDER}" build \
     -f "${DOCKERFILE}" \
     --platform "${PLATFORMS}" \
     --build-arg ROS_DISTRO="${ROS_DISTRO}" \
-    --tag "${TAG}" \
-    "${OUTPUT_ARGS[@]}" "${CI_ARGS[@]}" "${BUILD_CONTEXT}"
+    "${TAG_ARGS[@]}" "${OUTPUT_ARGS[@]}" "${CI_ARGS[@]}" \
+    "${BUILD_CONTEXT}"

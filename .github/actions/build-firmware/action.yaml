@@ -1,0 +1,54 @@
+name: Build Firmware
+description: Build the Rover's firmware
+
+outputs:
+  release:
+    description: release zip file
+    value: ${{ steps.release.outputs.release }}
+
+runs:
+  using: composite
+  steps:
+    - name: Cache python venv
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+
+    - name: Cache meson subprojects
+      uses: actions/cache@v4
+      with:
+        path: subprojects
+        key: meson-${{ runner.os }}-${{ hashFiles('subprojects/*.wrap') }}-${{ hashFiles('subprojects/packagefiles/**') }}
+
+    # Will run pip
+    - name: Bootstrap build
+      run: ./scripts/bootstrap.sh
+      shell: bash
+
+    - name: Activate python venv
+      run: |
+        source .venv/bin/activate
+        echo "$VIRTUAL_ENV/bin" >> $GITHUB_PATH
+        echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Build source
+      run: meson compile -C build
+      shell: bash
+
+    - name: Run tests
+      run: meson test -v -C build
+      shell: bash
+
+    - name: Check source
+      run: meson compile -C build check
+      shell: bash
+
+    - name: Build documentation
+      run: meson compile -C build docs
+      shell: bash
+
+    - run: echo "release=$(ls build/rover-release*.zip)" >> $GITHUB_OUTPUT
+      id: release
+      shell: bash
