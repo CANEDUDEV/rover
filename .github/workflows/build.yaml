@@ -1,0 +1,38 @@
+name: Build
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  firmware:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build firmware
+        uses: ./.github/actions/build-firmware
+
+  ros-gateway:
+    strategy:
+      matrix:
+        ros_distro: [humble, jazzy]
+
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ROS gateway
+        uses: ./.github/actions/build-gateway
+        with:
+          ros_distro: ${{ matrix.ros_distro }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
