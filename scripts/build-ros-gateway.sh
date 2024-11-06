@@ -11,8 +11,9 @@ Build the ros-gateway docker image. Requires docker to be installed
 and usable without sudo.
 
 args:
-    --help                show this help
-    --push                push containers
+    --help      show this help
+    --local     build local version for testing with tag "rover-ros-gateway-test"
+    --push      push containers
 
 default env vars:
     ROS_DISTRO=jazzy                                        ROS distro codename to build
@@ -37,6 +38,11 @@ while [[ $# -gt 0 ]]; do
     --help)
         usage
         exit 0
+        ;;
+
+    --local)
+        LOCAL="true"
+        shift 1
         ;;
 
     --push)
@@ -88,9 +94,17 @@ if ! docker buildx ls | grep "${BUILDER}" >/dev/null; then
         --bootstrap
 fi
 
-docker buildx --builder "${BUILDER}" build \
-    -f "${DOCKERFILE}" \
-    --platform "${PLATFORMS}" \
-    --build-arg ROS_DISTRO="${ROS_DISTRO}" \
-    "${TAG_ARGS[@]}" "${OUTPUT_ARGS[@]}" "${CI_ARGS[@]}" \
-    "${BUILD_CONTEXT}"
+if [[ -z ${LOCAL} ]]; then
+    docker buildx --builder "${BUILDER}" build \
+        -f "${DOCKERFILE}" \
+        --platform "${PLATFORMS}" \
+        --build-arg ROS_DISTRO="${ROS_DISTRO}" \
+        "${TAG_ARGS[@]}" "${OUTPUT_ARGS[@]}" "${CI_ARGS[@]}" \
+        "${BUILD_CONTEXT}"
+else
+    docker build \
+        -f "${DOCKERFILE}" \
+        -t rover-ros-gateway-test \
+        --build-arg ROS_DISTRO="${ROS_DISTRO}" \
+        "${BUILD_CONTEXT}"
+fi
