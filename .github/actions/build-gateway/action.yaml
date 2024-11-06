@@ -41,5 +41,5 @@ runs:
       env:
         ROS_DISTRO: ${{ inputs.ros_distro }}
         PLATFORMS: ${{ steps.builder.outputs.platforms }}
-        DOCKER_BUILDER: ${{ steps.builder.outputs.name }}
+        BUILDER: ${{ steps.builder.outputs.name }}
         VERSION_TAGS: ${{ inputs.tags }}
