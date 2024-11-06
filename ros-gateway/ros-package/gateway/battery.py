@@ -66,7 +66,7 @@ class Publisher(Node):
     def __publish_cell_voltages(self, msg):
         # If first message received is for the last 3 cells, skip it
         # If something went wrong with the reception order, we also skip it
-        if (msg.data[0] == 1 and len(self.cell_voltages) <= 3) or (
+        if (msg.data[0] == 1 and len(self.cell_voltages) < 3) or (
             msg.data[0] == 0 and len(self.cell_voltages) > 0
         ):
             self.cell_voltages.clear()
@@ -79,9 +79,9 @@ class Publisher(Node):
         if len(self.cell_voltages) >= 6:
             cell_voltage_msg = msgtype.UInt16MultiArray()
             cell_voltage_msg.data = self.cell_voltages
-            self.publisher.publish(cell_voltage_msg)
+            self.cell_voltages_publisher.publish(cell_voltage_msg)
             self.get_logger().debug(
-                f'Publishing {self.topic}: "{cell_voltage_msg.data}"'
+                f'Publishing {self.cell_voltages_topic}: "{cell_voltage_msg.data}"'
             )
 
             self.cell_voltages.clear()
