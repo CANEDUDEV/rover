@@ -62,17 +62,11 @@ class RosBridge(can.Listener):
         self.logger.info("finished cleanup")
 
     def on_message_received(self, msg):
-        if self.last_control_override_message_timestamp != 0:
-            timestamp = time.time()
-            if timestamp - self.last_control_override_message_timestamp > 0.1:
-                self.controller.clear_override()
-
         if (
             msg.arbitration_id == rover.Envelope.STEERING
             or msg.arbitration_id == rover.Envelope.THROTTLE
         ):
-            self.controller.set_override()
-            self.last_control_override_message_timestamp = msg.timestamp
+            self.controller.refresh_radio_timestamp(msg.timestamp)
 
         for publisher in self.publishers:
             publisher.publish(msg)

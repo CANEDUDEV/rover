@@ -33,7 +33,7 @@ class RosController(Node):
 
         self.can_bus = None
 
-        self.override = True
+        self.last_radio_timestamp = 0
         self.throttle = 1500
         self.steering = 0
         self.control_freq_hz = 100
@@ -41,6 +41,9 @@ class RosController(Node):
             1 / self.control_freq_hz, self.send_control_command
         )
         self.get_logger().info("finished initialization")
+
+    def refresh_radio_timestamp(self, timestamp):
+        self.last_radio_timestamp = timestamp
 
     def stop_timer(self):
         self.control_timer.destroy()
@@ -69,14 +72,11 @@ class RosController(Node):
             is_extended_id=False,
         )
 
-    def set_override(self):
-        self.override = True
-
-    def clear_override(self):
-        self.override = False
-
     def send_control_command(self):
-        if self.override:
+        if (
+            self.last_radio_timestamp == 0
+            or time.time() - self.last_radio_timestamp <= 0.1
+        ):
             self.get_logger().debug(
                 f"radio control override active, will not interfere"
             )
