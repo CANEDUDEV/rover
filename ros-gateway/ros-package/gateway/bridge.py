@@ -6,7 +6,7 @@ import rclpy.logging  # pyright: ignore
 
 import rover
 
-from . import battery, obstacle_detector, wheel
+from . import battery, obstacle_detector, radio, wheel
 from .battery import BatteryMonitor
 from .controller import RosController
 from .obstacle_detector import ObstacleDetector
@@ -40,6 +40,7 @@ class RosBridge(can.Listener):
             wheel.Publisher(Wheel.WHEEL_REAR_RIGHT),
             obstacle_detector.Publisher(ObstacleDetector.OBSTACLE_DETECTOR_FRONT),
             obstacle_detector.Publisher(ObstacleDetector.OBSTACLE_DETECTOR_REAR),
+            radio.Publisher(),
         ]
 
         self.logger.info("finished initialization")
