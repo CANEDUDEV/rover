@@ -16,8 +16,8 @@ class Publisher(Node):
 
         self.get_logger().info(f"initializing {self.name}")
 
-        self.throttle_topic = f"{self.name}/steering"
-        self.steering_topic = f"{self.name}/throttle"
+        self.throttle_topic = f"{self.name}/throttle"
+        self.steering_topic = f"{self.name}/steering"
         self.throttle_publisher = self.create_publisher(
             msgtype.Float32,
             rover_topic(self.throttle_topic),
