@@ -163,7 +163,7 @@ class Flasher:
 
         # The power board powers the other boards, so need to sleep longer to compensate for that case.
         if id == rover.City.BATTERY_MONITOR:
-            time.sleep(1)
+            time.sleep(2)
 
         self.ch.busOn()
 
