@@ -121,7 +121,7 @@ int main(void) {
     error();
   }
 
-  jsondb_init();  // Ignore error
+  jsondb_init();
 
   mayor_init();
 
@@ -550,7 +550,7 @@ static void write_config(void *unused) {
 
   ck_data_t *ck_data = get_ck_data();
 
-  char *config_storage = (char *)get_jsondb_raw();
+  char *config_storage = get_jsondb_raw();
 
   for (;;) {
     memset(config_storage, 0, get_jsondb_max_size());

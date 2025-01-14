@@ -1,11 +1,10 @@
-#include <stdint.h>
 #include <stdio.h>
 
 #include "error.h"
 #include "json.h"
 #include "lfs-wrapper.h"
 
-static uint8_t db_storage[JSON_MAX_SIZE];
+static char db_storage[JSON_MAX_SIZE];
 
 static file_t db_file = {
     .name = "settings.json",
@@ -21,7 +20,7 @@ json_object_t *get_jsondb(void) {
   return jsondb;
 }
 
-uint8_t *get_jsondb_raw(void) {
+char *get_jsondb_raw(void) {
   return db_storage;
 }
 
@@ -29,7 +28,7 @@ size_t get_jsondb_max_size(void) {
   return sizeof(db_storage);
 }
 
-int jsondb_init(void) {
+void jsondb_init(void) {
   if (read_file(&db_file) != APP_OK) {
     printf("note: creating new JSON DB\r\n");
     sprintf(db_file.data, "{}");
@@ -37,11 +36,10 @@ int jsondb_init(void) {
 
   jsondb = json_parse(db_file.data);
   if (!jsondb) {
-    printf("error: corrupt JSON DB\r\n");
-    return APP_NOT_OK;
+    printf("error: corrupt JSON DB, creating new JSON DB.\r\n");
+    sprintf(db_file.data, "{}");
+    jsondb = json_parse(db_file.data);
   }
-
-  return APP_OK;
 }
 
 int jsondb_update(json_object_t *new_json) {
