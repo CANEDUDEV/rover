@@ -20,15 +20,16 @@ class Flasher:
         self.ch.writeWait(
             rover.set_action_mode(mode=rover.ActionMode.FREEZE), self.default_timeout_ms
         )
-        self.ch.iocontrol.flush_rx_buffer()
+
+        time.sleep(0.1)  # Wait for nodes to apply freeze
 
         self.ch.write(rover.give_base_number(response_page=1))
-        time.sleep(0.1)  # Allow time to respond
+        self.ch.iocontrol.flush_rx_buffer()
 
         # Check responses
         while True:
             try:
-                frame = self.ch.read(timeout=10)
+                frame = self.ch.read(timeout=self.default_timeout_ms)
                 if frame:
                     self.online_node_ids.add(frame.id - rover.BASE_NUMBER)
 
@@ -170,19 +171,20 @@ class Flasher:
         # Init block transfer
         data = [1] + list(len(binary).to_bytes(4, "little")) + [0, 0, 0]
         self.ch.write(Frame(id_=envelope, dlc=8, data=data))
+        self.ch.iocontrol.flush_rx_buffer()
 
         try:
             self.ch.readSyncSpecific(envelope, timeout=1000)
             received = self.ch.readSpecificSkip(envelope)
 
         except (canlib.exceptions.CanNoMsg, canlib.exceptions.CanTimeout):
-            raise RuntimeError("No bundle request response (1). Exiting.")
+            raise RuntimeError("no bundle request response (1)")
 
         if received.data[0] != 2:
-            raise RuntimeError("Wrong response during block transfer init.")
+            raise RuntimeError("wrong response during block transfer init")
 
         if int.from_bytes(received.data[1:3], byteorder="little") != 0xFFFF:
-            raise RuntimeError("Got wrong bundle request, wanted 0xFFFF.")
+            raise RuntimeError("got wrong bundle request, wanted 0xFFFF")
 
         # Chunk and send data
         chunk_size = 7  # Payload bytes per frame
@@ -213,21 +215,24 @@ class Flasher:
                     current_page_number = 3
 
             self.ch.writeSync(timeout=self.default_timeout_ms)
+
         except canlib.exceptions.CanTimeout as e:
-            raise RuntimeError(f"Block transfer timed out") from e
+            raise RuntimeError(f"block transfer timed out") from e
+
+        self.ch.iocontrol.flush_rx_buffer()
 
         try:
             self.ch.readSyncSpecific(envelope, timeout=5000)
             received = self.ch.readSpecificSkip(envelope)
 
         except (canlib.exceptions.CanNoMsg, canlib.exceptions.CanTimeout):
-            raise RuntimeError("No bundle request response (2). Exiting.")
+            raise RuntimeError("no bundle request response (2)")
 
         if received.data[0] != 2:
-            raise RuntimeError("Wrong response after block transfer")
+            raise RuntimeError("wrong response after block transfer")
 
         if int.from_bytes(received.data[1:3], byteorder="little") != 0x0000:
-            raise RuntimeError("Got wrong bundle request, wanted 0x0000")
+            raise RuntimeError("got wrong bundle request, wanted 0x0000")
 
     def __enter_bootloader(self, id):
         try:
@@ -326,15 +331,15 @@ class Flasher:
         if not timeout:
             timeout = self.default_timeout_ms
 
-        self.ch.iocontrol.flush_rx_buffer()
         self.ch.write(frame)
+        self.ch.iocontrol.flush_rx_buffer()
 
         try:
             self.ch.readSyncSpecific(Envelope.BOOTLOADER_COMMAND_ACK, timeout=timeout)
             received = self.ch.readSpecificSkip(Envelope.BOOTLOADER_COMMAND_ACK)
 
         except (canlib.exceptions.CanNoMsg, canlib.exceptions.CanTimeout):
-            raise RuntimeError("No ACK received. Exiting.")
+            raise RuntimeError("no ACK received")
 
         command_id = int.from_bytes(received.data[1:5], byteorder="little")
 
@@ -343,7 +348,7 @@ class Flasher:
 
         if command_id != frame.id:
             raise RuntimeError(
-                f"Wrong ACK for command, expected: {hex(frame.id)}, got {hex(command_id)}"
+                f"wrong ACK for command, expected: {hex(frame.id)}, got {hex(command_id)}"
             )
 
 
