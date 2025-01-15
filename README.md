@@ -1,8 +1,10 @@
 # Rover
 
-This repository contains the default code for all boards in the CANEDUDEV Rover.
+This repository contains the default code for all boards in the CanEduDev Rover.
 
-Board applications utilize [FreeRTOS](https://www.freertos.org/).
+For more documentation, visit [CanEduDev's Documentation website](https://www.canedudev.com/getting-started-with-the-rover/).
+
+Feel free to submit issues if anything is unclear.
 
 ## Building the Board Applications
 
@@ -16,13 +18,13 @@ Supported OS: Ubuntu 24.04. If you're using Windows, you can utilize the Ubuntu 
 2. Execute `meson compile -C build` to initiate the build process.
 3. The build output can be found in the `build` folder.
 
-## ROS2 gateway
+## ROS2 Gateway
 
 There is a ROS gateway available which exposes the Rover's CAN messages as ROS topics, and allows the user to control the Rover via ROS. The gateway is deployed as a docker container and available as part of this repository's Github packages.
 
 The gateway can be built locally using `meson compile -C build ros-gateway`.
 
-## Building the Documentation
+## Building the Code Documentation
 
 To build the documentation, run `meson compile -C build docs`. The HTML output is located in the `build/docs/html` folder.
 
@@ -49,4 +51,12 @@ Follow these steps to generate code:
 
 ## Flashing Binaries onto the Board
 
-Binaries are flashed onto the board using the [STLINK-V3SET programmer](https://www.st.com/en/development-tools/stlink-v3set.html) along with the [STM32CubeProgrammer software](https://www.st.com/en/development-tools/stm32cubeprog.html).
+There are two steps to flash the binaries.
+1. Flash the board via SWD using an STM32 programmer such as the [STLINK-V3SET programmer](https://www.st.com/en/development-tools/stlink-v3set.html) along with the [STM32CubeProgrammer software](https://www.st.com/en/development-tools/stm32cubeprog.html). For rovers delivered with a working software, this step can be skipped.
+
+2. Flash the binary and configuration via CAN using a Kvaser interface. Use the "fw_update.py" program by calling "python fw_update.py" from the release folder. This will flash all boards in a system with the correct binary and configuration. Do not interrupt this process as this will brick your devices. 
+
+Bricked devices can be restored by following step 1.
+
+### Upgrading a working system's firmware
+To update a working system, download the latest release and follow step 2 above.
