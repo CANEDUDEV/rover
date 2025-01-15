@@ -9,6 +9,10 @@ extern "C" {
 
 #include "ck-types.h"
 
+// FreeRTOS
+#include "FreeRTOS.h"
+#include "task.h"
+
 typedef struct {
   uint32_t priority;
   int (*app_letter_handler_func)(const ck_folder_t *folder,
@@ -17,6 +21,7 @@ typedef struct {
 } letter_reader_cfg_t;
 
 int init_letter_reader_task(letter_reader_cfg_t config);
+TaskHandle_t get_letter_reader_task_handle(void);
 
 #ifdef __cplusplus
 }

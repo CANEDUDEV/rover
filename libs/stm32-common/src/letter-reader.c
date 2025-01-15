@@ -34,6 +34,7 @@ static void dispatch_letter(ck_letter_t *letter);
 static ck_letter_t frame_to_letter(CAN_RxHeaderTypeDef *header, uint8_t *data);
 
 static letter_reader_cfg_t task_cfg;
+static TaskHandle_t task_handle;
 
 int init_letter_reader_task(letter_reader_cfg_t config) {
   if (config.priority == 0) {
@@ -46,13 +47,17 @@ int init_letter_reader_task(letter_reader_cfg_t config) {
   letter_queue = xQueueCreateStatic(LETTER_QUEUE_LENGTH, LETTER_QUEUE_ITEM_SIZE,
                                     letter_queue_storage, &static_letter_queue);
 
-  xTaskCreateStatic(process_letter, "process letter", PROCESS_LETTER_STACK_SIZE,
-                    NULL, config.priority, process_letter_stack,
-                    &process_letter_buf);
+  task_handle = xTaskCreateStatic(
+      process_letter, "process letter", PROCESS_LETTER_STACK_SIZE, NULL,
+      config.priority, process_letter_stack, &process_letter_buf);
 
   task_cfg = config;
 
   return APP_OK;
+}
+
+TaskHandle_t get_letter_reader_task_handle(void) {
+  return task_handle;
 }
 
 static void process_letter(void *unused) {
