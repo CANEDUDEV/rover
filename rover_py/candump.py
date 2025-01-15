@@ -150,7 +150,7 @@ class Dumper:
             ".asc",
             ".blf",
             ".csv",
-            ".db ",
+            ".db",
             ".log",
             ".mf4",
             ".trc",
@@ -176,10 +176,12 @@ class CanPrinter(can.Listener):
         self.db = db
 
     def on_message_received(self, msg):
+        print(msg)
         if self.db:
-            print(self.db.decode_message(msg.arbitration_id, msg.data))
-        else:
-            print(msg)
+            try:
+                print("\t", self.db.decode_message(msg.arbitration_id, msg.data))
+            except KeyError:  # not decodable
+                pass
 
 
 if __name__ == "__main__":
