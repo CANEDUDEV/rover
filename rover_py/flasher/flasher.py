@@ -222,7 +222,7 @@ class Flasher:
         self.ch.iocontrol.flush_rx_buffer()
 
         try:
-            self.ch.readSyncSpecific(envelope, timeout=5000)
+            self.ch.readSyncSpecific(envelope, timeout=10000)
             received = self.ch.readSpecificSkip(envelope)
 
         except (canlib.exceptions.CanNoMsg, canlib.exceptions.CanTimeout):
