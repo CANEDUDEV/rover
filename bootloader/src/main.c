@@ -22,6 +22,7 @@
 // FreeRTOS
 #include "FreeRTOS.h"
 #include "stream_buffer.h"
+#include "task.h"
 #include "timers.h"
 
 // Symbols defined in bootloader linker script
@@ -63,6 +64,7 @@ static int process_fs_format_letter(const ck_letter_t *letter);
 static int process_block_transfer(const ck_letter_t *letter,
                                   enum block_type block_type);
 
+const uint8_t receive_timeout_ms = 100;
 static bool transfer_in_progress = false;
 static bool transfer_failed = false;
 
@@ -469,9 +471,11 @@ static int process_block_transfer(const ck_letter_t *letter,
   // possible to receive more bytes than wanted without considering it an
   // error.
   if (received_bytes >= bytes_to_receive) {
-    // Wait for stream buffer to empty
-    while (xStreamBufferIsEmpty(byte_stream) != pdTRUE) {
-      vTaskDelay(pdMS_TO_TICKS(500));
+    // Wait for flasher/writer task to signal that it's finished
+    if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(5000)) != pdPASS) {
+      // The timeout is long, if task is not finished by now something fishy is
+      // going on.
+      transfer_failed = true;
     }
 
     if (!transfer_failed) {
@@ -510,7 +514,7 @@ static void flash_program(void *unused) {
     for (;;) {
       memset(word, 0, sizeof(word));
       read_bytes = xStreamBufferReceive(byte_stream, &word, sizeof(word),
-                                        pdMS_TO_TICKS(10));
+                                        pdMS_TO_TICKS(receive_timeout_ms));
 
       if (read_bytes == 0) {
         // No more bytes to read, finish.
@@ -521,7 +525,8 @@ static void flash_program(void *unused) {
       if (read_bytes < sizeof(word)) {
         // Try to read the rest of the word
         xStreamBufferReceive(byte_stream, &word[read_bytes],
-                             sizeof(word) - read_bytes, pdMS_TO_TICKS(100));
+                             sizeof(word) - read_bytes,
+                             pdMS_TO_TICKS(receive_timeout_ms));
       }
 
       // Program flash with word
@@ -533,6 +538,7 @@ static void flash_program(void *unused) {
         printf("%s: fatal error: flashing failed.\r\n",
                flash_program_task_name);
         send_abort_page(ck_data->program_transmit_folder->folder_no);
+        transfer_failed = true;
         break;
       }
 
@@ -542,6 +548,7 @@ static void flash_program(void *unused) {
 
     HAL_FLASH_Lock();
     transfer_in_progress = false;
+    xTaskNotifyGive(get_letter_reader_task_handle());
   }
 }
 
@@ -556,7 +563,6 @@ static void write_config(void *unused) {
     memset(config_storage, 0, get_jsondb_max_size());
     xStreamBufferReset(byte_stream);
 
-    bool fail = false;
     size_t read_bytes = 0;
     size_t written_bytes = 0;
     const size_t chunk_size = 7;  // Payload bytes per CAN frame.
@@ -567,8 +573,8 @@ static void write_config(void *unused) {
 
     for (;;) {
       // Don't read into config_storage directly, to avoid out of bounds access.
-      read_bytes =
-          xStreamBufferReceive(byte_stream, buf, chunk_size, pdMS_TO_TICKS(10));
+      read_bytes = xStreamBufferReceive(byte_stream, buf, chunk_size,
+                                        pdMS_TO_TICKS(receive_timeout_ms));
 
       if (read_bytes == 0) {
         // No more bytes to read, finish.
@@ -578,7 +584,7 @@ static void write_config(void *unused) {
       if (written_bytes + read_bytes >= get_jsondb_max_size()) {
         printf("%s: config too large. Aborting.\r\n", write_config_task_name);
         send_abort_page(ck_data->config_transmit_folder->folder_no);
-        fail = true;
+        transfer_failed = true;
         break;
       }
 
@@ -586,25 +592,28 @@ static void write_config(void *unused) {
       written_bytes += read_bytes;
     }
 
+    json_object_t *json = NULL;
+    if (!transfer_failed) {
+      json = json_parse(config_storage);
+      if (!json) {
+        printf("%s: invalid JSON received: \r\n%s.\r\n", write_config_task_name,
+               config_storage);
+        send_abort_page(ck_data->config_transmit_folder->folder_no);
+        transfer_failed = true;
+      }
+    }
+
+    if (json) {
+      if (jsondb_update(json) != APP_OK) {
+        printf("%s: fatal error: couldn't write config to FS. Aborting.\r\n",
+               write_config_task_name);
+        send_abort_page(ck_data->config_transmit_folder->folder_no);
+        transfer_failed = true;
+      }
+    }
+
     transfer_in_progress = false;
-
-    if (fail) {
-      continue;
-    }
-
-    json_object_t *json = json_parse(config_storage);
-    if (!json) {
-      printf("%s: invalid JSON received: \r\n%s.\r\n", write_config_task_name,
-             config_storage);
-      send_abort_page(ck_data->config_transmit_folder->folder_no);
-      continue;
-    }
-
-    if (jsondb_update(json) != APP_OK) {
-      printf("%s: fatal error: couldn't write config to FS. Aborting.\r\n",
-             write_config_task_name);
-      send_abort_page(ck_data->config_transmit_folder->folder_no);
-    }
+    xTaskNotifyGive(get_letter_reader_task_handle());
   }
 }
 

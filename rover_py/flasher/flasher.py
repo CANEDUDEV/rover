@@ -207,14 +207,14 @@ class Flasher:
                 self.ch.write(Frame(id_=envelope, dlc=8, data=data))
 
                 if chunk_no % batch_size == 0:
-                    self.ch.writeSync(timeout=self.default_timeout_ms)
+                    self.ch.writeSync(timeout=1000)
 
                 if current_page_number == 3:
                     current_page_number = 4
                 else:
                     current_page_number = 3
 
-            self.ch.writeSync(timeout=self.default_timeout_ms)
+            self.ch.writeSync(timeout=1000)
 
         except canlib.exceptions.CanTimeout as e:
             raise RuntimeError(f"block transfer timed out") from e
@@ -318,6 +318,7 @@ class Flasher:
             rover.set_action_mode(mode=rover.ActionMode.RESET),
             self.default_timeout_ms,
         )
+        time.sleep(1)  # Wait for restart
 
     def __assign_bootloader_envelopes(self, node_id):
         bootloader_assignments = bootloader.generate_assignments(node_id)
