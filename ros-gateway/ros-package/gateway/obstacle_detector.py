@@ -34,7 +34,7 @@ class Publisher(Node):
             ReliabilityPolicy.BEST_EFFORT,
         )
 
-        self.get_logger().info(f"finished initialization")
+        self.get_logger().info("finished initialization")
 
     def publish(self, msg):
         id = msg.arbitration_id
@@ -45,7 +45,6 @@ class Publisher(Node):
             self.obstacle_detector == ObstacleDetector.OBSTACLE_DETECTOR_REAR
             and id == rover.Envelope.OBSTACLE_DETECTOR_REAR_DISTANCE
         ):
-
             distance_msg = msgtype.UInt16MultiArray()
             distance_msg.data = [
                 struct.unpack("H", msg.data[0:2])[0],

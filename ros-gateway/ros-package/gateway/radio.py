@@ -29,7 +29,7 @@ class Publisher(Node):
             ReliabilityPolicy.BEST_EFFORT,
         )
 
-        self.get_logger().info(f"finished initialization")
+        self.get_logger().info("finished initialization")
 
     def __publish_throttle(self, msg):
         throttle_msg = msgtype.Float32()

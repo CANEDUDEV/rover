@@ -1,5 +1,3 @@
-import time
-
 import can
 import rclpy  # pyright: ignore
 import rclpy.logging  # pyright: ignore

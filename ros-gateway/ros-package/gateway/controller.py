@@ -77,9 +77,7 @@ class RosController(Node):
             self.last_radio_timestamp == 0
             or time.time() - self.last_radio_timestamp <= 0.1
         ):
-            self.get_logger().debug(
-                f"radio control override active, will not interfere"
-            )
+            self.get_logger().debug("radio control override active, will not interfere")
             self.stop_timer()
             time.sleep(1)
             self.start_timer()
@@ -94,7 +92,7 @@ class RosController(Node):
                 )
             except can.exceptions.CanOperationError:
                 self.get_logger().error(
-                    f"""CAN error: steering command not sent. Retrying in 1 s.
+                    """CAN error: steering command not sent. Retrying in 1 s.
     Potential causes: Buffer overflow, error frame, less than 2 nodes on bus, or invalid bitrate setting"""
                 )
                 self.can_bus.flush_tx_buffer()
@@ -138,7 +136,7 @@ class RosController(Node):
 
         # Reversing directions needs special treatment
         if switch_reverse or switch_forward:
-            self.get_logger().debug(f"Reversing")
+            self.get_logger().debug("Reversing")
 
             self.stop_timer()
 

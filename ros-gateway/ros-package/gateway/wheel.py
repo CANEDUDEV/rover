@@ -76,6 +76,5 @@ class Publisher(Node):
                 and id == rover.Envelope.WHEEL_REAR_RIGHT_SPEED
             )
         ):
-
             self.__publish_rpm(msg)
             self.__publish_speed(msg)

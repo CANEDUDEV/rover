@@ -19,15 +19,13 @@ main() {
     echo "Formatting..."
     find_shell_files | xargs shfmt -w -s -i 4
     .bin/yamlfmt -quiet -formatter type=basic,retain_line_breaks=true . .clang-tidy .clang-format
-    isort --quiet --gitignore --profile black .
-    black --quiet .
     meson fmt -i -r .
     ninja --quiet -C "${BUILD_DIR}" clang-format
-    pip freeze --exclude-editable >requirements.txt
+    ruff format
 
-    # Check
     echo "Linting..."
     find_shell_files | xargs shellcheck -o all
+    ruff check --fix
     pyright .
     ninja --quiet -C "${BUILD_DIR}" clang-tidy
     check_git_index

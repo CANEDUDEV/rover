@@ -139,11 +139,11 @@ def run_flasher(args):
             else:
                 run_default(ch, args)
 
-        except canlib.exceptions.CanNotFound as e:
+        except canlib.exceptions.CanNotFound:
             print(f"error: CAN channel {args.channel} not found.", file=sys.stderr)
             sys.exit(1)
 
-        except canlib.exceptions.CanTimeout as e:
+        except canlib.exceptions.CanTimeout:
             print(
                 f"error: CAN channel {args.channel} timed out.",
                 "Check that device is connected to the Rover CAN bus and that the Rover is on.",

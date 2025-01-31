@@ -175,7 +175,7 @@ def parse_frame(db, frame):
 
     msg = bmsg._message
 
-    output = output + f"┏ Timestamp: {str(frame.timestamp/1000.0)}\n"
+    output = output + f"┏ Timestamp: {str(frame.timestamp / 1000.0)}\n"
     output = output + f"┃ ID: {frame.id}, {msg.name}\n"
 
     # The steering and throttle messages have a signal which indicates how to

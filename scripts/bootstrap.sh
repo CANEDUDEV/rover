@@ -13,9 +13,12 @@ sudo apt-get -qq install --no-upgrade -y \
     doxygen \
     gcc-arm-none-eabi \
     libc6-dev-armhf-cross \
-    python3-pip \
-    python3-venv \
     zip
+
+echo "Installing uv..."
+if ! command -v uv; then
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+fi
 
 echo "Downloading yamlfmt..."
 if [[ ! -x .bin/yamlfmt ]]; then
@@ -24,16 +27,10 @@ if [[ ! -x .bin/yamlfmt ]]; then
     chmod +x .bin/yamlfmt
 fi
 
-if [[ ! -d .venv ]]; then
-    echo "Creating Python virtualenv..."
-    python3 -m venv .venv
-fi
+uv sync
 
 # shellcheck disable=SC1091,SC2312
 source .venv/bin/activate
-
-echo "Populating virtualenv..."
-pip install -q -r requirements.txt -e rover_py
 
 echo "Setting up build dir..."
 meson setup --cross-file stm32f302ret6.ini --wipe build

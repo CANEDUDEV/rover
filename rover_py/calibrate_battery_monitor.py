@@ -8,7 +8,7 @@ from rover import Envelope, battery
 def main():
     calibration_voltage_mv = 24_000
     input(
-        f"""Connect battery monitor board to DC power supply with {calibration_voltage_mv/1000}V on all cells.
+        f"""Connect battery monitor board to DC power supply with {calibration_voltage_mv / 1000}V on all cells.
 Turn power on and press Enter to continue.
     """
     )
@@ -26,8 +26,8 @@ Turn power on and press Enter to continue.
 
             if error > accepted_error:
                 ans = input(
-                    f"""warning: measured startup voltage is {start_voltage_mv}mv.
-Make sure you set the voltage to {calibration_voltage_mv/1000}V. 
+                    f"""warning: measured startup voltage is {start_voltage_mv}mV.
+Make sure you set the voltage to {calibration_voltage_mv / 1000}V.
 Continue? [y/N] >
 """
                 )
@@ -44,7 +44,7 @@ Continue? [y/N] >
             error = abs(calibration_voltage_mv - voltage_mv)
             if error > accepted_error:
                 print(
-                    f"error: calibration failed: calibration error {error}mv is too large."
+                    f"error: calibration failed: calibration error {error}mV is too large."
                 )
                 sys.exit(1)
 

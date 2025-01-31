@@ -46,7 +46,7 @@ class Flasher:
 
     def run(self):
         if not self.config:
-            raise ValueError(f"run method requires config parameter")
+            raise ValueError("run method requires config parameter")
 
         self.detect_online_nodes(restore_comm=False)
 
@@ -217,7 +217,7 @@ class Flasher:
             self.ch.writeSync(timeout=1000)
 
         except canlib.exceptions.CanTimeout as e:
-            raise RuntimeError(f"block transfer timed out") from e
+            raise RuntimeError("block transfer timed out") from e
 
         self.ch.iocontrol.flush_rx_buffer()
 
@@ -355,7 +355,6 @@ class Flasher:
 
 class FlasherConfig:
     def __init__(self, flasher_conf, binary_dir):
-
         try:
             f = _read_binary(flasher_conf)
             self.json = json.loads(f)

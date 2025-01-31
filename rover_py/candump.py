@@ -56,7 +56,7 @@ class Dumper:
             )
         except can.exceptions.CanError as e:
             print(f"error: failed to connect to CAN bus: {e}", file=sys.stderr)
-            print(f"\nconfig:", file=sys.stderr)
+            print("\nconfig:", file=sys.stderr)
             print(f"\tinterface: {self.interface}", file=sys.stderr)
             print(f"\tchannel: {self.channel}", file=sys.stderr)
             print(f"\tbitrate: {self.bitrate}", file=sys.stderr)
@@ -136,7 +136,7 @@ class Dumper:
 
         try:
             self.db = cantools.db.load_file(dbc)
-        except:
+        except cantools.db.UnsupportedDatabaseFormatError:
             print(f"error: {dbc} is not a valid DBC file", file=sys.stderr)
             sys.exit(1)
 
