@@ -30,7 +30,7 @@ class Flasher:
         while True:
             try:
                 frame = self.ch.read(timeout=self.default_timeout_ms)
-                if frame:
+                if frame and canlib.MessageFlag.ERROR_FRAME not in frame.flags:
                     self.online_node_ids.add(frame.id - rover.BASE_NUMBER)
 
             except (canlib.exceptions.CanTimeout, canlib.exceptions.CanNoMsg):
