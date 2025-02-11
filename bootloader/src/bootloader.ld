@@ -38,6 +38,7 @@ MEMORY
      * and 8K for storing user data. */
     BOOTROM (rx) : ORIGIN = 0x08000000, LENGTH = 64K
     APPROM (rx)  : ORIGIN = 0x08000000 + 64K, LENGTH = 512K - 64K
+    STORAGE (rw) : ORIGIN = 0x08000000 + 64K + 440K, LENGTH = 8K
 }
 
 APPROM_START = ORIGIN(APPROM);
