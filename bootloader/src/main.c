@@ -648,7 +648,8 @@ static void send_ack(const ck_letter_t *letter) {
 
   // Don't raise error here since this is an error on the flasher's part.
   if (ck_send_document(ck_data->command_ack_folder->folder_no) != CK_OK) {
-    printf("Error sending ACK with ID 0x%x.\r\n", letter->envelope.envelope_no);
+    printf("Error sending ACK with ID 0x%lx.\r\n",
+           (unsigned long)letter->envelope.envelope_no);
   }
 }
 
@@ -660,8 +661,8 @@ static void send_nack(const ck_letter_t *letter) {
 
   // Don't raise error here since this is an error on the flasher's part.
   if (ck_send_document(ck_data->command_ack_folder->folder_no) != CK_OK) {
-    printf("Error sending NACK with ID 0x%x.\r\n",
-           letter->envelope.envelope_no);
+    printf("Error sending NACK with ID 0x%lx.\r\n",
+           (unsigned long)letter->envelope.envelope_no);
   }
 }
 

@@ -54,7 +54,7 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 SECTIONS
 {
   /* The startup code goes first into APPROM */
-  .isr_vector :
+  .isr_vector (READONLY) :
   {
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
@@ -62,7 +62,7 @@ SECTIONS
   } >APPROM
 
   /* The program code and other data goes into APPROM */
-  .text :
+  .text (READONLY) :
   {
     . = ALIGN(4);
     *(.text)           /* .text sections (code) */
@@ -79,7 +79,7 @@ SECTIONS
   } >APPROM
 
   /* Constant data goes into APPROM */
-  .rodata :
+  .rodata (READONLY) :
   {
     . = ALIGN(4);
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
@@ -87,27 +87,27 @@ SECTIONS
     . = ALIGN(4);
   } >APPROM
 
-  .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >APPROM
-  .ARM : {
+  .ARM.extab  (READONLY)  : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >APPROM
+  .ARM (READONLY) : {
     __exidx_start = .;
     *(.ARM.exidx*)
     __exidx_end = .;
   } >APPROM
 
-  .preinit_array     :
+  .preinit_array  (READONLY)    :
   {
     PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
   } >APPROM
-  .init_array :
+  .init_array (READONLY) :
   {
     PROVIDE_HIDDEN (__init_array_start = .);
     KEEP (*(SORT(.init_array.*)))
     KEEP (*(.init_array*))
     PROVIDE_HIDDEN (__init_array_end = .);
   } >APPROM
-  .fini_array :
+  .fini_array (READONLY) :
   {
     PROVIDE_HIDDEN (__fini_array_start = .);
     KEEP (*(SORT(.fini_array.*)))

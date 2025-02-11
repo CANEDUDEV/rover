@@ -8,12 +8,14 @@ stm32_lib_src = files(
     'src' / 'device-id.c',
     'src' / 'error.c',
     'src' / 'freertos-config.c',
+    'src' / 'jsondb.c',
     'src' / 'letter-reader.c',
     'src' / 'lfs-wrapper.c',
     'src' / 'postmaster-base.c',
     'src' / 'print.c',
     'src' / 'spi-flash.c',
-    'src' / 'jsondb.c',
+    'src' / 'syscalls.c',
+    'src' / 'sysmem.c',
 )
 
 stm32_startup_src = files(

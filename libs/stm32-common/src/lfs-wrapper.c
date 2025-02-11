@@ -127,7 +127,8 @@ void lfs_deinit(void) {
 
 int init_lfs_task(uint32_t write_priority) {
   if (write_priority == 0) {
-    printf("Error: failed to init lfs task, priority: %d\r\n.", write_priority);
+    printf("Error: failed to init lfs task, priority: %lu\r\n.",
+           (unsigned long)write_priority);
     return APP_NOT_OK;
   }
 
@@ -258,12 +259,13 @@ int write_file_async(const file_t *file) {
 
 int spi_flash_read(const struct lfs_config *config, lfs_block_t block,
                    lfs_off_t offset, void *buffer, lfs_size_t size) {
-  return read(block * config->block_size + offset, buffer, size);
+  return read((block * config->block_size) + offset, buffer, size);
 }
 
 int spi_flash_prog(const struct lfs_config *config, lfs_block_t block,
                    lfs_off_t offset, const void *buffer, lfs_size_t size) {
-  return program(block * config->block_size + offset, (uint8_t *)buffer, size);
+  return program((block * config->block_size) + offset, (uint8_t *)buffer,
+                 size);
 }
 
 int spi_flash_erase(const struct lfs_config *config, lfs_block_t block) {

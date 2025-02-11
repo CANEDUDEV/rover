@@ -56,7 +56,7 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 SECTIONS
 {
   /* The startup code goes first into BOOTROM */
-  .isr_vector :
+  .isr_vector (READONLY) :
   {
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
@@ -64,7 +64,7 @@ SECTIONS
   } >BOOTROM
 
   /* The program code and other data goes into BOOTROM */
-  .text :
+  .text (READONLY) :
   {
     . = ALIGN(4);
     *(.text)           /* .text sections (code) */
@@ -81,7 +81,7 @@ SECTIONS
   } >BOOTROM
 
   /* Constant data goes into BOOTROM */
-  .rodata :
+  .rodata (READONLY) :
   {
     . = ALIGN(4);
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
@@ -89,27 +89,27 @@ SECTIONS
     . = ALIGN(4);
   } >BOOTROM
 
-  .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >BOOTROM
-  .ARM : {
+  .ARM.extab (READONLY)   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >BOOTROM
+  .ARM (READONLY) : {
     __exidx_start = .;
     *(.ARM.exidx*)
     __exidx_end = .;
   } >BOOTROM
 
-  .preinit_array     :
+  .preinit_array (READONLY)     :
   {
     PROVIDE_HIDDEN (__preinit_array_start = .);
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
   } >BOOTROM
-  .init_array :
+  .init_array (READONLY) :
   {
     PROVIDE_HIDDEN (__init_array_start = .);
     KEEP (*(SORT(.init_array.*)))
     KEEP (*(.init_array*))
     PROVIDE_HIDDEN (__init_array_end = .);
   } >BOOTROM
-  .fini_array :
+  .fini_array (READONLY) :
   {
     PROVIDE_HIDDEN (__fini_array_start = .);
     KEEP (*(SORT(.fini_array.*)))

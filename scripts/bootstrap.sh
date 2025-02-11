@@ -2,7 +2,10 @@
 
 set -euo pipefail
 
-YAMLFMT=https://github.com/google/yamlfmt/releases/download/v0.13.0/yamlfmt_0.13.0_Linux_x86_64.tar.gz
+TOOL_DIR=.tools
+
+TOOLCHAIN_URL=https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz
+YAMLFMT_URL=https://github.com/google/yamlfmt/releases/download/v0.13.0/yamlfmt_0.13.0_Linux_x86_64.tar.gz
 
 echo "Installing APT dependencies..."
 sudo apt-get -qq update
@@ -11,20 +14,24 @@ sudo apt-get -qq install --no-upgrade -y \
     clang-format \
     clang-tidy \
     doxygen \
-    gcc-arm-none-eabi \
-    libc6-dev-armhf-cross \
     zip
 
-echo "Installing uv..."
-if ! command -v uv; then
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+if [[ ! -e "${TOOL_DIR}/.complete" ]]; then
+    echo "Installing tools..."
+
+    mkdir -p "${TOOL_DIR}"
+    pushd "${TOOL_DIR}" >/dev/null
+
+    curl --progress-bar -LSf "${TOOLCHAIN_URL}" | tar xJf -
+    curl --progress-bar -LSf "${YAMLFMT_URL}" | tar xzf - yamlfmt
+
+    touch .complete
+    popd >/dev/null
 fi
 
-echo "Downloading yamlfmt..."
-if [[ ! -x .bin/yamlfmt ]]; then
-    mkdir -p .bin
-    curl -L -s "${YAMLFMT}" | tar -C .bin -xzf - yamlfmt
-    chmod +x .bin/yamlfmt
+if ! command -v uv; then
+    echo "Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
 fi
 
 uv sync

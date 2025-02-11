@@ -21,8 +21,8 @@ int init_potentiometers(void) {
       HAL_I2C_Master_Transmit(&peripherals->hi2c1, POTENTIOMETER_ADDRESS,
                               acr_write, sizeof(acr_write), HAL_MAX_DELAY);
   if (err != HAL_OK) {
-    printf("Error: failed to set up potentiometer: %d\r\n",
-           HAL_I2C_GetError(&peripherals->hi2c1));
+    printf("Error: failed to set up potentiometer: %lu\r\n",
+           (unsigned long)HAL_I2C_GetError(&peripherals->hi2c1));
     return APP_NOT_OK;
   }
 
@@ -38,8 +38,8 @@ int write_potentiometer_value(uint8_t terminal_address, uint8_t pot_value) {
                               write_cmd, sizeof(write_cmd), HAL_MAX_DELAY);
 
   if (err != HAL_OK) {
-    printf("Error: failed to set pot value: %d\r\n",
-           HAL_I2C_GetError(&peripherals->hi2c1));
+    printf("Error: failed to set pot value: %lu\r\n",
+           (unsigned long)HAL_I2C_GetError(&peripherals->hi2c1));
     return APP_NOT_OK;
   }
 

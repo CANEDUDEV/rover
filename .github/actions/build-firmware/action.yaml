@@ -9,11 +9,18 @@ outputs:
 runs:
   using: composite
   steps:
+
+    - name: Cache tools dir
+      uses: actions/cache@v4
+      with:
+        path: .tools
+        key: tools-${{ runner.os }}-${{ hashFiles('scripts/bootstrap.sh') }}
+
     - name: Cache python venv
       uses: actions/cache@v4
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+        key: venv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
 
     - name: Cache meson subprojects
       uses: actions/cache@v4
@@ -21,7 +28,6 @@ runs:
         path: subprojects
         key: meson-${{ runner.os }}-${{ hashFiles('subprojects/*.wrap') }}-${{ hashFiles('subprojects/packagefiles/**') }}
 
-    # Will run pip
     - name: Bootstrap build
       run: ./scripts/bootstrap.sh
       shell: bash

@@ -18,7 +18,7 @@ main() {
 
     echo "Formatting..."
     find_shell_files | xargs shfmt -w -s -i 4
-    .bin/yamlfmt -quiet -formatter type=basic,retain_line_breaks=true . .clang-tidy .clang-format
+    .tools/yamlfmt -quiet -formatter type=basic,retain_line_breaks=true . .clang-tidy .clang-format
     meson fmt -i -r .
     ninja --quiet -C "${BUILD_DIR}" clang-format
     ruff format

@@ -99,10 +99,10 @@ int write_ck_id(ck_id_t *ck_id) {
   }
 
   sprintf(str,
-          "\"ck_id\":{\"city_address\":%u,\"base_no\":%u,"
+          "\"ck_id\":{\"city_address\":%u,\"base_no\":%lu,"
           "\"base_no_has_extended_id\":%s,\"base_no_is_known\":%s}",
-          ck_id->city_address, ck_id->base_no, base_no_has_extended_id,
-          base_no_is_known);
+          ck_id->city_address, (unsigned long)ck_id->base_no,
+          base_no_has_extended_id, base_no_is_known);
 
   if (json_insert_object(str, json) != APP_OK) {
     printf("error: couldn't insert: %s\r\n", str);

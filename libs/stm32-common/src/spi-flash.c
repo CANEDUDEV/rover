@@ -324,7 +324,7 @@ void dump_flash(uint32_t start_address, uint32_t size) {
       error();
     }
 
-    printf("%08x ", addr);
+    printf("%08lx ", (unsigned long)addr);
     for (uint8_t byte = 0; byte < row_length; byte++) {
       printf("%02x ", read_buf[byte]);
       if (byte == 7) {  // NOLINT

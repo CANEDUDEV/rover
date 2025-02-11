@@ -3,9 +3,9 @@
 *.zip
 *.log
 *Zone.Identifier
-.bin/
 .cache/
 .mxproject
+.tools/
 .venv/
 .vscode/
 build/

@@ -161,7 +161,7 @@ static int read_uart_stream(uint8_t *dest, size_t size) {
 
   uint32_t err = HAL_UART_GetError(&peripherals->huart2);
   if (err != HAL_UART_ERROR_NONE) {
-    printf("UART error in SBUS header: 0x%x\r\n", err);
+    printf("UART error in SBUS header: 0x%lx\r\n", (unsigned long)err);
     __HAL_UART_FLUSH_DRREGISTER(&peripherals->huart2);
     return APP_NOT_OK;
   }
