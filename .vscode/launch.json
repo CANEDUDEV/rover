@@ -1,0 +1,82 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Flash & Debug App",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/apps/${input:targetName}/${input:targetName}.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "openocd",
+            "configFiles": [
+                "openocd.cfg"
+            ],
+            "svdFile": "stm32f302.svd",
+            "device": "STM32F302",
+            "gdbPath": ".tools/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gdb",
+            "preLaunchTask": "Flash ${input:targetName}"
+        },
+        {
+            "name": "Flash & Debug Bootloader",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/bootloader/bootloader.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "openocd",
+            "configFiles": [
+                "openocd.cfg"
+            ],
+            "svdFile": "stm32f302.svd",
+            "device": "STM32F302",
+            "gdbPath": ".tools/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gdb",
+            "preLaunchTask": "Flash bootloader"
+        },
+        {
+            "name": "Debug App",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/apps/${input:targetName}/${input:targetName}.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "openocd",
+            "configFiles": [
+                "openocd.cfg"
+            ],
+            "svdFile": "stm32f302.svd",
+            "device": "STM32F302",
+            "gdbPath": ".tools/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gdb",
+        },
+        {
+            "name": "Debug Bootloader",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/bootloader/bootloader.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "openocd",
+            "configFiles": [
+                "openocd.cfg"
+            ],
+            "svdFile": "stm32f302.svd",
+            "device": "STM32F302",
+            "gdbPath": ".tools/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi/bin/arm-none-eabi-gdb",
+        },
+    ],
+    "inputs": [
+        {
+            "id": "targetName",
+            "type": "pickString",
+            "description": "Select the target to debug",
+            "options": [
+                "battery-monitor",
+                "brake",
+                "obstacle-detector",
+                "sbus-receiver",
+                "servo"
+            ],
+            "default": "battery-monitor"
+        }
+    ]
+}

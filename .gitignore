@@ -7,7 +7,6 @@
 .mxproject
 .tools/
 .venv/
-.vscode/
 build/
 compile_commands.json
 subprojects/*
