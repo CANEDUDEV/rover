@@ -17,7 +17,6 @@
                 "showReuseMessage": true,
                 "clear": false
             },
-            "problemMatcher": []
         },
         {
             "label": "Build",
@@ -39,9 +38,6 @@
                 "showReuseMessage": true,
                 "clear": false
             },
-            "problemMatcher": [
-                "$gcc"
-            ]
         },
         {
             "label": "Test",
@@ -62,7 +58,6 @@
                 "panel": "shared",
                 "clear": false
             },
-            "problemMatcher": []
         },
         {
             "label": "Check",
@@ -83,7 +78,6 @@
                 "panel": "shared",
                 "clear": false
             },
-            "problemMatcher": []
         },
         {
             "label": "Flash bootloader",
@@ -93,7 +87,6 @@
                 "-c",
                 "source .venv/bin/activate && meson compile -C build swd-flash-bootloader"
             ],
-            "problemMatcher": [],
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -109,7 +102,6 @@
                 "-c",
                 "source .venv/bin/activate && meson compile -C build swd-flash-battery-monitor"
             ],
-            "problemMatcher": [],
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -125,7 +117,6 @@
                 "-c",
                 "source .venv/bin/activate && meson compile -C build swd-flash-brake"
             ],
-            "problemMatcher": [],
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -141,7 +132,6 @@
                 "-c",
                 "source .venv/bin/activate && meson compile -C build swd-flash-obstacle-detector"
             ],
-            "problemMatcher": [],
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -157,7 +147,6 @@
                 "-c",
                 "source .venv/bin/activate && meson compile -C build swd-flash-sbus-receiver"
             ],
-            "problemMatcher": [],
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -173,7 +162,6 @@
                 "-c",
                 "source .venv/bin/activate && meson compile -C build swd-flash-servo"
             ],
-            "problemMatcher": [],
             "presentation": {
                 "echo": true,
                 "reveal": "always",

@@ -1,5 +1,6 @@
 {
     "recommendations": [
-        "marus25.cortex-debug"
+        "marus25.cortex-debug",
+        "llvm-vs-code-extensions.vscode-clangd"
     ]
 }
