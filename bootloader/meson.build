@@ -11,7 +11,6 @@ app_linker_script = fs.copyfile(files('src' / 'app.ld'))
 bootloader_linker_script = fs.copyfile(files('src' / 'bootloader.ld'))
 
 bootloader_elf = executable(
-
     'bootloader.elf',
     bootloader_src,
     c_args: ['-Os'],  # Optimize for size
@@ -40,6 +39,17 @@ bootloader_bin = custom_target(
     build_by_default: true,
 )
 
-release_files += bootloader_bin
+run_target(
+    'swd-flash-bootloader',
+    command: [
+        openocd,
+        '-f',
+        openocd_config,
+        '-c',
+        'program @0@ verify reset exit'.format(bootloader_elf.full_path()),
+    ],
+)
+
+release_files += [bootloader_elf, bootloader_bin]
 
 bootloader_tidy_files = [bootloader_src]

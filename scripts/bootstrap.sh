@@ -14,6 +14,7 @@ sudo apt-get -qq install --no-upgrade -y \
     clang-format \
     clang-tidy \
     doxygen \
+    openocd \
     zip
 
 if [[ ! -e "${TOOL_DIR}/.complete" ]]; then

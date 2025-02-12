@@ -27,4 +27,19 @@ sbus_receiver_bin = custom_target(
     build_by_default: true,
 )
 
+run_target(
+    'swd-flash-sbus-receiver',
+    command: [
+        openocd,
+        '-f',
+        openocd_config,
+        '-c',
+        'program @0@ verify'.format(bootloader_elf.full_path()),
+        '-c',
+        'program @0@ verify reset exit'.format(sbus_receiver_elf.full_path()),
+    ],
+)
+
+release_files += [sbus_receiver_elf, sbus_receiver_bin]
+
 sbus_receiver_tidy_files = sbus_receiver_src

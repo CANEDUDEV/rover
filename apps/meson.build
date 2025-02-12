@@ -16,7 +16,6 @@ app_binaries = {
 }
 
 foreach name, app : app_binaries
-    release_files += app
     release_files += custom_target(
         '@0@-with-bootloader.bin'.format(name),
         build_by_default: true,

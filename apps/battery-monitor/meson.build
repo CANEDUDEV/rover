@@ -34,4 +34,19 @@ battery_monitor_bin = custom_target(
 
 subdir('tests')
 
+run_target(
+    'swd-flash-battery-monitor',
+    command: [
+        openocd,
+        '-f',
+        openocd_config,
+        '-c',
+        'program @0@ verify'.format(bootloader_elf.full_path()),
+        '-c',
+        'program @0@ verify reset exit'.format(battery_monitor_elf.full_path()),
+    ],
+)
+
+release_files += [battery_monitor_elf, battery_monitor_bin]
+
 battery_monitor_tidy_files = [battery_monitor_src, battery_test_tidy_files]

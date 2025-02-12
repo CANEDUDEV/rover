@@ -30,7 +30,7 @@ while [[ $# -gt 0 ]]; do
         ;;
     *)
 
-        if [[ $1 == *.bin ]]; then
+        if [[ $1 == *.bin || $1 == *.elf ]]; then
             BINARIES+=("$1")
         else
             OTHER_FILES+=("$1")

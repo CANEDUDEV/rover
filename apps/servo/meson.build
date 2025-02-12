@@ -52,4 +52,36 @@ motor_bin = custom_target(
 
 subdir('tests')
 
+run_target(
+    'swd-flash-servo',
+    command: [
+        openocd,
+        '-f',
+        'interface/stlink.cfg',
+        '-f',
+        'target/stm32f3x.cfg',
+        '-c',
+        'adapter speed 100000',
+        '-c',
+        'program @0@ verify'.format(bootloader_elf.full_path()),
+        '-c',
+        'program @0@ verify reset exit'.format(servo_elf.full_path()),
+    ],
+)
+
+run_target(
+    'swd-flash-motor',
+    command: [
+        openocd,
+        '-f',
+        openocd_config,
+        '-c',
+        'program @0@ verify'.format(bootloader_elf.full_path()),
+        '-c',
+        'program @0@ verify reset exit'.format(motor_elf.full_path()),
+    ],
+)
+
+release_files += [servo_elf, servo_bin, motor_elf, motor_bin]
+
 servo_tidy_files = [servo_src, servo_test_tidy_files]

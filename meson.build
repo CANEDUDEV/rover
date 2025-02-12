@@ -22,6 +22,8 @@ objcopy = find_program('objcopy')
 clang_tidy = find_program('clang-tidy')
 cat = find_program('cat')
 python = find_program('python3', required: true)
+openocd = find_program('openocd')
+openocd_config = files('openocd.cfg')
 
 stm32f3_hal_dep = dependency('stm32f3-hal')
 freertos_dep = dependency('freertos')
@@ -132,7 +134,7 @@ run_target(
 python_flash = find_program('python3.exe', 'python3', required: false)
 
 run_target(
-    'flash',
+    'can-flash-all',
     command: [
         python_flash,
         release_dir / 'fw_update.py',

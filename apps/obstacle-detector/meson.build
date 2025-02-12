@@ -28,4 +28,19 @@ obstacle_detector_bin = custom_target(
     build_by_default: true,
 )
 
+run_target(
+    'swd-flash-obstacle-detector',
+    command: [
+        openocd,
+        '-f',
+        openocd_config,
+        '-c',
+        'program @0@ verify'.format(bootloader_elf.full_path()),
+        '-c',
+        'program @0@ verify reset exit'.format(obstacle_detector_elf.full_path()),
+    ],
+)
+
+release_files += [obstacle_detector_elf, obstacle_detector_bin]
+
 obstacle_detector_tidy_files = [obstacle_detector_src]
