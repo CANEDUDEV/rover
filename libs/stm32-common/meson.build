@@ -14,12 +14,12 @@ stm32_lib_src = files(
     'src' / 'postmaster-base.c',
     'src' / 'print.c',
     'src' / 'spi-flash.c',
-    'src' / 'syscalls.c',
-    'src' / 'sysmem.c',
 )
 
 stm32_startup_src = files(
     'src' / 'startup_stm32f302xe.s',
+    'src' / 'syscalls.c',
+    'src' / 'sysmem.c',
     'src' / 'system_stm32f3xx.c',
 )
 
