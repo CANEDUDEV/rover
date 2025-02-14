@@ -28,7 +28,6 @@ servo_bin = custom_target(
     output: 'servo.bin',
     input: servo_elf,
     command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],
-    depends: servo_elf,
     build_by_default: true,
 )
 
@@ -46,7 +45,6 @@ motor_bin = custom_target(
     output: 'motor.bin',
     input: motor_elf,
     command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],
-    depends: motor_elf,
     build_by_default: true,
 )
 
@@ -67,6 +65,7 @@ run_target(
         '-c',
         'program @0@ verify reset exit'.format(servo_elf.full_path()),
     ],
+    depends: [bootloader_elf, servo_elf],  # required because full_path doesn't create automatic dependency on these objects
 )
 
 run_target(
@@ -80,6 +79,7 @@ run_target(
         '-c',
         'program @0@ verify reset exit'.format(motor_elf.full_path()),
     ],
+    depends: [bootloader_elf, motor_elf],  # required because full_path doesn't create automatic dependency on these objects
 )
 
 release_files += [servo_elf, servo_bin, motor_elf, motor_bin]

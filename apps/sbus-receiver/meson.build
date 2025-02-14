@@ -23,7 +23,6 @@ sbus_receiver_bin = custom_target(
     output: 'sbus-receiver.bin',
     input: sbus_receiver_elf,
     command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],
-    depends: sbus_receiver_elf,
     build_by_default: true,
 )
 
@@ -38,6 +37,7 @@ run_target(
         '-c',
         'program @0@ verify reset exit'.format(sbus_receiver_elf.full_path()),
     ],
+    depends: [bootloader_elf, sbus_receiver_elf],  # required because full_path doesn't create automatic dependency on these objects
 )
 
 release_files += [sbus_receiver_elf, sbus_receiver_bin]

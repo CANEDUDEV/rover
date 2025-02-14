@@ -24,7 +24,6 @@ obstacle_detector_bin = custom_target(
     output: 'obstacle-detector.bin',
     input: obstacle_detector_elf,
     command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],
-    depends: obstacle_detector_elf,
     build_by_default: true,
 )
 
@@ -39,6 +38,7 @@ run_target(
         '-c',
         'program @0@ verify reset exit'.format(obstacle_detector_elf.full_path()),
     ],
+    depends: [bootloader_elf, obstacle_detector_elf],  # required because full_path doesn't create automatic dependency on these objects
 )
 
 release_files += [obstacle_detector_elf, obstacle_detector_bin]

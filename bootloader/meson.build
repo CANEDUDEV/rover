@@ -35,7 +35,6 @@ bootloader_bin = custom_target(
         '@INPUT@',
         '@OUTPUT@',
     ],
-    depends: bootloader_elf,
     build_by_default: true,
 )
 
@@ -48,6 +47,7 @@ run_target(
         '-c',
         'program @0@ verify reset exit'.format(bootloader_elf.full_path()),
     ],
+    depends: [bootloader_elf],  # required because full_path doesn't create automatic dependency on this object
 )
 
 release_files += [bootloader_elf, bootloader_bin]

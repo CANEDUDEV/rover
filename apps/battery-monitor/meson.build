@@ -28,7 +28,6 @@ battery_monitor_bin = custom_target(
     output: 'battery-monitor.bin',
     input: battery_monitor_elf,
     command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],
-    depends: battery_monitor_elf,
     build_by_default: true,
 )
 
@@ -45,6 +44,7 @@ run_target(
         '-c',
         'program @0@ verify reset exit'.format(battery_monitor_elf.full_path()),
     ],
+    depends: [bootloader_elf, battery_monitor_elf],  # required because full_path doesn't create automatic dependency on these objects
 )
 
 release_files += [battery_monitor_elf, battery_monitor_bin]

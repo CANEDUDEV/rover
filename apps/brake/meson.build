@@ -24,7 +24,6 @@ brake_bin = custom_target(
     output: 'brake.bin',
     input: brake_elf,
     command: [objcopy, '-O', 'binary', '-S', '@INPUT@', '@OUTPUT@'],
-    depends: brake_elf,
     build_by_default: true,
 )
 
@@ -39,6 +38,7 @@ run_target(
         '-c',
         'program @0@ verify reset exit'.format(brake_elf.full_path()),
     ],
+    depends: [bootloader_elf, brake_elf],  # required because full_path doesn't create automatic dependency on these objects
 )
 
 release_files += [brake_elf, brake_bin]
