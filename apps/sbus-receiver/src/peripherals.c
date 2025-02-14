@@ -2,13 +2,16 @@
 
 #include "error.h"
 #include "ports.h"
-#include "stm32f3xx_hal.h"
+#include "stm32f3xx_hal_gpio.h"
 
+#define TIM1_DMA_IRQ_PRIORITY 0
 #define USART2_IRQ_PRIORITY 5
 
 static peripherals_t peripherals;
 
 void gpio_init(void);
+void dma_init(void);
+void tim1_init(void);
 void uart2_init(void);
 
 peripherals_t* get_peripherals(void) {
@@ -20,6 +23,8 @@ void peripherals_init(void) {
   peripherals.common_peripherals = get_common_peripherals();
 
   gpio_init();
+  dma_init();
+  tim1_init();
   uart2_init();
 }
 
@@ -30,6 +35,7 @@ void gpio_init(void) {
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
+  // 3.3V output
   HAL_GPIO_WritePin(VDD_IO_LEVEL_GPIO_PORT, VDD_IO_LEVEL_PIN, GPIO_PIN_RESET);
 
   GPIO_InitTypeDef gpio_init;
@@ -39,7 +45,94 @@ void gpio_init(void) {
   gpio_init.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(VDD_IO_LEVEL_GPIO_PORT, &gpio_init);
 
-  HAL_GPIO_WritePin(VDD_IO_LEVEL_GPIO_PORT, VDD_IO_LEVEL_PIN, GPIO_PIN_SET);
+  // Enable all GPIO outputs
+  HAL_GPIO_WritePin(GPIO_PWRON_1_2_GPIO_PORT, GPIO_PWRON_1_PIN, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIO_PWRON_1_2_GPIO_PORT, GPIO_PWRON_2_PIN, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIO_PWRON_3_4_GPIO_PORT, GPIO_PWRON_3_PIN, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIO_PWRON_3_4_GPIO_PORT, GPIO_PWRON_4_PIN, GPIO_PIN_SET);
+
+  gpio_init.Pin = GPIO_PWRON_1_PIN | GPIO_PWRON_2_PIN;
+  HAL_GPIO_Init(GPIO_PWRON_1_2_GPIO_PORT, &gpio_init);
+
+  gpio_init.Pin = GPIO_PWRON_3_PIN | GPIO_PWRON_4_PIN;
+  HAL_GPIO_Init(GPIO_PWRON_3_4_GPIO_PORT, &gpio_init);
+}
+
+void tim1_init(void) {
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  TIM_HandleTypeDef* htim1 = &peripherals.htim1;
+
+  htim1->Instance = TIM1;
+  htim1->Init.Prescaler = 0;
+  htim1->Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1->Init.Period = 120;  // NOLINT(*-magic-numbers)
+  htim1->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(htim1) != HAL_OK) {
+    error();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(htim1, &sClockSourceConfig) != HAL_OK) {
+    error();
+  }
+  if (HAL_TIM_PWM_Init(htim1) != HAL_OK) {
+    error();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(htim1, &sMasterConfig) != HAL_OK) {
+    error();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 120;  // NOLINT(*-magic-numbers)
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  if (HAL_TIM_PWM_ConfigChannel(htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK) {
+    error();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK) {
+    error();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK) {
+    error();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(htim1, &sConfigOC, TIM_CHANNEL_4) != HAL_OK) {
+    error();
+  }
+
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  GPIO_InitTypeDef gpio_init;
+
+  gpio_init.Pin = TIM1_CH1_PIN | TIM1_CH2_PIN | TIM1_CH3_PIN | TIM1_CH4_PIN;
+  gpio_init.Mode = GPIO_MODE_AF_PP;
+  gpio_init.Pull = GPIO_NOPULL;
+  gpio_init.Speed = GPIO_SPEED_FREQ_HIGH;
+  gpio_init.Alternate = GPIO_AF2_TIM1;
+
+  HAL_GPIO_Init(TIM1_GPIO_PORT, &gpio_init);
+}
+
+void dma_init(void) {
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  // TIM1_CH1
+  HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, TIM1_DMA_IRQ_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
+
+  // TIM1_CH2
+  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, TIM1_DMA_IRQ_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
+
+  // TIM1_CH3
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, TIM1_DMA_IRQ_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
+
+  // TIM1_CH4
+  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, TIM1_DMA_IRQ_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
 }
 
 void uart2_init(void) {
@@ -111,6 +204,106 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi) {
 
   } else if (hspi->Instance == SPI2) {
     spi2_msp_deinit();
+  }
+}
+
+/**
+ * @brief TIM_Base MSP Initialization
+ * This function configures the hardware resources used in this example
+ * @param htim_base: TIM_Base handle pointer
+ * @retval None
+ */
+void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base) {
+  if (htim_base->Instance == TIM1) {
+    /* Peripheral clock enable */
+    __HAL_RCC_TIM1_CLK_ENABLE();
+
+    DMA_HandleTypeDef* hdma_tim1_ch1 = &peripherals.hdma_tim1_ch1;
+
+    hdma_tim1_ch1->Instance = DMA1_Channel2;
+    hdma_tim1_ch1->Init.Direction = DMA_MEMORY_TO_PERIPH;
+    hdma_tim1_ch1->Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_tim1_ch1->Init.MemInc = DMA_MINC_ENABLE;
+    hdma_tim1_ch1->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    hdma_tim1_ch1->Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    hdma_tim1_ch1->Init.Mode = DMA_CIRCULAR;
+    hdma_tim1_ch1->Init.Priority = DMA_PRIORITY_LOW;
+    if (HAL_DMA_Init(hdma_tim1_ch1) != HAL_OK) {
+      error();
+    }
+
+    __HAL_LINKDMA(htim_base, hdma[TIM_DMA_ID_CC1], *hdma_tim1_ch1);
+
+    DMA_HandleTypeDef* hdma_tim1_ch2 = &peripherals.hdma_tim1_ch2;
+
+    hdma_tim1_ch2->Instance = DMA1_Channel3;
+    hdma_tim1_ch2->Init.Direction = DMA_MEMORY_TO_PERIPH;
+    hdma_tim1_ch2->Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_tim1_ch2->Init.MemInc = DMA_MINC_ENABLE;
+    hdma_tim1_ch2->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    hdma_tim1_ch2->Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    hdma_tim1_ch2->Init.Mode = DMA_CIRCULAR;
+
+    hdma_tim1_ch2->Init.Priority = DMA_PRIORITY_LOW;
+    if (HAL_DMA_Init(hdma_tim1_ch2) != HAL_OK) {
+      error();
+    }
+
+    __HAL_LINKDMA(htim_base, hdma[TIM_DMA_ID_CC2], *hdma_tim1_ch2);
+
+    DMA_HandleTypeDef* hdma_tim1_ch3 = &peripherals.hdma_tim1_ch3;
+
+    hdma_tim1_ch3->Instance = DMA1_Channel6;
+    hdma_tim1_ch3->Init.Direction = DMA_MEMORY_TO_PERIPH;
+    hdma_tim1_ch3->Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_tim1_ch3->Init.MemInc = DMA_MINC_ENABLE;
+    hdma_tim1_ch3->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    hdma_tim1_ch3->Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    hdma_tim1_ch3->Init.Mode = DMA_CIRCULAR;
+    hdma_tim1_ch3->Init.Priority = DMA_PRIORITY_LOW;
+    if (HAL_DMA_Init(hdma_tim1_ch3) != HAL_OK) {
+      error();
+    }
+
+    __HAL_LINKDMA(htim_base, hdma[TIM_DMA_ID_CC3], *hdma_tim1_ch3);
+
+    DMA_HandleTypeDef* hdma_tim1_ch4 = &peripherals.hdma_tim1_ch4;
+
+    hdma_tim1_ch4->Instance = DMA1_Channel4;
+    hdma_tim1_ch4->Init.Direction = DMA_MEMORY_TO_PERIPH;
+    hdma_tim1_ch4->Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_tim1_ch4->Init.MemInc = DMA_MINC_ENABLE;
+    hdma_tim1_ch4->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    hdma_tim1_ch4->Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    hdma_tim1_ch4->Init.Mode = DMA_CIRCULAR;
+    hdma_tim1_ch4->Init.Priority = DMA_PRIORITY_LOW;
+    if (HAL_DMA_Init(hdma_tim1_ch4) != HAL_OK) {
+      error();
+    }
+
+    __HAL_LINKDMA(htim_base, hdma[TIM_DMA_ID_CC4], *hdma_tim1_ch4);
+  }
+}
+
+/**
+ * @brief TIM_Base MSP De-Initialization
+ * This function freeze the hardware resources used in this example
+ * @param htim_base: TIM_Base handle pointer
+ * @retval None
+ */
+void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base) {
+  if (htim_base->Instance == TIM1) {
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM1_CLK_DISABLE();
+
+    /* tim1 DMA DeInit */
+    HAL_DMA_DeInit(htim_base->hdma[TIM_DMA_ID_CC1]);
+    HAL_DMA_DeInit(htim_base->hdma[TIM_DMA_ID_CC2]);
+    HAL_DMA_DeInit(htim_base->hdma[TIM_DMA_ID_CC3]);
+    HAL_DMA_DeInit(htim_base->hdma[TIM_DMA_ID_CC4]);
+
+    HAL_GPIO_DeInit(TIM1_GPIO_PORT,
+                    TIM1_CH1_PIN | TIM1_CH2_PIN | TIM1_CH3_PIN | TIM1_CH4_PIN);
   }
 }
 

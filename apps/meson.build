@@ -29,8 +29,8 @@ endforeach
 
 apps_tidy_files = [
     battery_monitor_tidy_files,
+    brake_tidy_files,
     obstacle_detector_tidy_files,
     sbus_receiver_tidy_files,
     servo_tidy_files,
-    brake_tidy_files,
 ]

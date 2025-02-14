@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "ck-data.h"
+#include "peripherals.h"
 #include "sbus.h"
 #include "steering.h"
 
@@ -17,15 +18,52 @@
 
 // FreeRTOS
 #include "FreeRTOS.h"
+#include "stm32f3xx_hal_tim.h"
 #include "task.h"
 
+#define STEERING_TASK_STACK_SIZE (2 * configMINIMAL_STACK_SIZE)
 static TaskHandle_t steering_task;
 static StaticTask_t steering_task_buf;
-static StackType_t steering_task_stack[2 * configMINIMAL_STACK_SIZE];
+static StackType_t steering_task_stack[STEERING_TASK_STACK_SIZE];
 
+// DSHOT
+#define DSHOT_FRAME_SIZE_BITS 16
+#define DSHOT_THROTTLE_MAX 2047
+#define DSHOT_CRC_MASK 0xF
+#define DSHOT_BIT_0_PULSE 45
+#define DSHOT_BIT_1_PULSE (2 * DSHOT_BIT_0_PULSE)
+
+typedef enum {
+  DSHOT_150,
+  DSHOT_300,
+  DSHOT_600,
+} dshot_protocol_t;
+
+typedef struct {
+  uint16_t data;
+} dshot_frame_t;
+
+typedef struct {
+  // Use double buffering
+  uint32_t data[2][DSHOT_FRAME_SIZE_BITS];
+  uint8_t active_buf;
+  dshot_frame_t next_frame;
+} dshot_dma_buf_t;
+
+static dshot_dma_buf_t dshot_dma_buffers[4];
+
+void dshot_init_bufs(void);
+void dshot_set_protocol(dshot_protocol_t proto);
+void dshot_start(void);
+void dshot_update_buf(size_t bufno);
+
+dshot_frame_t create_dshot_frame(uint16_t throttle);
+
+// SBUS
 void sbus_read_and_steer(void *unused);
 void send_steering_command(steering_command_t *command);
 
+// CK
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
 
 void task_init(void) {
@@ -35,9 +73,9 @@ void task_init(void) {
     error();
   }
 
-  steering_task = xTaskCreateStatic(
-      sbus_read_and_steer, "sbus read", 2 * configMINIMAL_STACK_SIZE, NULL,
-      priority++, steering_task_stack, &steering_task_buf);
+  steering_task = xTaskCreateStatic(sbus_read_and_steer, "steering task",
+                                    STEERING_TASK_STACK_SIZE, NULL, priority++,
+                                    steering_task_stack, &steering_task_buf);
 
   letter_reader_cfg_t letter_reader_cfg = {
       .priority = priority++,
@@ -53,6 +91,10 @@ void sbus_read_and_steer(void *unused) {
   (void)unused;
 
   init_steering();
+
+  dshot_set_protocol(DSHOT_600);
+  dshot_init_bufs();
+  dshot_start();
 
   for (;;) {
     sbus_message_t message;
@@ -79,6 +121,14 @@ void sbus_read_and_steer(void *unused) {
 }
 
 void send_steering_command(steering_command_t *command) {
+  // DSHOT
+  const uint16_t dshot_throttle = (2 * (command->throttle - 1000)) + 48;
+  dshot_frame_t dshot_frame = create_dshot_frame(dshot_throttle);
+  for (int i = 0; i < 4; i++) {
+    dshot_dma_buffers[i].next_frame = dshot_frame;
+  }
+
+  // CAN
   if (!command->steering_is_on ||
       ck_get_action_mode() == CK_ACTION_MODE_FREEZE) {
     return;
@@ -99,6 +149,114 @@ void send_steering_command(steering_command_t *command) {
   if (ret != CK_OK && ret != CK_ERR_TIMEOUT) {
     printf("error: failed to send throttle doc\r\n");
   }
+}
+
+// Assumes timer clock is 72 MHz
+void dshot_set_protocol(dshot_protocol_t proto) {
+  TIM_HandleTypeDef *htim = &get_peripherals()->htim1;
+  switch (proto) {
+    case DSHOT_150:
+      __HAL_TIM_SET_PRESCALER(htim, 4 - 1);
+      break;
+
+    case DSHOT_300:
+      __HAL_TIM_SET_PRESCALER(htim, 2 - 1);
+      break;
+
+    case DSHOT_600:
+      __HAL_TIM_SET_PRESCALER(htim, 0);
+      break;
+  }
+}
+
+void dshot_init_bufs(void) {
+  for (int i = 0; i < 4; i++) {
+    dshot_dma_buffers[i].next_frame = create_dshot_frame(0);
+
+    dshot_dma_buffers[i].active_buf = 0;
+    dshot_update_buf(i);
+    dshot_dma_buffers[i].active_buf = 1;
+  }
+}
+
+void dshot_update_buf(size_t bufno) {
+  dshot_dma_buf_t *current = &dshot_dma_buffers[bufno];
+
+  for (size_t i = 0; i < DSHOT_FRAME_SIZE_BITS; i++) {
+    bool bit_high = (current->next_frame.data >> i) & 1;
+    if (bit_high) {
+      current->data[current->active_buf][DSHOT_FRAME_SIZE_BITS - 1 - i] =
+          DSHOT_BIT_1_PULSE;
+    } else {
+      current->data[current->active_buf][DSHOT_FRAME_SIZE_BITS - 1 - i] =
+          DSHOT_BIT_0_PULSE;
+    }
+  }
+}
+
+void dshot_start(void) {
+  peripherals_t *peripherals = get_peripherals();
+
+  HAL_TIM_PWM_Start_DMA(&peripherals->htim1, TIM_CHANNEL_1,
+                        (uint32_t *)dshot_dma_buffers[0].data,
+                        DSHOT_FRAME_SIZE_BITS * 2);
+  HAL_TIM_PWM_Start_DMA(&peripherals->htim1, TIM_CHANNEL_2,
+                        (uint32_t *)dshot_dma_buffers[1].data,
+                        DSHOT_FRAME_SIZE_BITS * 2);
+  HAL_TIM_PWM_Start_DMA(&peripherals->htim1, TIM_CHANNEL_3,
+                        (uint32_t *)dshot_dma_buffers[2].data,
+                        DSHOT_FRAME_SIZE_BITS * 2);
+  HAL_TIM_PWM_Start_DMA(&peripherals->htim1, TIM_CHANNEL_4,
+                        (uint32_t *)dshot_dma_buffers[3].data,
+                        DSHOT_FRAME_SIZE_BITS * 2);
+}
+
+void HAL_TIM_PWM_PulseFinishedHalfCpltCallback(TIM_HandleTypeDef *htim) {
+  uint8_t channel = 0;
+  switch (htim->Channel) {
+    case HAL_TIM_ACTIVE_CHANNEL_1:
+      channel = 0;
+      break;
+
+    case HAL_TIM_ACTIVE_CHANNEL_2:
+      channel = 1;
+      break;
+
+    case HAL_TIM_ACTIVE_CHANNEL_3:
+      channel = 2;
+      break;
+
+    case HAL_TIM_ACTIVE_CHANNEL_4:
+      channel = 3;
+      break;
+
+    default:
+      break;
+  }
+
+  dshot_dma_buf_t *dshot_buf = &dshot_dma_buffers[channel];
+  dshot_buf->active_buf = (dshot_buf->active_buf + 1) % 2;
+  dshot_update_buf(channel);
+}
+
+dshot_frame_t create_dshot_frame(uint16_t throttle) {
+  uint16_t data = throttle;
+  if (data > DSHOT_THROTTLE_MAX) {
+    data = DSHOT_THROTTLE_MAX;
+  }
+
+  data <<= 1;  // 11 bit throttle + telemetry bit
+  uint16_t crc_data = data;
+  uint16_t crc = 0;
+  for (int i = 0; i < 3; i++) {
+    crc ^= crc_data;  // XOR data by nibbles
+    crc_data >>= 4;
+  }
+  crc &= DSHOT_CRC_MASK;
+
+  dshot_frame_t frame = {.data = (data << 4) | crc};
+
+  return frame;
 }
 
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter) {
