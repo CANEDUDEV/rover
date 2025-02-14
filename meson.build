@@ -44,11 +44,26 @@ subdir('docs')
 
 tidy_files = [apps_tidy_files, bootloader_tidy_files, common_libs_tidy_files]
 
-# Override default meson clang-tidy target
+# Override default meson clang-tidy targets
 run_target(
     'clang-tidy',
     command: [
         clang_tidy,
+        '--config-file',
+        meson.project_source_root() / '.clang-tidy',
+        '--quiet',
+        '-p',
+        meson.project_build_root(),
+        tidy_files,
+    ],
+)
+
+run_target(
+    'clang-tidy-fix',
+    command: [
+        clang_tidy,
+        '--fix-errors',
+        '-extra-arg=-ferror-limit=0',
         '--config-file',
         meson.project_source_root() / '.clang-tidy',
         '--quiet',
