@@ -65,7 +65,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "source .venv/bin/activate && ./scripts/check-src.sh"
+                "source .venv/bin/activate; ./scripts/check-src.sh"
             ],
             "group": {
                 "kind": "test",
@@ -85,7 +85,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "source .venv/bin/activate && meson compile -C build swd-flash-bootloader"
+                "source .venv/bin/activate; meson compile -C build swd-flash-bootloader"
             ],
             "presentation": {
                 "echo": true,
@@ -101,7 +101,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "source .venv/bin/activate && meson compile -C build swd-flash-battery-monitor"
+                "source .venv/bin/activate; meson compile -C build swd-flash-battery-monitor"
             ],
             "presentation": {
                 "echo": true,
@@ -117,7 +117,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "source .venv/bin/activate && meson compile -C build swd-flash-brake"
+                "source .venv/bin/activate; meson compile -C build swd-flash-brake"
             ],
             "presentation": {
                 "echo": true,
@@ -133,7 +133,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "source .venv/bin/activate && meson compile -C build swd-flash-obstacle-detector"
+                "source .venv/bin/activate; meson compile -C build swd-flash-obstacle-detector"
             ],
             "presentation": {
                 "echo": true,
@@ -149,7 +149,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "source .venv/bin/activate && meson compile -C build swd-flash-sbus-receiver"
+                "source .venv/bin/activate; meson compile -C build swd-flash-sbus-receiver"
             ],
             "presentation": {
                 "echo": true,
@@ -165,7 +165,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "source .venv/bin/activate && meson compile -C build swd-flash-servo"
+                "source .venv/bin/activate; meson compile -C build swd-flash-servo"
             ],
             "presentation": {
                 "echo": true,
