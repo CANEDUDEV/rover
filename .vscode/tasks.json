@@ -7,7 +7,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "scripts/bootstrap.sh",
+                "scripts/bootstrap.sh"
             ],
             "presentation": {
                 "echo": true,
@@ -16,7 +16,7 @@
                 "panel": "shared",
                 "showReuseMessage": true,
                 "clear": false
-            },
+            }
         },
         {
             "label": "Build",
@@ -24,7 +24,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "source .venv/bin/activate; meson compile -C build",
+                "source .venv/bin/activate; meson compile -C build"
             ],
             "group": {
                 "kind": "build",
@@ -37,7 +37,7 @@
                 "panel": "shared",
                 "showReuseMessage": true,
                 "clear": false
-            },
+            }
         },
         {
             "label": "Test",
@@ -45,7 +45,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "source .venv/bin/activate; meson test -C build",
+                "source .venv/bin/activate; meson test -C build"
             ],
             "group": {
                 "kind": "test",
@@ -57,7 +57,7 @@
                 "focus": false,
                 "panel": "shared",
                 "clear": false
-            },
+            }
         },
         {
             "label": "Check",
@@ -77,7 +77,7 @@
                 "focus": false,
                 "panel": "shared",
                 "clear": false
-            },
+            }
         },
         {
             "label": "Flash bootloader",
@@ -93,6 +93,7 @@
                 "focus": false,
                 "panel": "shared"
             },
+            "problemMatcher": []
         },
         {
             "label": "Flash battery-monitor",
@@ -108,6 +109,7 @@
                 "focus": false,
                 "panel": "shared"
             },
+            "problemMatcher": []
         },
         {
             "label": "Flash brake",
@@ -123,6 +125,7 @@
                 "focus": false,
                 "panel": "shared"
             },
+            "problemMatcher": []
         },
         {
             "label": "Flash obstacle-detector",
@@ -138,6 +141,7 @@
                 "focus": false,
                 "panel": "shared"
             },
+            "problemMatcher": []
         },
         {
             "label": "Flash sbus-receiver",
@@ -153,6 +157,7 @@
                 "focus": false,
                 "panel": "shared"
             },
+            "problemMatcher": []
         },
         {
             "label": "Flash servo",
@@ -168,6 +173,7 @@
                 "focus": false,
                 "panel": "shared"
             },
+            "problemMatcher": []
         }
     ],
 }
