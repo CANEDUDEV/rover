@@ -5,6 +5,7 @@
 
 #include "ck-data.h"
 #include "peripherals.h"
+#include "ports.h"
 #include "sbus.h"
 #include "steering.h"
 
@@ -18,7 +19,6 @@
 
 // FreeRTOS
 #include "FreeRTOS.h"
-#include "stm32f3xx_hal_tim.h"
 #include "task.h"
 
 #define STEERING_TASK_STACK_SIZE (2 * configMINIMAL_STACK_SIZE)
@@ -66,12 +66,73 @@ void send_steering_command(steering_command_t *command);
 // CK
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
 
+static TaskHandle_t imu_task;
+static StaticTask_t imu_task_buf;
+static StackType_t imu_task_stack[configMINIMAL_STACK_SIZE];
+
+#define IMU_REG_GYRO_XOUT_H 0x43
+#define IMU_REG_GYRO_XOUT_L 0x44
+#define IMU_REG_GYRO_YOUT_H 0x45
+#define IMU_REG_GYRO_YOUT_L 0x46
+#define IMU_REG_GYRO_ZOUT_H 0x47
+#define IMU_REG_GYRO_ZOUT_L 0x48
+#define IMU_REG_WHOAMI 0x75
+
+typedef struct {
+  uint16_t x;
+  uint16_t y;
+  uint16_t z;
+} gyro_t;
+
+uint8_t imu_read_reg(uint8_t reg) {
+  SPI_HandleTypeDef *hspi = &get_peripherals()->hspi3;
+  const uint8_t read_reg = 1 << 7;
+  uint8_t tx = read_reg | reg;
+  uint8_t rx = 0;
+  HAL_GPIO_WritePin(SPI3_NSS_GPIO_PORT, SPI3_NSS_PIN, GPIO_PIN_RESET);
+  HAL_SPI_Transmit(hspi, &tx, sizeof(tx), portMAX_DELAY);
+  HAL_SPI_Receive(hspi, &rx, sizeof(rx), portMAX_DELAY);
+  HAL_GPIO_WritePin(SPI3_NSS_GPIO_PORT, SPI3_NSS_PIN, GPIO_PIN_SET);
+  return rx;
+}
+
+uint16_t imu_read_double_reg(uint8_t reg_h) {
+  const uint8_t byte_shift = 8;
+  uint16_t msb = imu_read_reg(reg_h);
+  uint16_t lsb = imu_read_reg(reg_h + 1);
+  return (msb << byte_shift | lsb);
+}
+
+void imu_update_gyro(gyro_t *gyro) {
+  gyro->x = imu_read_double_reg(IMU_REG_GYRO_XOUT_H);
+  gyro->y = imu_read_double_reg(IMU_REG_GYRO_YOUT_H);
+  gyro->z = imu_read_double_reg(IMU_REG_GYRO_ZOUT_H);
+}
+
+void imu_task_fn(void *unused) {
+  (void)unused;
+
+  gyro_t gyro;
+
+  for (;;) {
+    vTaskDelay(pdMS_TO_TICKS(200));
+    printf("whoami: 0x%02x\r\n", imu_read_reg(IMU_REG_WHOAMI));
+    imu_update_gyro(&gyro);
+    printf("gyro: {x: 0x%04x, y: 0x%04x, z: 0x%04x}\r\n", gyro.x, gyro.y,
+           gyro.z);
+  }
+}
+
 void task_init(void) {
   uint8_t priority = LOWEST_TASK_PRIORITY;
 
   if (init_lfs_task(priority++) < 0) {
     error();
   }
+
+  imu_task =
+      xTaskCreateStatic(imu_task_fn, "IMU task", configMINIMAL_STACK_SIZE, NULL,
+                        priority++, imu_task_stack, &imu_task_buf);
 
   steering_task = xTaskCreateStatic(sbus_read_and_steer, "steering task",
                                     STEERING_TASK_STACK_SIZE, NULL, priority++,

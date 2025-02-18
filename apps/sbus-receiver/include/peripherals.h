@@ -23,7 +23,9 @@ typedef struct {
   DMA_HandleTypeDef hdma_tim1_ch3;
   DMA_HandleTypeDef hdma_tim1_ch4;
 
+  SPI_HandleTypeDef hspi3;
   UART_HandleTypeDef huart2;
+
 } peripherals_t;
 
 peripherals_t *get_peripherals(void);

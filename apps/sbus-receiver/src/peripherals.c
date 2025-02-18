@@ -12,6 +12,7 @@ static peripherals_t peripherals;
 void gpio_init(void);
 void dma_init(void);
 void tim1_init(void);
+void imu_init(void);
 void uart2_init(void);
 
 peripherals_t* get_peripherals(void) {
@@ -25,6 +26,7 @@ void peripherals_init(void) {
   gpio_init();
   dma_init();
   tim1_init();
+  imu_init();
   uart2_init();
 }
 
@@ -135,6 +137,29 @@ void dma_init(void) {
   HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
 }
 
+// IMU over SPI3
+void imu_init(void) {
+  SPI_HandleTypeDef* hspi3 = &peripherals.hspi3;
+  hspi3->Instance = SPI3;
+  hspi3->Init.Mode = SPI_MODE_MASTER;
+  hspi3->Init.Direction = SPI_DIRECTION_2LINES;
+  hspi3->Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi3->Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi3->Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi3->Init.NSS = SPI_NSS_SOFT;
+  hspi3->Init.BaudRatePrescaler =
+      SPI_BAUDRATEPRESCALER_64;  // IMU max freq is 1MHz, this gives < 1 MHZ
+  hspi3->Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi3->Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi3->Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi3->Init.CRCPolynomial = 7;  // NOLINT
+  hspi3->Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hspi3->Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
+  if (HAL_SPI_Init(hspi3) != HAL_OK) {
+    error();
+  }
+}
+
 void uart2_init(void) {
   UART_HandleTypeDef* huart2 = &peripherals.huart2;
   huart2->Instance = USART2;
@@ -189,6 +214,34 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi) {
 
   } else if (hspi->Instance == SPI2) {
     spi2_msp_init();
+  } else if (hspi->Instance == SPI3) {
+    GPIO_InitTypeDef gpio_init;
+    /* Peripheral clock enable */
+    __HAL_RCC_SPI3_CLK_ENABLE();
+
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    /**SPI3 GPIO Configuration
+    PC10     ------> SPI3_SCK
+    PC11     ------> SPI3_MISO
+    PC12     ------> SPI3_MOSI
+    PD2     ------> SPI3_NSS
+    */
+    gpio_init.Pin = SPI3_SCK_PIN | SPI3_MISO_PIN | SPI3_MOSI_PIN;
+    gpio_init.Mode = GPIO_MODE_AF_PP;
+    gpio_init.Pull = GPIO_NOPULL;
+    gpio_init.Speed = GPIO_SPEED_FREQ_HIGH;
+    gpio_init.Alternate = GPIO_AF6_SPI3;
+    HAL_GPIO_Init(SPI3_SCK_GPIO_PORT, &gpio_init);
+
+    // Init NSS
+    HAL_GPIO_WritePin(SPI3_NSS_GPIO_PORT, SPI3_NSS_PIN, GPIO_PIN_SET);
+
+    gpio_init.Pin = SPI3_NSS_PIN;
+    gpio_init.Mode = GPIO_MODE_OUTPUT_PP;
+    gpio_init.Pull = GPIO_NOPULL;
+    gpio_init.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(SPI3_NSS_GPIO_PORT, &gpio_init);
   }
 }
 
@@ -204,6 +257,20 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi) {
 
   } else if (hspi->Instance == SPI2) {
     spi2_msp_deinit();
+  } else if (hspi->Instance == SPI3) {
+    /* Peripheral clock disable */
+    __HAL_RCC_SPI3_CLK_DISABLE();
+    /**SPI3 GPIO Configuration
+    PC10     ------> SPI3_SCK
+    PC11     ------> SPI3_MISO
+    PC12     ------> SPI3_MOSI
+    PD2     ------> SPI3_NSS
+    */
+
+    HAL_GPIO_WritePin(SPI3_NSS_GPIO_PORT, SPI3_NSS_PIN, GPIO_PIN_RESET);
+    HAL_GPIO_DeInit(SPI3_NSS_GPIO_PORT, SPI3_NSS_PIN);
+    HAL_GPIO_DeInit(SPI3_SCK_GPIO_PORT,
+                    SPI3_SCK_PIN | SPI3_MISO_PIN | SPI3_MOSI_PIN);
   }
 }
 
