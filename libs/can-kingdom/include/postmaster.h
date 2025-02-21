@@ -19,6 +19,21 @@ extern "C" {
 #include "ck-types.h"
 
 /*******************************************************************************
+ * Initialize the postmaster.
+ *
+ * Should be provided by the implementation if anything needs to be initialized
+ * before starting CAN communication.
+ *
+ * This function is called by ck_mayor_init() and should not be called directly
+ * by the user applicaiton.
+ *
+ * @return #CK_ERR_USER if init fails.
+ *
+ * @return #CK_OK on success.
+ ******************************************************************************/
+ck_err_t ck_postmaster_init(void);
+
+/*******************************************************************************
  * Try to send a letter.
  *
  * This function should not be called directly by the user applicaiton, use

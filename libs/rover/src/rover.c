@@ -43,36 +43,36 @@ static void king(void *unused) {
     // Task will never be resumed
   }
 
-  ck_err_t err = CK_OK;
+  ck_err_t ret = CK_OK;
 
   // Send default letter several times to make sure everyone receives it.
   for (uint8_t i = 0; i < 5; i++) {  // NOLINT(*-magic-numbers)
-    err = send_default_letter();
-    if (err != CK_OK) {
+    ret = send_default_letter();
+    if (ret != CK_OK) {
       error();
     }
     vTaskDelay(pdMS_TO_TICKS(1));
   }
 
-  err = set_rover_base_number();
-  if (err != CK_OK) {
+  ret = set_rover_base_number();
+  if (ret != CK_OK) {
     error();
   }
 
   vTaskDelay(pdMS_TO_TICKS(50));  // Give cities time to respond
 
-  err = assign_rover_envelopes(get_cached_ck_id());
-  if (err != CK_OK) {
+  ret = assign_rover_envelopes(get_cached_ck_id());
+  if (ret != CK_OK) {
     error();
   }
 
-  err = configure_rover_settings();
-  if (err != CK_OK) {
+  ret = configure_rover_settings();
+  if (ret != CK_OK) {
     error();
   }
 
-  err = start_communication();
-  if (err != CK_OK) {
+  ret = start_communication();
+  if (ret != CK_OK) {
     error();
   }
 

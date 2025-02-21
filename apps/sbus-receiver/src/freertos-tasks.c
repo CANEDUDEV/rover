@@ -91,11 +91,13 @@ void send_steering_command(steering_command_t *command) {
   memcpy(&ck_data->throttle_page->lines[1], &command->throttle,
          sizeof(command->throttle));
 
-  if (ck_send_document(ck_data->steering_folder->folder_no) != CK_OK) {
-    printf("failed to send doc.\r\n");
+  ck_err_t ret = ck_send_document(ck_data->steering_folder->folder_no);
+  if (ret != CK_OK && ret != CK_ERR_TIMEOUT) {
+    printf("error: failed to send steering doc\r\n");
   }
-  if (ck_send_document(ck_data->throttle_folder->folder_no) != CK_OK) {
-    printf("failed to send doc.\r\n");
+  ret = ck_send_document(ck_data->throttle_folder->folder_no);
+  if (ret != CK_OK && ret != CK_ERR_TIMEOUT) {
+    printf("error: failed to send throttle doc\r\n");
   }
 }
 

@@ -151,20 +151,29 @@ void report_timer(TimerHandle_t timer) {
 void send_docs(void) {
   ck_data_t *ck_data = get_ck_data();
 
-  if (ck_send_document(ck_data->servo_position_folder->folder_no) != CK_OK) {
-    printf("failed to send doc.\r\n");
+  ck_err_t ret = ck_send_document(ck_data->servo_position_folder->folder_no);
+  if (ret != CK_OK && ret != CK_ERR_TIMEOUT) {
+    printf("error: failed to send servo position doc\r\n");
   }
-  if (ck_send_document(ck_data->servo_current_folder->folder_no) != CK_OK) {
-    printf("failed to send doc.\r\n");
+
+  ret = ck_send_document(ck_data->servo_current_folder->folder_no);
+  if (ret != CK_OK && ret != CK_ERR_TIMEOUT) {
+    printf("error: failed to send servo current doc\r\n");
   }
-  if (ck_send_document(ck_data->battery_voltage_folder->folder_no) != CK_OK) {
-    printf("failed to send doc.\r\n");
+
+  ret = ck_send_document(ck_data->battery_voltage_folder->folder_no);
+  if (ret != CK_OK && ret != CK_ERR_TIMEOUT) {
+    printf("error: failed to send battery voltage doc\r\n");
   }
-  if (ck_send_document(ck_data->servo_voltage_folder->folder_no) != CK_OK) {
-    printf("failed to send doc.\r\n");
+
+  ret = ck_send_document(ck_data->servo_voltage_folder->folder_no);
+  if (ret != CK_OK && ret != CK_ERR_TIMEOUT) {
+    printf("error: failed to send servo voltage doc\r\n");
   }
-  if (ck_send_document(ck_data->h_bridge_current_folder->folder_no) != CK_OK) {
-    printf("failed to send doc.\r\n");
+
+  ret = ck_send_document(ck_data->h_bridge_current_folder->folder_no);
+  if (ret != CK_OK && ret != CK_ERR_TIMEOUT) {
+    printf("error: failed to send H-bridge current doc\r\n");
   }
 }
 

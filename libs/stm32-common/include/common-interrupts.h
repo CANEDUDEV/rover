@@ -15,6 +15,7 @@ void SysTick_Handler(void);
 
 void USART1_IRQHandler(void);
 void USB_LP_CAN_RX0_IRQHandler(void);
+void USB_HP_CAN_TX_IRQHandler(void);
 
 #ifdef __cplusplus
 }

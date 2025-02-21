@@ -125,6 +125,11 @@ ck_err_t ck_mayor_init(const ck_mayor_t *mayor_) {
     return ret;
   }
 
+  ret = ck_postmaster_init();
+  if (ret != CK_OK) {
+    return ret;
+  }
+
   mayor.comm_mode = CK_COMM_MODE_SILENT;
   mayor.comm_flags = CK_COMM_RESET;
 
@@ -253,8 +258,10 @@ ck_err_t ck_send_document(uint8_t folder_no) {
     letter.envelope = folder->envelopes[i];
     for (int j = 0; j < doc->page_count; j++) {
       memcpy(&letter.page, doc->pages[j], sizeof(ck_page_t));
-      if (ck_send_letter(&letter) != CK_OK) {
-        return CK_ERR_SEND_FAILED;
+
+      ck_err_t ret = ck_send_letter(&letter);
+      if (ret != CK_OK) {
+        return ret;
       }
     }
   }
@@ -305,10 +312,13 @@ ck_err_t ck_send_page(uint8_t folder_no, uint8_t page_no) {
     if (!folder->envelopes[i].enable) {
       continue;
     }
+
     letter.envelope = folder->envelopes[i];
     memcpy(&letter.page, doc->pages[page_no], sizeof(ck_page_t));
-    if (ck_send_letter(&letter) != CK_OK) {
-      return CK_ERR_SEND_FAILED;
+
+    ck_err_t ret = ck_send_letter(&letter);
+    if (ret != CK_OK) {
+      return ret;
     }
   }
   return CK_OK;
@@ -342,9 +352,12 @@ ck_err_t ck_send_mayors_page(uint8_t page_no) {
     if (!folder->envelopes[i].enable) {
       continue;
     }
+
     letter.envelope = folder->envelopes[i];
-    if (ck_send_letter(&letter) != CK_OK) {
-      return CK_ERR_SEND_FAILED;
+
+    ck_err_t ret = ck_send_letter(&letter);
+    if (ret != CK_OK) {
+      return ret;
     }
   }
   return CK_OK;
@@ -653,9 +666,9 @@ static ck_err_t process_kp1(const ck_page_t *page) {
       .is_remote = false,
   };
 
-  ck_err_t err = ck_check_envelope(&mayors_envelope);
-  if (err != CK_OK) {
-    return err;
+  ck_err_t ret = ck_check_envelope(&mayors_envelope);
+  if (ret != CK_OK) {
+    return ret;
   }
 
   mayor.user_data.folders[CK_MAYORS_FOLDER_NO].envelopes[0] = mayors_envelope;
@@ -687,9 +700,9 @@ static ck_err_t process_kp2(const ck_page_t *page) {
   // NOLINTEND(*-magic-numbers)
 
   // Bounds check
-  ck_err_t err = ck_check_envelope(&envelope);
-  if (err != CK_OK) {
-    return err;
+  ck_err_t ret = ck_check_envelope(&envelope);
+  if (ret != CK_OK) {
+    return ret;
   }
 
   switch (envelope_action) {

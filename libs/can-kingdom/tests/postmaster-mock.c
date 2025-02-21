@@ -3,6 +3,10 @@
 static ck_can_bit_timing_t current_bit_timing;
 static ck_can_bit_timing_t saved_bit_timing;
 
+ck_err_t ck_postmaster_init(void) {
+  return CK_OK;
+}
+
 ck_err_t ck_send_letter(const ck_letter_t *letter) {
   (void)letter;
   return CK_OK;

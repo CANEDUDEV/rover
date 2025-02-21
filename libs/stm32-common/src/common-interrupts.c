@@ -62,3 +62,8 @@ void USB_LP_CAN_RX0_IRQHandler(void) {
   common_peripherals_t *common_peripherals = get_common_peripherals();
   HAL_CAN_IRQHandler(&common_peripherals->hcan);
 }
+
+void USB_HP_CAN_TX_IRQHandler(void) {
+  common_peripherals_t *common_peripherals = get_common_peripherals();
+  HAL_CAN_IRQHandler(&common_peripherals->hcan);
+}

@@ -5,6 +5,7 @@
 
 #define USART1_IRQ_PRIORITY 5
 #define USB_LP_CAN_RX0_IRQ_PRIORITY 5
+#define USB_HP_CAN_TX_IRQ_PRIORITY 5
 #define PENDSV_IRQ_PRIORITY 15
 
 static common_peripherals_t common_peripherals;
@@ -164,6 +165,8 @@ void can_msp_init(void) {
   /* CAN interrupt Init */
   HAL_NVIC_SetPriority(USB_LP_CAN_RX0_IRQn, USB_LP_CAN_RX0_IRQ_PRIORITY, 0);
   HAL_NVIC_EnableIRQ(USB_LP_CAN_RX0_IRQn);
+  HAL_NVIC_SetPriority(USB_HP_CAN_TX_IRQn, USB_HP_CAN_TX_IRQ_PRIORITY, 0);
+  HAL_NVIC_EnableIRQ(USB_HP_CAN_TX_IRQn);
 }
 
 void can_msp_deinit(void) {

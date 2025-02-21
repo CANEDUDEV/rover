@@ -176,11 +176,13 @@ static void send_subtrim_commands(void) {
   memcpy(ck_data->throttle_subtrim_page->lines, &throttle_subtrim,
          sizeof(throttle_subtrim));
 
-  if (ck_send_document(ck_data->steering_subtrim_folder->folder_no) != CK_OK) {
-    printf("failed to send doc.\r\n");
+  ck_err_t ret = ck_send_document(ck_data->steering_subtrim_folder->folder_no);
+  if (ret != CK_OK && ret != CK_ERR_TIMEOUT) {
+    printf("error: failed to send steering subtrim doc\r\n");
   }
-  if (ck_send_document(ck_data->throttle_subtrim_folder->folder_no) != CK_OK) {
-    printf("failed to send doc.\r\n");
+  ret = ck_send_document(ck_data->throttle_subtrim_folder->folder_no);
+  if (ret != CK_OK && ret != CK_ERR_TIMEOUT) {
+    printf("error: failed to send throttle subtrim doc\r\n");
   }
 }
 

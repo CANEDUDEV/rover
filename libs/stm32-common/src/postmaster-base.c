@@ -1,6 +1,11 @@
 #include "common-peripherals.h"
 #include "postmaster.h"
 
+// FreeRTOS
+#include "FreeRTOS.h"
+#include "semphr.h"
+#include "task.h"
+
 // Helpers
 static ck_err_t check_bit_timing(const ck_can_bit_timing_t *bit_timing);
 static int get_tseg1(const ck_can_bit_timing_t *bit_timing);
@@ -14,9 +19,30 @@ inline int min(int a, int b) {  // NOLINT
   return b;
 }
 
+static StaticSemaphore_t can_tx_sem_buf;
+static SemaphoreHandle_t can_tx_sem = NULL;
+
+ck_err_t ck_postmaster_init(void) {
+  CAN_HandleTypeDef *hcan = &get_common_peripherals()->hcan;
+  HAL_CAN_ActivateNotification(hcan, CAN_IT_TX_MAILBOX_EMPTY);
+  const uint8_t mailbox_count = 3;
+  can_tx_sem =
+      xSemaphoreCreateCountingStatic(mailbox_count, 0, &can_tx_sem_buf);
+  if (can_tx_sem == NULL) {
+    return CK_ERR_USER;
+  }
+  for (int i = 0; i < mailbox_count; i++) {
+    xSemaphoreGive(can_tx_sem);
+  }
+  return CK_OK;
+}
+
 ck_err_t ck_send_letter(const ck_letter_t *letter) {
-  common_peripherals_t *common_peripherals = get_common_peripherals();
-  CAN_HandleTypeDef *hcan = &common_peripherals->hcan;
+  CAN_HandleTypeDef *hcan = &get_common_peripherals()->hcan;
+
+  if (can_tx_sem == NULL) {
+    return CK_ERR_NOT_INITIALIZED;
+  }
 
   // If bus off, return error
   if (hcan->State != HAL_CAN_STATE_READY &&
@@ -24,8 +50,9 @@ ck_err_t ck_send_letter(const ck_letter_t *letter) {
     return CK_ERR_SEND_FAILED;
   }
 
-  while (HAL_CAN_GetTxMailboxesFreeLevel(hcan) < 1) {
-    // Busy loop, wait for mailbox to be free
+  if (xSemaphoreTake(can_tx_sem, pdMS_TO_TICKS(10)) != pdPASS) {
+    // Cannot send message, either bus is overloaded or no one is on bus.
+    return CK_ERR_TIMEOUT;
   }
 
   CAN_TxHeaderTypeDef header = {
@@ -46,9 +73,29 @@ ck_err_t ck_send_letter(const ck_letter_t *letter) {
   uint32_t mailbox = 0;
   if (HAL_CAN_AddTxMessage(hcan, &header, letter->page.lines, &mailbox) !=
       HAL_OK) {
+    xSemaphoreGive(can_tx_sem);
     return CK_ERR_SEND_FAILED;
   }
   return CK_OK;
+}
+
+static void tx_complete(void) {
+  BaseType_t higher_priority_task_woken = pdFALSE;
+  xSemaphoreGiveFromISR(can_tx_sem, &higher_priority_task_woken);
+  portYIELD_FROM_ISR(higher_priority_task_woken);
+}
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan) {
+  (void)hcan;
+  tx_complete();
+}
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan) {
+  (void)hcan;
+  tx_complete();
+}
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan) {
+  (void)hcan;
+  tx_complete();
 }
 
 ck_err_t ck_apply_comm_mode(ck_comm_mode_t mode) {

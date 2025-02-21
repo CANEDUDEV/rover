@@ -74,8 +74,9 @@ void report(void *unused) {
       continue;
     }
 
-    if (ck_send_document(ck_data->object_distance_folder->folder_no) != CK_OK) {
-      printf("failed to send doc.\r\n");
+    ck_err_t ret = ck_send_document(ck_data->object_distance_folder->folder_no);
+    if (ret != CK_OK && ret != CK_ERR_TIMEOUT) {
+      printf("error: failed to send object distance doc\r\n");
     }
   }
 }

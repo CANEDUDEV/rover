@@ -172,6 +172,10 @@ typedef enum {
   CK_ERR_PERIPHERAL,
   /// Input argument to function is wrong in some way.
   CK_ERR_INVALID_PARAMETER,
+  /// Undefined error in user-defined function.
+  CK_ERR_USER,
+  /// Function exited due to timeout.
+  CK_ERR_TIMEOUT,
 } ck_err_t;
 
 /// Supported king's pages.

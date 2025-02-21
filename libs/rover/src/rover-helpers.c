@@ -20,17 +20,17 @@ static ck_envelope_t kings_envelope = {
 
 ck_err_t send_default_letter(void) {
   // Spoof a default letter reception
-  ck_err_t err = ck_default_letter_received();
-  if (err != CK_OK) {
-    printf("Error: failed to receive default letter: %d\r\n", err);
-    return err;
+  ck_err_t ret = ck_default_letter_received();
+  if (ret != CK_OK) {
+    printf("Error: failed to receive default letter: %d\r\n", ret);
+    return ret;
   }
 
   ck_letter_t default_letter = ck_default_letter();
-  err = ck_send_letter(&default_letter);
-  if (err != CK_OK) {
-    printf("Error: failed to send default letter: %d\r\n", err);
-    return err;
+  ret = ck_send_letter(&default_letter);
+  if (ret != CK_OK) {
+    printf("Error: failed to send default letter: %d\r\n", ret);
+    return ret;
   }
 
   return CK_OK;
@@ -49,10 +49,10 @@ ck_err_t assign_rover_envelopes(const ck_id_t *own_id) {
         .folder_no = kingdom->assignments[i].folder,
         .envelope_action = CK_ENVELOPE_ASSIGN,
     };
-    ck_err_t err = ck_create_kings_page_2(&kp2_args, &page);
-    if (err != CK_OK) {
-      printf("Error: failed to create king's page: %d.\r\n", err);
-      return err;
+    ck_err_t ret = ck_create_kings_page_2(&kp2_args, &page);
+    if (ret != CK_OK) {
+      printf("Error: failed to create king's page: %d.\r\n", ret);
+      return ret;
     }
 
     ck_letter_t letter = {
@@ -63,17 +63,17 @@ ck_err_t assign_rover_envelopes(const ck_id_t *own_id) {
     // Letters meant for us need to be processed internally,
     // since we can't receive the messages we send.
     if (kingdom->assignments[i].city == own_id->city_address) {
-      err = ck_process_kings_letter(&letter);
-      if (err != CK_OK) {
-        printf("Error: failed to assign envelope to self: %d.\r\n", err);
-        return err;
+      ret = ck_process_kings_letter(&letter);
+      if (ret != CK_OK) {
+        printf("Error: failed to assign envelope to self: %d.\r\n", ret);
+        return ret;
       }
     }
 
-    err = ck_send_letter(&letter);
-    if (err != CK_OK) {
-      printf("Error: failed to assign envelope: %d\r\n", err);
-      return err;
+    ret = ck_send_letter(&letter);
+    if (ret != CK_OK) {
+      printf("Error: failed to assign envelope: %d\r\n", ret);
+      return ret;
     }
   }
 
@@ -88,10 +88,10 @@ ck_err_t set_rover_base_number(void) {
       .has_extended_id = false,
       .mayor_response_no = 0,
   };
-  ck_err_t err = ck_create_kings_page_1(&kp1_args, &page);
-  if (err != CK_OK) {
-    printf("Error: failed to create king's page: %d.\r\n", err);
-    return err;
+  ck_err_t ret = ck_create_kings_page_1(&kp1_args, &page);
+  if (ret != CK_OK) {
+    printf("Error: failed to create king's page: %d.\r\n", ret);
+    return ret;
   }
 
   ck_letter_t letter = {
@@ -100,16 +100,16 @@ ck_err_t set_rover_base_number(void) {
   };
 
   // Send base number to self
-  err = ck_process_kings_letter(&letter);
-  if (err != CK_OK) {
-    printf("Error: couldn't send base number letter to self: %d.\r\n", err);
-    return err;
+  ret = ck_process_kings_letter(&letter);
+  if (ret != CK_OK) {
+    printf("Error: couldn't send base number letter to self: %d.\r\n", ret);
+    return ret;
   }
 
-  err = ck_send_letter(&letter);
-  if (err != CK_OK) {
-    printf("Error: couldn't send base number letter: %d.\r\n", err);
-    return err;
+  ret = ck_send_letter(&letter);
+  if (ret != CK_OK) {
+    printf("Error: couldn't send base number letter: %d.\r\n", ret);
+    return ret;
   }
 
   return CK_OK;
@@ -132,10 +132,10 @@ ck_err_t configure_rover_settings(void) {
       .envelope = reverse_envelope,
   };
 
-  ck_err_t err = ck_send_letter(&letter);
-  if (err != CK_OK) {
-    printf("Error: failed to send servo reverse letter: %d\r\n", err);
-    return err;
+  ck_err_t ret = ck_send_letter(&letter);
+  if (ret != CK_OK) {
+    printf("Error: failed to send servo reverse letter: %d\r\n", ret);
+    return ret;
   }
 
   return CK_OK;
@@ -149,10 +149,10 @@ ck_err_t start_communication(void) {
       .action_mode = CK_ACTION_MODE_KEEP_CURRENT,
       .comm_mode = CK_COMM_MODE_COMMUNICATE,
   };
-  ck_err_t err = ck_create_kings_page_0(&kp0_args, &page);
-  if (err != CK_OK) {
-    printf("Error: failed to create king's page: %d.\r\n", err);
-    return err;
+  ck_err_t ret = ck_create_kings_page_0(&kp0_args, &page);
+  if (ret != CK_OK) {
+    printf("Error: failed to create king's page: %d.\r\n", ret);
+    return ret;
   }
 
   ck_letter_t letter = {
@@ -160,16 +160,16 @@ ck_err_t start_communication(void) {
       .page = page,
   };
 
-  err = ck_process_kings_letter(&letter);
-  if (err != CK_OK) {
-    printf("Error: failed to send start command to self: %d.\r\n", err);
-    return err;
+  ret = ck_process_kings_letter(&letter);
+  if (ret != CK_OK) {
+    printf("Error: failed to send start command to self: %d.\r\n", ret);
+    return ret;
   }
 
-  err = ck_send_letter(&letter);
-  if (err != CK_OK) {
-    printf("Error: failed to send start command: %d\r\n", err);
-    return err;
+  ret = ck_send_letter(&letter);
+  if (ret != CK_OK) {
+    printf("Error: failed to send start command: %d\r\n", ret);
+    return ret;
   }
 
   return CK_OK;
