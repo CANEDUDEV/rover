@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "ck-data.h"
+#include "float.h"
 #include "peripherals.h"
 #include "ports.h"
 #include "sbus.h"
@@ -66,23 +67,29 @@ void send_steering_command(steering_command_t *command);
 // CK
 int handle_letter(const ck_folder_t *folder, const ck_letter_t *letter);
 
+#define IMU_TASK_STACK_SIZE (2 * configMINIMAL_STACK_SIZE)
 static TaskHandle_t imu_task;
 static StaticTask_t imu_task_buf;
-static StackType_t imu_task_stack[configMINIMAL_STACK_SIZE];
+static StackType_t imu_task_stack[IMU_TASK_STACK_SIZE];
 
-#define IMU_REG_GYRO_XOUT_H 0x43
-#define IMU_REG_GYRO_XOUT_L 0x44
-#define IMU_REG_GYRO_YOUT_H 0x45
-#define IMU_REG_GYRO_YOUT_L 0x46
-#define IMU_REG_GYRO_ZOUT_H 0x47
-#define IMU_REG_GYRO_ZOUT_L 0x48
+#define IMU_REG_GYRO_BASE 0x43
+#define IMU_REG_ACCEL_BASE 0x3B
 #define IMU_REG_WHOAMI 0x75
 
 typedef struct {
-  uint16_t x;
-  uint16_t y;
-  uint16_t z;
-} gyro_t;
+  int16_t x;
+  int16_t y;
+  int16_t z;
+} sensor_reading_t;
+
+struct float_reading {
+  float x;
+  float y;
+  float z;
+};
+
+typedef struct float_reading gyro_t;
+typedef struct float_reading accel_t;
 
 uint8_t imu_read_reg(uint8_t reg) {
   SPI_HandleTypeDef *hspi = &get_peripherals()->hspi3;
@@ -96,30 +103,67 @@ uint8_t imu_read_reg(uint8_t reg) {
   return rx;
 }
 
-uint16_t imu_read_double_reg(uint8_t reg_h) {
+uint16_t imu_read_double_reg(uint8_t high_reg) {
   const uint8_t byte_shift = 8;
-  uint16_t msb = imu_read_reg(reg_h);
-  uint16_t lsb = imu_read_reg(reg_h + 1);
+  uint16_t msb = imu_read_reg(high_reg);
+  uint16_t lsb = imu_read_reg(high_reg + 1);
   return (msb << byte_shift | lsb);
 }
 
+sensor_reading_t imu_read_sensor_reg(uint8_t base_reg) {
+  sensor_reading_t reading = {
+      .x = (int16_t)imu_read_double_reg(base_reg),
+      .y = (int16_t)imu_read_double_reg(base_reg + 2),
+      .z = (int16_t)imu_read_double_reg(base_reg + 4),
+  };
+  return reading;
+}
+
 void imu_update_gyro(gyro_t *gyro) {
-  gyro->x = imu_read_double_reg(IMU_REG_GYRO_XOUT_H);
-  gyro->y = imu_read_double_reg(IMU_REG_GYRO_YOUT_H);
-  gyro->z = imu_read_double_reg(IMU_REG_GYRO_ZOUT_H);
+  sensor_reading_t reading = imu_read_sensor_reg(IMU_REG_GYRO_BASE);
+  const float gyro_max = 250;  // Configurable, use default for now
+  gyro->x = gyro_max * ((float)reading.x / INT16_MAX);
+  gyro->y = gyro_max * ((float)reading.y / INT16_MAX);
+  gyro->z = gyro_max * ((float)reading.z / INT16_MAX);
+}
+
+void imu_update_accel(accel_t *accel) {
+  sensor_reading_t reading = imu_read_sensor_reg(IMU_REG_ACCEL_BASE);
+  const float g = 9.80665F;
+  const float accel_max = 2 * g;  // Configurable, use default for now
+  accel->x = accel_max * ((float)reading.x / INT16_MAX);
+  accel->y = accel_max * ((float)reading.y / INT16_MAX);
+  accel->z = accel_max * ((float)reading.z / INT16_MAX);
 }
 
 void imu_task_fn(void *unused) {
   (void)unused;
 
+  const size_t float_str_size = 32;
+  char x_str[float_str_size];
+  char y_str[float_str_size];
+  char z_str[float_str_size];
+
   gyro_t gyro;
+  accel_t accel;
 
   for (;;) {
     vTaskDelay(pdMS_TO_TICKS(200));
     printf("whoami: 0x%02x\r\n", imu_read_reg(IMU_REG_WHOAMI));
+
     imu_update_gyro(&gyro);
-    printf("gyro: {x: 0x%04x, y: 0x%04x, z: 0x%04x}\r\n", gyro.x, gyro.y,
-           gyro.z);
+
+    float_sprint(x_str, gyro.x);
+    float_sprint(y_str, gyro.y);
+    float_sprint(z_str, gyro.z);
+    printf("gyro: {x: %s, y: %s, z: %s (deg/s)}\r\n", x_str, y_str, z_str);
+
+    imu_update_accel(&accel);
+
+    float_sprint(x_str, accel.x);
+    float_sprint(y_str, accel.y);
+    float_sprint(z_str, accel.z);
+    printf("accel: {x: %s, y: %s, z: %s (m/s2)}\r\n", x_str, y_str, z_str);
   }
 }
 
@@ -130,9 +174,8 @@ void task_init(void) {
     error();
   }
 
-  imu_task =
-      xTaskCreateStatic(imu_task_fn, "IMU task", configMINIMAL_STACK_SIZE, NULL,
-                        priority++, imu_task_stack, &imu_task_buf);
+  imu_task = xTaskCreateStatic(imu_task_fn, "IMU task", IMU_TASK_STACK_SIZE,
+                               NULL, priority++, imu_task_stack, &imu_task_buf);
 
   steering_task = xTaskCreateStatic(sbus_read_and_steer, "steering task",
                                     STEERING_TASK_STACK_SIZE, NULL, priority++,
@@ -167,8 +210,8 @@ void sbus_read_and_steer(void *unused) {
     }
 
     // Failsafe usually triggers if many frames are lost in a row.
-    // Indicates heavy connection loss. Frame lost indicateds slight connection
-    // loss or issue with frame.
+    // Indicates heavy connection loss. Frame lost indicateds slight
+    // connection loss or issue with frame.
     bool read_failed = message.failsafe_activated || message.frame_lost;
 
     if (read_failed) {
